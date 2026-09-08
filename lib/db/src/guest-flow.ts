@@ -179,8 +179,12 @@ export async function cullGuestOverage(vaultId: string) {
       .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.culledAt)))
       .orderBy(asc(submissionsTable.submittedAt));
     const remove = excess.slice(cap);
-    if (remove.length) await tx.update(submissionsTable).set({ culledAt: new Date() })
-      .where(inArray(submissionsTable.id, remove.map((row) => row.id)));
+    if (remove.length) {
+      const submissionIds = remove.map((row) => row.id);
+      await tx.delete(answersTable).where(inArray(answersTable.submissionId, submissionIds));
+      await tx.update(submissionsTable).set({ culledAt: new Date() })
+        .where(inArray(submissionsTable.id, submissionIds));
+    }
     return remove.length;
   });
 }
