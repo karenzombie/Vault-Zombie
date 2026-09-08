@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&family=Caveat:wght@500;600;700&family=Tilt+Warp&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&family=Tilt+Warp&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -44,7 +44,6 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
   --font-display: var(--app-font-display);
-  --font-script: var(--app-font-script);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -75,9 +74,9 @@
   --brass: 40 45% 60%;
   --brass-lt: 40 50% 81%;
   --bronze-wash: 39 36% 90%;
-  --pop: 13 54% 50%;
-  --pop-dk: 12 58% 41%;
-  --pop-tint: 20 52% 92%;
+  --pop: 40 45% 60%;
+  --pop-dk: 38 40% 39%;
+  --pop-tint: 39 36% 90%;
   --ok: 111 27% 38%;
   --ok-tint: 111 27% 92%;
   --warn: 35 71% 42%;
@@ -107,7 +106,7 @@
   --accent: var(--bronze-wash);
   --accent-foreground: var(--bronze);
 
-  --destructive: var(--pop-dk);
+  --destructive: 8 46% 43%;
   --destructive-foreground: 22 100% 98%;
 
   --input: var(--white);
@@ -117,7 +116,6 @@
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
   --app-font-display: 'Tilt Warp', system-ui, sans-serif;
-  --app-font-script: 'Caveat', ui-rounded, cursive;
 
   --radius-sm: 6px;
   --radius-md: 9px;
@@ -153,7 +151,7 @@
   --muted-foreground: var(--text-2);
   --accent: var(--bronze-wash);
   --accent-foreground: var(--bronze);
-  --destructive: var(--pop-dk);
+  --destructive: 8 46% 43%;
   --destructive-foreground: 22 100% 98%;
   --input: var(--white);
   --ring: var(--pop);
@@ -173,7 +171,7 @@
   .hover-elevate:active { transform: translateY(1px); }
   
   .font-display { font-family: var(--font-display); }
-  .font-script { font-family: var(--font-script); }
+  .font-script { font-family: var(--font-display); }
 
   /* Utility variants for specific colors */
   .bg-ink { background-color: hsl(var(--ink)); }

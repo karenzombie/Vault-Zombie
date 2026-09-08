@@ -11,6 +11,8 @@ export interface UnlockedAnswerScope {
   revealSlotId?: string;
   guestId?: string;
   now?: Date;
+  /** A transaction may be supplied so a reveal mutation reads and writes atomically. */
+  database?: Pick<typeof db, "select">;
 }
 
 /**
@@ -22,6 +24,7 @@ export interface UnlockedAnswerScope {
  */
 export async function readUnlockedAnswers(scope: UnlockedAnswerScope) {
   const now = scope.now ?? new Date();
+  const database = scope.database ?? db;
   const conditions = [
     eq(submissionsTable.vaultId, scope.vaultId),
     or(
@@ -40,7 +43,7 @@ export async function readUnlockedAnswers(scope: UnlockedAnswerScope) {
     conditions.push(eq(submissionsTable.guestId, scope.guestId));
   }
 
-  return db
+  return database
     .select({
       id: answersTable.id,
       submissionId: answersTable.submissionId,

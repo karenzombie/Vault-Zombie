@@ -111,3 +111,164 @@ export interface GuestSubmissionConfirmation {
   createVaultUrl: string;
 }
 
+export interface AnswerValue {
+  answerId: string;
+  guestId: string;
+  guestDisplayName: string;
+  /** @nullable */
+  textValue: string | null;
+  /** @nullable */
+  numberValue: number | null;
+  /** @nullable */
+  optionId: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type TextClusterSuggestedTier = typeof TextClusterSuggestedTier[keyof typeof TextClusterSuggestedTier] | null;
+
+
+export const TextClusterSuggestedTier = {
+  full: 'full',
+  half: 'half',
+  zero: 'zero',
+} as const;
+
+/**
+ * @nullable
+ */
+export type TextClusterConfirmedTier = typeof TextClusterConfirmedTier[keyof typeof TextClusterConfirmedTier] | null;
+
+
+export const TextClusterConfirmedTier = {
+  full: 'full',
+  half: 'half',
+  zero: 'zero',
+} as const;
+
+export interface TextCluster {
+  key: string;
+  normalizedValue: string;
+  answerCount: number;
+  /** @nullable */
+  suggestedTier: TextClusterSuggestedTier;
+  /** @nullable */
+  confirmedTier?: TextClusterConfirmedTier;
+  answers: AnswerValue[];
+}
+
+export type RevealQuestionWorkAnswerType = typeof RevealQuestionWorkAnswerType[keyof typeof RevealQuestionWorkAnswerType];
+
+
+export const RevealQuestionWorkAnswerType = {
+  free_text: 'free_text',
+  number: 'number',
+  multiple_choice: 'multiple_choice',
+  name_pick: 'name_pick',
+} as const;
+
+/**
+ * @nullable
+ */
+export type RevealQuestionWorkFreeTextMode = typeof RevealQuestionWorkFreeTextMode[keyof typeof RevealQuestionWorkFreeTextMode] | null;
+
+
+export const RevealQuestionWorkFreeTextMode = {
+  scoreable: 'scoreable',
+  keepsake: 'keepsake',
+} as const;
+
+export interface RevealQuestionWork {
+  vaultQuestionId: string;
+  revealSlotId: string;
+  prompt: string;
+  answerType: RevealQuestionWorkAnswerType;
+  /** @nullable */
+  freeTextMode: RevealQuestionWorkFreeTextMode;
+  /** @nullable */
+  numberCloseBand?: number | null;
+  /** @nullable */
+  trueTextValue?: string | null;
+  /** @nullable */
+  trueNumberValue?: number | null;
+  /** @nullable */
+  trueOptionId?: string | null;
+  /**
+     * @maxLength 140
+     * @nullable
+     */
+  operatorNote?: string | null;
+  answers: AnswerValue[];
+  clusters: TextCluster[];
+}
+
+export interface UnlockedRevealWork {
+  questions: RevealQuestionWork[];
+}
+
+export interface OutcomeInput {
+  /**
+     * @maxLength 140
+     * @nullable
+     */
+  trueTextValue?: string | null;
+  /** @nullable */
+  trueNumberValue?: number | null;
+  /** @nullable */
+  trueOptionId?: string | null;
+  /**
+     * @maxLength 140
+     * @nullable
+     */
+  operatorNote?: string | null;
+}
+
+export interface ResolvedOutcome {
+  outcomeId: string;
+  vaultQuestionId: string;
+  revealSlotId: string;
+  verdictCount: number;
+}
+
+export type ClusterVerdictInputTier = typeof ClusterVerdictInputTier[keyof typeof ClusterVerdictInputTier];
+
+
+export const ClusterVerdictInputTier = {
+  full: 'full',
+  half: 'half',
+  zero: 'zero',
+} as const;
+
+export interface ClusterVerdictInput {
+  tier: ClusterVerdictInputTier;
+}
+
+export type ClusterVerdictResultTier = typeof ClusterVerdictResultTier[keyof typeof ClusterVerdictResultTier];
+
+
+export const ClusterVerdictResultTier = {
+  full: 'full',
+  half: 'half',
+  zero: 'zero',
+} as const;
+
+export interface ClusterVerdictResult {
+  clusterKey: string;
+  tier: ClusterVerdictResultTier;
+  affectedAnswers: number;
+}
+
+export interface ScoreboardEntry {
+  guestId: string;
+  displayName: string;
+  full: number;
+  half: number;
+  zero: number;
+  total: number;
+}
+
+export interface Scoreboard {
+  entries: ScoreboardEntry[];
+}
+

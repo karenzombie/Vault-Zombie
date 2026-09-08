@@ -59,9 +59,7 @@ export default function GuestFlow() {
         
         {/* Top Bar */}
         <button type="button" onClick={leaveForHome} className="bg-ink text-parchment p-4 flex items-center gap-3 shrink-0 text-left">
-          <div className="w-8 h-8 rounded-full bg-pop flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-[#FFF7F2]"><path d="M12 21s-7-4.4-7-9.3A3.7 3.7 0 0112 9a3.7 3.7 0 017 2.7C19 16.6 12 21 12 21z"/></svg>
-          </div>
+          <img src="/vault_zombie_png.png" alt="Vault Zombie" className="h-8 w-auto shrink-0" />
           <div>
             <div className="font-bold text-[15px] leading-tight">{vault.name}</div>
             <div className="text-[11px] text-brass tracking-wider uppercase">Vault Zombie</div>

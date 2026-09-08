@@ -5,10 +5,7 @@ export default function AdminPlaceholder() {
     <div className="flex h-[100dvh] w-full text-foreground">
       <aside className="w-[236px] bg-ink text-background flex flex-col p-4">
         <div className="flex items-center gap-2 px-2 py-4 mb-2">
-          <span className="font-display text-[20px] tracking-tight">
-            <span className="text-background">Vault</span>
-            <span className="text-brass">Zombie</span>
-          </span>
+          <Link href="/"><img src="/vault_zombie_png.png" alt="Vault Zombie" className="h-8 w-auto" /></Link>
         </div>
         <div className="text-[11px] tracking-[0.1em] uppercase text-gray px-3 py-2">Admin</div>
         <nav className="flex flex-col gap-1">

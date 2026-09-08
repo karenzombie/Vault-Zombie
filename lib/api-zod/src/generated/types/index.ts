@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './answerValue';
+export * from './clusterVerdictInput';
+export * from './clusterVerdictInputTier';
+export * from './clusterVerdictResult';
+export * from './clusterVerdictResultTier';
 export * from './guestAnswerInput';
 export * from './guestAnswerInputAnswerType';
 export * from './guestOption';
@@ -18,3 +23,14 @@ export * from './guestVault';
 export * from './guestVaultLayout';
 export * from './guestVaultSubjectValues';
 export * from './healthStatus';
+export * from './outcomeInput';
+export * from './resolvedOutcome';
+export * from './revealQuestionWork';
+export * from './revealQuestionWorkAnswerType';
+export * from './revealQuestionWorkFreeTextMode';
+export * from './scoreboard';
+export * from './scoreboardEntry';
+export * from './textCluster';
+export * from './textClusterConfirmedTier';
+export * from './textClusterSuggestedTier';
+export * from './unlockedRevealWork';

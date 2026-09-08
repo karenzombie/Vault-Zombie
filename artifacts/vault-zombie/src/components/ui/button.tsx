@@ -9,7 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-ink text-[hsl(var(--brass-lt))] hover:bg-[hsl(var(--ink-2))]",
-        pop: "bg-pop text-[#FFF7F2] shadow-[0_10px_22px_-12px_rgba(196,87,58,0.7)] hover:bg-[hsl(var(--pop-dk))]",
+        pop: "bg-pop text-ink shadow-[0_10px_22px_-12px_rgba(138,109,59,0.45)] hover:bg-[hsl(var(--pop-dk))] hover:text-white",
         secondary: "bg-white text-ink border border-hairline hover:border-[#D8C9A9] hover:bg-background",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         quiet: "bg-bronze-wash text-bronze hover:bg-[#E8DFCC]",

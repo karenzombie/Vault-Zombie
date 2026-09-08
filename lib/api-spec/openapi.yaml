@@ -12,6 +12,8 @@ tags:
     description: Health operations
   - name: guest
     description: Account-free, write-only guest prediction flow
+  - name: operator
+    description: Authenticated operator reveal and scoring operations
 paths:
   /healthz:
     get:
@@ -68,8 +70,108 @@ paths:
           description: Link not found
         "429":
           description: Rate limit reached
+  /operator/vaults/{vaultId}/reveals/unlocked:
+    get:
+      operationId: listUnlockedRevealWork
+      tags: [operator]
+      summary: List unlocked reveal work for an owned vault
+      parameters:
+        - $ref: "#/components/parameters/VaultId"
+      responses:
+        "200":
+          description: Unlocked answers grouped into question work items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnlockedRevealWork"
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault not found }
+  /operator/vaults/{vaultId}/reveals/{revealSlotId}/questions/{vaultQuestionId}/outcome:
+    put:
+      operationId: resolveRevealQuestionOutcome
+      tags: [operator]
+      summary: Atomically save a question outcome and automatic verdicts
+      parameters:
+        - $ref: "#/components/parameters/VaultId"
+        - $ref: "#/components/parameters/RevealSlotId"
+        - $ref: "#/components/parameters/VaultQuestionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutcomeInput" }
+      responses:
+        "200":
+          description: Outcome resolved idempotently
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResolvedOutcome" }
+        "400": { description: Invalid outcome for question type }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Unlocked reveal question not found }
+  /operator/vaults/{vaultId}/reveals/{revealSlotId}/questions/{vaultQuestionId}/clusters/{clusterKey}/verdict:
+    put:
+      operationId: overrideRevealTextClusterVerdict
+      tags: [operator]
+      summary: Confirm or override one free-text answer cluster
+      parameters:
+        - $ref: "#/components/parameters/VaultId"
+        - $ref: "#/components/parameters/RevealSlotId"
+        - $ref: "#/components/parameters/VaultQuestionId"
+        - name: clusterKey
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 140 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ClusterVerdictInput" }
+      responses:
+        "200":
+          description: Cluster verdict saved idempotently
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ClusterVerdictResult" }
+        "400": { description: Cluster is not scoreable }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Unlocked cluster or resolved outcome not found }
+  /operator/vaults/{vaultId}/scoreboard:
+    get:
+      operationId: getOperatorScoreboard
+      tags: [operator]
+      summary: Get the scored unlocked-answer scoreboard for an owned vault
+      parameters:
+        - $ref: "#/components/parameters/VaultId"
+      responses:
+        "200":
+          description: Scoreboard totals, with full worth one and half worth one half
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Scoreboard" }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault not found }
 components:
   parameters:
+    VaultId:
+      name: vaultId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    RevealSlotId:
+      name: revealSlotId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    VaultQuestionId:
+      name: vaultQuestionId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     GuestToken:
       name: token
       in: path
@@ -161,4 +263,89 @@ components:
       properties:
         accepted: { type: boolean }
         createVaultUrl: { type: string }
+    AnswerValue:
+      type: object
+      required: [answerId, guestId, guestDisplayName, textValue, numberValue, optionId]
+      properties:
+        answerId: { type: string, format: uuid }
+        guestId: { type: string, format: uuid }
+        guestDisplayName: { type: string }
+        textValue: { type: ["string", "null"] }
+        numberValue: { type: ["number", "null"] }
+        optionId: { type: ["string", "null"], format: uuid }
+    TextCluster:
+      type: object
+      required: [key, normalizedValue, answerCount, answers, suggestedTier]
+      properties:
+        key: { type: string }
+        normalizedValue: { type: string }
+        answerCount: { type: integer }
+        suggestedTier: { type: ["string", "null"], enum: [full, half, zero, null] }
+        confirmedTier: { type: ["string", "null"], enum: [full, half, zero, null] }
+        answers:
+          type: array
+          items: { $ref: "#/components/schemas/AnswerValue" }
+    RevealQuestionWork:
+      type: object
+      required: [vaultQuestionId, revealSlotId, prompt, answerType, freeTextMode, answers, clusters]
+      properties:
+        vaultQuestionId: { type: string, format: uuid }
+        revealSlotId: { type: string, format: uuid }
+        prompt: { type: string }
+        answerType: { type: string, enum: [free_text, number, multiple_choice, name_pick] }
+        freeTextMode: { type: ["string", "null"], enum: [scoreable, keepsake, null] }
+        numberCloseBand: { type: ["number", "null"] }
+        trueTextValue: { type: ["string", "null"] }
+        trueNumberValue: { type: ["number", "null"] }
+        trueOptionId: { type: ["string", "null"], format: uuid }
+        operatorNote: { type: ["string", "null"], maxLength: 140 }
+        answers: { type: array, items: { $ref: "#/components/schemas/AnswerValue" } }
+        clusters: { type: array, items: { $ref: "#/components/schemas/TextCluster" } }
+    UnlockedRevealWork:
+      type: object
+      required: [questions]
+      properties:
+        questions: { type: array, items: { $ref: "#/components/schemas/RevealQuestionWork" } }
+    OutcomeInput:
+      type: object
+      properties:
+        trueTextValue: { type: ["string", "null"], maxLength: 140 }
+        trueNumberValue: { type: ["number", "null"] }
+        trueOptionId: { type: ["string", "null"], format: uuid }
+        operatorNote: { type: ["string", "null"], maxLength: 140 }
+    ResolvedOutcome:
+      type: object
+      required: [outcomeId, vaultQuestionId, revealSlotId, verdictCount]
+      properties:
+        outcomeId: { type: string, format: uuid }
+        vaultQuestionId: { type: string, format: uuid }
+        revealSlotId: { type: string, format: uuid }
+        verdictCount: { type: integer }
+    ClusterVerdictInput:
+      type: object
+      required: [tier]
+      properties:
+        tier: { type: string, enum: [full, half, zero] }
+    ClusterVerdictResult:
+      type: object
+      required: [clusterKey, tier, affectedAnswers]
+      properties:
+        clusterKey: { type: string }
+        tier: { type: string, enum: [full, half, zero] }
+        affectedAnswers: { type: integer }
+    ScoreboardEntry:
+      type: object
+      required: [guestId, displayName, full, half, zero, total]
+      properties:
+        guestId: { type: string, format: uuid }
+        displayName: { type: string }
+        full: { type: integer }
+        half: { type: integer }
+        zero: { type: integer }
+        total: { type: number }
+    Scoreboard:
+      type: object
+      required: [entries]
+      properties:
+        entries: { type: array, items: { $ref: "#/components/schemas/ScoreboardEntry" } }
 
