@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
-    "start": "node --enable-source-maps ./dist/index.mjs",
+    "start": "node --enable-source-maps ./dist/index.mjs & api=$!; (while true; do node --enable-source-maps ./dist/email-worker.mjs; sleep ${EMAIL_WORKER_INTERVAL_SECONDS:-60}; done) & worker=$!; trap 'kill $api $worker 2>/dev/null; wait $api $worker 2>/dev/null' INT TERM EXIT; wait $api",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

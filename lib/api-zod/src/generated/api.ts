@@ -99,6 +99,24 @@ export const SubmitGuestPredictionResponse = zod.object({
 
 
 /**
+ * @summary Signed one-click guest email unsubscribe
+ */
+export const UnsubscribeGuestEmailParams = zod.object({
+  "guestId": zod.coerce.string().uuid()
+})
+
+export const unsubscribeGuestEmailQueryTokenMin = 20;
+
+
+
+export const UnsubscribeGuestEmailQueryParams = zod.object({
+  "token": zod.coerce.string().min(unsubscribeGuestEmailQueryTokenMin)
+})
+
+export const UnsubscribeGuestEmailResponse = zod.unknown()
+
+
+/**
  * @summary Get billing status for an owned vault
  */
 export const GetOperatorVaultBillingStatusParams = zod.object({
@@ -315,7 +333,9 @@ export const ListAdminGiftsResponse = zod.object({
   "redeemedVaultId": zod.string().uuid().nullable(),
   "stripeRefundId": zod.string().nullable(),
   "stripePaymentIntentId": zod.string().nullable(),
-  "refundableNow": zod.boolean()
+  "refundableNow": zod.boolean(),
+  "latestDeliveryStatus": zod.union([zod.literal('queued'),zod.literal('sending'),zod.literal('sent'),zod.literal('failed'),zod.literal('suppressed'),zod.literal(null)]).nullable(),
+  "latestDeliveryError": zod.string().nullable()
 }))
 })
 
@@ -333,6 +353,70 @@ export const ListAdminOveragesResponse = zod.object({
   "resolvedAt": zod.coerce.date().nullable(),
   "outcome": zod.union([zod.literal('upgraded'),zod.literal('declined'),zod.literal(null)]).nullable()
 }))
+})
+
+
+/**
+ * @summary List transactional email delivery status and failures
+ */
+export const ListAdminEmailDeliveriesResponse = zod.object({
+  "deliveries": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "dedupeKey": zod.string(),
+  "eventType": zod.string(),
+  "recipientEmail": zod.string().email(),
+  "status": zod.enum(['queued', 'sending', 'sent', 'failed', 'suppressed']),
+  "attempts": zod.number().int(),
+  "providerId": zod.string().nullable(),
+  "lastError": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "sentAt": zod.coerce.date().nullable()
+}))
+})
+
+
+/**
+ * @summary Fresh-MFA retry of a failed transactional email with a typed reason
+ */
+export const RetryAdminEmailDeliveryParams = zod.object({
+  "emailDeliveryId": zod.coerce.string().uuid()
+})
+
+export const retryAdminEmailDeliveryBodyReasonMax = 1000;
+
+
+
+export const RetryAdminEmailDeliveryBody = zod.object({
+  "reason": zod.string().min(1).max(retryAdminEmailDeliveryBodyReasonMax)
+})
+
+export const RetryAdminEmailDeliveryResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['queued'])
+})
+
+
+/**
+ * @summary Fresh-MFA resend of a purchased gift delivery with a typed reason
+ */
+export const ResendAdminGiftParams = zod.object({
+  "giftId": zod.coerce.string().uuid()
+})
+
+export const resendAdminGiftBodyOneReasonMax = 1000;
+
+
+
+export const ResendAdminGiftBody = zod.object({
+  "reason": zod.string().min(1).max(resendAdminGiftBodyOneReasonMax)
+}).and(zod.object({
+  "requestId": zod.string().uuid()
+}))
+
+export const ResendAdminGiftResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['queued'])
 })
 
 

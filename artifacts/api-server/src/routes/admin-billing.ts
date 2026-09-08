@@ -8,8 +8,9 @@ import {
 } from "@workspace/api-zod";
 import {
   billingRecordsTable, db, declineGuestOverage, PLAN_POLICY, runSensitiveAdminAction,
-  giftsTable, overageEventsTable, revealSlotsTable, submissionsTable, vaultsTable,
+  giftsTable, overageEventsTable, revealSlotsTable, submissionsTable, vaultsTable, emailDeliveriesTable, enqueueEmail, requeueEmail,
 } from "@workspace/db";
+import { ListAdminEmailDeliveriesResponse, RetryAdminEmailDeliveryParams, RetryAdminEmailDeliveryBody, RetryAdminEmailDeliveryResponse, ResendAdminGiftParams, ResendAdminGiftBody, ResendAdminGiftResponse } from "@workspace/api-zod";
 import { getStripeClient, TIER_ORDER, type PaidTier } from "../lib/stripe";
 import { requireAdmin, requireOperator, sensitiveAdminGuards } from "../middlewares/auth";
 
@@ -63,8 +64,12 @@ adminBillingRouter.get("/admin/gifts", requireOperator, requireAdmin, async (_re
       redeemedAt: giftsTable.redeemedAt, refundedAt: giftsTable.refundedAt, redeemedVaultId: giftsTable.redeemedVaultId,
       stripeRefundId: giftsTable.stripeRefundId, stripePaymentIntentId: giftsTable.stripePaymentIntentId,
     }).from(giftsTable).orderBy(desc(giftsTable.createdAt));
+    const deliveries = gifts.length ? await db.select({ giftId: emailDeliveriesTable.giftId, status: emailDeliveriesTable.status, lastError: emailDeliveriesTable.lastError, createdAt: emailDeliveriesTable.createdAt })
+      .from(emailDeliveriesTable).where(inArray(emailDeliveriesTable.giftId, gifts.map((gift) => gift.id))).orderBy(desc(emailDeliveriesTable.createdAt)) : [];
     return res.json(ListAdminGiftsResponse.parse({ gifts: gifts.map((gift) => ({
       ...gift,
+      latestDeliveryStatus: deliveries.find((delivery) => delivery.giftId === gift.id)?.status ?? null,
+      latestDeliveryError: deliveries.find((delivery) => delivery.giftId === gift.id)?.lastError ?? null,
       refundableNow: gift.status === "purchased" && !gift.redeemedAt && !gift.refundedAt &&
         !gift.stripeRefundId && Boolean(gift.stripePaymentIntentId) &&
         now - gift.createdAt.valueOf() <= 90 * 24 * 60 * 60 * 1000,
@@ -76,6 +81,43 @@ adminBillingRouter.get("/admin/overages", requireOperator, requireAdmin, async (
   try {
     const events = await db.select().from(overageEventsTable).orderBy(desc(overageEventsTable.createdAt));
     return res.json(ListAdminOveragesResponse.parse({ events }));
+  } catch (error) { return next(error); }
+});
+
+adminBillingRouter.get("/admin/email-deliveries", requireOperator, requireAdmin, async (_req, res, next) => {
+  try {
+    const deliveries = await db.select().from(emailDeliveriesTable).orderBy(desc(emailDeliveriesTable.createdAt)).limit(250);
+    return res.json(ListAdminEmailDeliveriesResponse.parse({ deliveries }));
+  } catch (error) { return next(error); }
+});
+
+adminBillingRouter.post("/admin/email-deliveries/:emailDeliveryId/retry", ...sensitiveAdminGuards, async (req, res, next) => {
+  try {
+    const { emailDeliveryId } = RetryAdminEmailDeliveryParams.parse(req.params);
+    const { reason } = RetryAdminEmailDeliveryBody.parse(req.body);
+    const result = await runSensitiveAdminAction({ actor: req.account!, action: "email_retry", targetType: "email_delivery", targetId: emailDeliveryId, reason }, async (tx) => {
+      const [row] = await tx.select().from(emailDeliveriesTable).where(eq(emailDeliveriesTable.id, emailDeliveryId)).limit(1).for("update");
+      if (!row || row.status !== "failed") throw new Error("Only failed email deliveries can be retried.");
+      await tx.update(emailDeliveriesTable).set({ status: "queued", lastError: null, claimedAt: null, claimToken: null }).where(eq(emailDeliveriesTable.id, row.id));
+      return { id: row.id, status: "queued" as const };
+    });
+    return res.json(RetryAdminEmailDeliveryResponse.parse(result));
+  } catch (error) { return next(error); }
+});
+
+adminBillingRouter.post("/admin/gifts/:giftId/resend", ...sensitiveAdminGuards, async (req, res, next) => {
+  try {
+    const { giftId } = ResendAdminGiftParams.parse(req.params); const { reason, requestId } = ResendAdminGiftBody.parse(req.body);
+    const result = await runSensitiveAdminAction({ actor: req.account!, action: "gift_resend", targetType: "gift", targetId: giftId, reason }, async (tx) => {
+      const [gift] = await tx.select().from(giftsTable).where(eq(giftsTable.id, giftId)).limit(1).for("update");
+      if (!gift?.gifterEmail || (gift.status !== "purchased" && gift.status !== "redeemed")) throw new Error("This gift has no deliverable gifter email.");
+      const [delivery] = await tx.insert(emailDeliveriesTable).values({ dedupeKey: `gift-resend:${gift.id}:${requestId}`, eventType: "gift_delivery", recipientEmail: gift.gifterEmail, giftId: gift.id, payload: { giftCode: gift.code } })
+        .onConflictDoNothing({ target: emailDeliveriesTable.dedupeKey }).returning();
+      if (delivery) return { id: delivery.id, status: "queued" as const };
+      const [existing] = await tx.select({ id: emailDeliveriesTable.id }).from(emailDeliveriesTable).where(eq(emailDeliveriesTable.dedupeKey, `gift-resend:${gift.id}:${requestId}`)).limit(1);
+      return { id: existing!.id, status: "queued" as const };
+    });
+    return res.json(ResendAdminGiftResponse.parse(result));
   } catch (error) { return next(error); }
 });
 

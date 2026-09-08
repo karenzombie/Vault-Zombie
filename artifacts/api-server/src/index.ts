@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { runEmailCycle } from "./lib/mail";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,7 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  // A restart safely reclaims stale rows; production deployments should invoke
+  // this one-shot processor on a recurring process schedule as well.
+  void runEmailCycle().catch((err) => logger.error({ err }, "Startup email cycle failed"));
 });

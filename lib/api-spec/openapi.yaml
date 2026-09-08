@@ -72,6 +72,20 @@ paths:
           description: Link not found
         "429":
           description: Rate limit reached
+  /email/unsubscribe/{guestId}:
+    get:
+      operationId: unsubscribeGuestEmail
+      tags: [guest]
+      summary: Signed one-click guest email unsubscribe
+      parameters:
+        - $ref: "#/components/parameters/GuestId"
+        - name: token
+          in: query
+          required: true
+          schema: { type: string, minLength: 20 }
+      responses:
+        "200": { description: Guest email preferences updated, content: { text/html: { schema: { type: string } } } }
+        "400": { description: Invalid unsubscribe link }
   /operator/vaults/{vaultId}/billing:
     get:
       operationId: getOperatorVaultBillingStatus
@@ -215,6 +229,43 @@ paths:
         "200": { description: Overage events, content: { application/json: { schema: { $ref: "#/components/schemas/AdminOverageList" } } } }
         "401": { description: Authentication required }
         "403": { description: Administrator access required }
+  /admin/email-deliveries:
+    get:
+      operationId: listAdminEmailDeliveries
+      tags: [billing]
+      summary: List transactional email delivery status and failures
+      responses:
+        "200": { description: Email deliveries, content: { application/json: { schema: { $ref: "#/components/schemas/AdminEmailDeliveryList" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/email-deliveries/{emailDeliveryId}/retry:
+    post:
+      operationId: retryAdminEmailDelivery
+      tags: [billing]
+      summary: Fresh-MFA retry of a failed transactional email with a typed reason
+      parameters:
+        - name: emailDeliveryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SensitiveReasonInput" } } }
+      responses:
+        "200": { description: Delivery queued, content: { application/json: { schema: { $ref: "#/components/schemas/EmailRetryResult" } } } }
+        "400": { description: Delivery is not safe to retry }
+  /admin/gifts/{giftId}/resend:
+    post:
+      operationId: resendAdminGift
+      tags: [billing]
+      summary: Fresh-MFA resend of a purchased gift delivery with a typed reason
+      parameters: [{ $ref: "#/components/parameters/GiftId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GiftResendInput" } } }
+      responses:
+        "200": { description: Fresh gift delivery queued, content: { application/json: { schema: { $ref: "#/components/schemas/GiftResendResult" } } } }
+        "400": { description: Gift has no gifter email or is not deliverable }
   /admin/billing/{billingRecordId}/refund:
     post:
       operationId: refundBillingRecord
@@ -554,6 +605,12 @@ components:
       type: object
       required: [reason]
       properties: { reason: { type: string, minLength: 1, maxLength: 1000 } }
+    GiftResendInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [requestId]
+          properties: { requestId: { type: string, format: uuid } }
     CompGrantInput:
       allOf:
         - $ref: "#/components/schemas/SensitiveReasonInput"
@@ -596,7 +653,7 @@ components:
           type: array
           items:
             type: object
-            required: [id, code, targetTier, status, amountCents, currency, createdAt, redeemedAt, refundedAt, redeemedVaultId, stripeRefundId, stripePaymentIntentId, refundableNow]
+            required: [id, code, targetTier, status, amountCents, currency, createdAt, redeemedAt, refundedAt, redeemedVaultId, stripeRefundId, stripePaymentIntentId, refundableNow, latestDeliveryStatus, latestDeliveryError]
             properties:
               id: { type: string, format: uuid }
               code: { type: string }
@@ -614,6 +671,8 @@ components:
               stripeRefundId: { type: ["string", "null"] }
               stripePaymentIntentId: { type: ["string", "null"] }
               refundableNow: { type: boolean }
+              latestDeliveryStatus: { type: ["string", "null"], enum: [queued, sending, sent, failed, suppressed, null] }
+              latestDeliveryError: { type: ["string", "null"] }
     AdminOverageList:
       type: object
       required: [events]
@@ -631,6 +690,33 @@ components:
               createdAt: { type: string, format: date-time }
               resolvedAt: { type: ["string", "null"], format: date-time }
               outcome: { type: ["string", "null"], enum: [upgraded, declined, null] }
+    AdminEmailDelivery:
+      type: object
+      required: [id, dedupeKey, eventType, recipientEmail, status, attempts, providerId, lastError, createdAt, updatedAt, sentAt]
+      properties:
+        id: { type: string, format: uuid }
+        dedupeKey: { type: string }
+        eventType: { type: string }
+        recipientEmail: { type: string, format: email }
+        status: { type: string, enum: [queued, sending, sent, failed, suppressed] }
+        attempts: { type: integer }
+        providerId: { type: ["string", "null"] }
+        lastError: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        sentAt: { type: ["string", "null"], format: date-time }
+    AdminEmailDeliveryList:
+      type: object
+      required: [deliveries]
+      properties: { deliveries: { type: array, items: { $ref: "#/components/schemas/AdminEmailDelivery" } } }
+    EmailRetryResult:
+      type: object
+      required: [id, status]
+      properties: { id: { type: string, format: uuid }, status: { type: string, enum: [queued] } }
+    GiftResendResult:
+      type: object
+      required: [id, status]
+      properties: { id: { type: string, format: uuid }, status: { type: string, enum: [queued] } }
     GiftRefundResult:
       type: object
       required: [giftId, status, stripeRefundId]

@@ -21,6 +21,7 @@ export * from "./accounts";
 export * from "./audit";
 export * from "./billing";
 export * from "./content";
+export * from "./email";
 export * from "./enums";
 export * from "./predictions";
 export * from "./vaults";

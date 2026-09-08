@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListAdminGifts, useRefundGift, getListAdminGiftsQueryKey } from "@workspace/api-client-react";
+import { useListAdminGifts, useRefundGift, useResendAdminGift, getListAdminGiftsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,12 @@ import { getTierLabel } from "@/lib/utils";
 export function AdminGiftsTab() {
   const { data, isLoading } = useListAdminGifts();
   const [refundTarget, setRefundTarget] = useState<string | null>(null);
+  const [resendTarget, setResendTarget] = useState<string | null>(null);
+  const [resendReason, setResendReason] = useState("");
+  const [resendRequestId, setResendRequestId] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const resend = useResendAdminGift();
 
   if (isLoading) return <div className="p-12 text-center text-text-2">Loading gifts...</div>;
 
@@ -22,9 +27,6 @@ export function AdminGiftsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-card border border-border rounded-xl p-5 mb-6 text-sm text-text-2">
-        <strong>Note:</strong> Automated email delivery of gift cards is not yet supported. Admins can copy codes to manually send to users if needed.
-      </div>
       <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
@@ -34,6 +36,7 @@ export function AdminGiftsTab() {
                 <th className="px-6 py-4 border-b">Tier</th>
                 <th className="px-6 py-4 border-b">To / From</th>
                 <th className="px-6 py-4 border-b">Status</th>
+                <th className="px-6 py-4 border-b">Delivery</th>
                 <th className="px-6 py-4 border-b text-right">Actions</th>
               </tr>
             </thead>
@@ -51,6 +54,7 @@ export function AdminGiftsTab() {
                   <td className="px-6 py-4 text-ink text-xs">
                     <div>{gift.toLine ? `To: ${gift.toLine}` : 'No To'}</div>
                     <div className="text-text-2">{gift.fromLine ? `From: ${gift.fromLine}` : 'No From'}</div>
+                   <div className="text-text-2">{gift.gifterEmail ?? "No gifter email"}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -62,7 +66,11 @@ export function AdminGiftsTab() {
                       {gift.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-xs">{gift.latestDeliveryStatus ?? "Not queued"}{gift.latestDeliveryError ? <div className="text-destructive max-w-48 truncate">{gift.latestDeliveryError}</div> : null}</td>
                   <td className="px-6 py-4 text-right">
+                    {gift.gifterEmail && ["purchased", "redeemed"].includes(gift.status) && <Button data-testid={`gift-resend-${gift.id}`} variant="outline" size="sm" disabled={resend.isPending} onClick={() => {
+                      setResendTarget(gift.id); setResendReason(""); setResendRequestId(crypto.randomUUID());
+                    }}>Resend</Button>}
                     {gift.refundableNow && (
                       <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setRefundTarget(gift.id)}>
                         Refund
@@ -72,7 +80,7 @@ export function AdminGiftsTab() {
                 </tr>
               ))}
               {data?.gifts?.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-text-2">No gifts found.</td></tr>
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-text-2">No gifts found.</td></tr>
               )}
             </tbody>
           </table>
@@ -80,6 +88,19 @@ export function AdminGiftsTab() {
       </div>
 
       <RefundGiftDialog giftId={refundTarget} onClose={() => setRefundTarget(null)} />
+      <Dialog open={!!resendTarget} onOpenChange={(open) => { if (!open) { setResendTarget(null); setResendRequestId(null); setResendReason(""); } }}>
+        <DialogContent><DialogHeader><DialogTitle>Resend Gift Delivery</DialogTitle><DialogDescription>Fresh MFA and a reason are required. The gift will be sent only to the original gifter email.</DialogDescription></DialogHeader>
+          <form onSubmit={(event) => {
+            event.preventDefault(); if (!resendTarget || !resendRequestId || !resendReason.trim()) return;
+            resend.mutate({ giftId: resendTarget, data: { reason: resendReason.trim(), requestId: resendRequestId } }, {
+              onSuccess: () => { toast({ title: "Gift delivery queued" }); queryClient.invalidateQueries({ queryKey: getListAdminGiftsQueryKey() }); setResendTarget(null); setResendRequestId(null); setResendReason(""); },
+              onError: (err: any) => { toast({ title: err?.response?.status === 401 || err?.response?.status === 403 ? "Fresh MFA Required" : "Gift resend failed", description: err?.response?.status === 401 || err?.response?.status === 403 ? "Please re-authenticate your session to perform this sensitive action." : err?.response?.data?.error || "The delivery could not be queued.", variant: "destructive" }); },
+            });
+          }} className="space-y-4 pt-4"><Input value={resendReason} onChange={(event) => setResendReason(event.target.value)} placeholder="Reason for resend" required minLength={1} />
+            <DialogFooter><Button type="button" variant="outline" onClick={() => { setResendTarget(null); setResendRequestId(null); }}>Cancel</Button><Button type="submit" disabled={!resendReason.trim() || resend.isPending}>{resend.isPending ? "Queuing..." : "Resend delivery"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
