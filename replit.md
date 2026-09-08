@@ -1,11 +1,12 @@
 # Vault Zombie
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A sealed-prediction web app for life events, with scheduled reveals, outcomes, and a long-running "who knew you best" scoreboard.
 
 ## Run & Operate
 
 - Canonical GitHub backup repository: `https://github.com/karenzombie/vault_zombie_codebase`
 - Keep the complete project codebase backed up to that repository.
+- Data backups must use a separate private repository configured later; never place plaintext database backups in the code repository.
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
@@ -24,15 +25,25 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `Vault_Zombie_Initial_Build_Files/` — authoritative specification set and clarification addenda
+- `lib/db/src/schema/` — domain schema and permanent content identity
+- `lib/db/src/sealed-content.ts` — sole ordinary read path for prediction content
+- `lib/db/src/schedule.ts` — reveal and milestone date computation
+- `scripts/src/question-bank-import.ts` — strict question-bank metadata validator/import foundation
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Specification authority: master brief, authoritative clarification addenda, admin brief for admin, report guide for reports, style guide, then nonbinding mockups.
+- Unlocking is computed. Prediction reads must filter through the single unlocked-content path using `COALESCE(unlock_override_at, unlock_at) <= now()`.
+- Admin full export is the only content-read exception; manual unlock changes `unlock_override_at` and then uses the normal path.
+- Content and option UUIDs are permanent; display order and wording can change without changing identity.
+- Missing number or free-text scoring metadata is a hard import failure and is never inferred.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Operators create and seal life-event vaults; account-free guests submit text predictions through write-only links.
+- Predictions unlock on fixed schedules, operators resolve outcomes, and paid reports summarize scoring over time.
+- Admin access includes MFA-gated sensitive actions, immutable auditing, content management, and manual backup.
 
 ## User preferences
 
@@ -40,7 +51,10 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Never query prediction content directly from `answers`; use `readUnlockedAnswers`.
+- Lockbox has no export or print stylesheet, even when a paid report has a visually similar free counterpart.
+- Deep Vault milestones may exceed ten years and combine with a regular reveal on the same date.
+- Question-bank import remains intentionally blocked until owner-supplied metadata passes validation.
 
 ## Pointers
 

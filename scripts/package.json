@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "validate:question-banks": "tsx ./src/question-bank-import.ts --validate",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
