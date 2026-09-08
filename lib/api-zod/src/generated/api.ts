@@ -1295,6 +1295,39 @@ export const DownloadAdminFullExportResponse = zod.unknown()
 
 
 /**
+ * @summary Fresh-MFA manual push of a full plaintext backup to the configured private repository
+ */
+export const pushAdminBackupBodyOneReasonMax = 1000;
+
+
+
+export const PushAdminBackupBody = zod.object({
+  "reason": zod.string().min(1).max(pushAdminBackupBodyOneReasonMax)
+}).and(zod.object({
+  "confirmation": zod.enum(['PUSH BACKUP']),
+  "requestId": zod.string().uuid(),
+  "plaintextHistoryAcknowledged": zod.literal(true)
+}))
+
+export const pushAdminBackupResponseRepositoryRegExp = new RegExp('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$');
+
+
+export const PushAdminBackupResponse = zod.object({
+  "backupRunId": zod.string().uuid(),
+  "requestId": zod.string().uuid(),
+  "snapshotId": zod.string(),
+  "generatedAt": zod.coerce.date(),
+  "repository": zod.string().regex(pushAdminBackupResponseRepositoryRegExp),
+  "branch": zod.string().nullish(),
+  "commitSha": zod.string().nullish(),
+  "tableCount": zod.number().int().nullish(),
+  "rowCount": zod.number().int().nullish(),
+  "artifactCount": zod.number().int().nullish(),
+  "status": zod.enum(['pending', 'identity_persisted', 'awaiting_reconciliation', 'github_pushed', 'completed', 'failed_definite'])
+})
+
+
+/**
  * @summary Download paid-vault unlocked content only
  */
 export const DownloadAdminVaultUnlockedExportParams = zod.object({

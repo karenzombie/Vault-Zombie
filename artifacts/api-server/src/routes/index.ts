@@ -12,6 +12,7 @@ import adminVaultsRouter from "./admin-vaults";
 import adminLifecycleRouter from "./admin-lifecycle";
 import adminExportRouter from "./admin-export";
 import adminContentRouter from "./admin-content";
+import adminBackupRouter from "./admin-backup";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(adminVaultsRouter);
 router.use(adminLifecycleRouter);
 router.use(adminExportRouter);
 router.use(adminContentRouter);
+router.use(adminBackupRouter);
 
 export default router;

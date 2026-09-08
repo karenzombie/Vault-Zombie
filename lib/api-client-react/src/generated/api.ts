@@ -21,6 +21,8 @@ import type {
 
 import type {
   AdminAuditList,
+  AdminBackupInput,
+  AdminBackupResult,
   AdminBillingActionResult,
   AdminBillingList,
   AdminContentList,
@@ -3402,6 +3404,77 @@ export const useDownloadAdminFullExport = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDownloadAdminFullExportMutationOptions(options));
+    }
+
+export const getPushAdminBackupUrl = () => {
+
+
+
+
+  return `/api/admin/backup`
+}
+
+/**
+ * @summary Fresh-MFA manual push of a full plaintext backup to the configured private repository
+ */
+export const pushAdminBackup = async (adminBackupInput: AdminBackupInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminBackupResult> => {
+
+  return customFetch<AdminBackupResult>(getPushAdminBackupUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminBackupInput)
+  }
+);}
+
+
+
+
+
+export const getPushAdminBackupMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pushAdminBackup>>, TError,{data: BodyType<AdminBackupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof pushAdminBackup>>, TError,{data: BodyType<AdminBackupInput>}, TContext> => {
+
+const mutationKey = ['pushAdminBackup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof pushAdminBackup>>, {data: BodyType<AdminBackupInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  pushAdminBackup(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PushAdminBackupMutationResult = NonNullable<Awaited<ReturnType<typeof pushAdminBackup>>>
+    export type PushAdminBackupMutationBody = BodyType<AdminBackupInput>
+    export type PushAdminBackupMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA manual push of a full plaintext backup to the configured private repository
+ */
+export const usePushAdminBackup = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pushAdminBackup>>, TError,{data: BodyType<AdminBackupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof pushAdminBackup>>,
+        TError,
+        {data: BodyType<AdminBackupInput>},
+        TContext
+      > => {
+      return useMutation(getPushAdminBackupMutationOptions(options));
     }
 
 export const getDownloadAdminVaultUnlockedExportUrl = (vaultId: string,) => {
