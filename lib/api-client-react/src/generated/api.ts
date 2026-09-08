@@ -20,16 +20,25 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AnswersArchive,
+  AreaReport,
   ClusterVerdictInput,
   ClusterVerdictResult,
+  FinaleReport,
+  GuestPersonalReport,
   GuestSubmissionConfirmation,
   GuestSubmissionInput,
   GuestVault,
   HealthStatus,
   OutcomeInput,
+  QuestionReport,
   ResolvedOutcome,
+  RevealReport,
   Scoreboard,
-  UnlockedRevealWork
+  TimelineReport,
+  UnlockedRevealWork,
+  VaultHealthReport,
+  VaultResultsSummary
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -582,6 +591,791 @@ export function useGetOperatorScoreboard<TData = Awaited<ReturnType<typeof getOp
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetOperatorScoreboardQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetVaultHealthReportUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/health`
+}
+
+/**
+ * @summary Get vault health counts and metadata only
+ */
+export const getVaultHealthReport = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<VaultHealthReport> => {
+
+  return customFetch<VaultHealthReport>(getGetVaultHealthReportUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVaultHealthReportQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/health`
+    ] as const;
+    }
+
+
+export const getGetVaultHealthReportQueryOptions = <TData = Awaited<ReturnType<typeof getVaultHealthReport>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVaultHealthReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVaultHealthReportQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVaultHealthReport>>> = ({ signal }) => getVaultHealthReport(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVaultHealthReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVaultHealthReportQueryResult = NonNullable<Awaited<ReturnType<typeof getVaultHealthReport>>>
+export type GetVaultHealthReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get vault health counts and metadata only
+ */
+
+export function useGetVaultHealthReport<TData = Awaited<ReturnType<typeof getVaultHealthReport>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVaultHealthReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVaultHealthReportQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetRevealReportUrl = (vaultId: string,
+    revealSlotId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/reveals/${revealSlotId}`
+}
+
+/**
+ * @summary Get the unlocked report for one reveal
+ */
+export const getRevealReport = async (vaultId: string,
+    revealSlotId: string, options?: Parameters<typeof customFetch>[1]): Promise<RevealReport> => {
+
+  return customFetch<RevealReport>(getGetRevealReportUrl(vaultId,revealSlotId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRevealReportQueryKey = (vaultId: string,
+    revealSlotId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/reveals/${revealSlotId}`
+    ] as const;
+    }
+
+
+export const getGetRevealReportQueryOptions = <TData = Awaited<ReturnType<typeof getRevealReport>>, TError = ErrorType<void>>(vaultId: string,
+    revealSlotId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRevealReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRevealReportQueryKey(vaultId,revealSlotId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRevealReport>>> = ({ signal }) => getRevealReport(vaultId,revealSlotId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined && revealSlotId !== null && revealSlotId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRevealReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRevealReportQueryResult = NonNullable<Awaited<ReturnType<typeof getRevealReport>>>
+export type GetRevealReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the unlocked report for one reveal
+ */
+
+export function useGetRevealReport<TData = Awaited<ReturnType<typeof getRevealReport>>, TError = ErrorType<void>>(
+ vaultId: string,
+    revealSlotId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRevealReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRevealReportQueryOptions(vaultId,revealSlotId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetQuestionReportUrl = (vaultId: string,
+    vaultQuestionId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/questions/${vaultQuestionId}`
+}
+
+/**
+ * @summary Get unlocked detail for one question
+ */
+export const getQuestionReport = async (vaultId: string,
+    vaultQuestionId: string, options?: Parameters<typeof customFetch>[1]): Promise<QuestionReport> => {
+
+  return customFetch<QuestionReport>(getGetQuestionReportUrl(vaultId,vaultQuestionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetQuestionReportQueryKey = (vaultId: string,
+    vaultQuestionId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/questions/${vaultQuestionId}`
+    ] as const;
+    }
+
+
+export const getGetQuestionReportQueryOptions = <TData = Awaited<ReturnType<typeof getQuestionReport>>, TError = ErrorType<void>>(vaultId: string,
+    vaultQuestionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuestionReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuestionReportQueryKey(vaultId,vaultQuestionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuestionReport>>> = ({ signal }) => getQuestionReport(vaultId,vaultQuestionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined && vaultQuestionId !== null && vaultQuestionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuestionReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetQuestionReportQueryResult = NonNullable<Awaited<ReturnType<typeof getQuestionReport>>>
+export type GetQuestionReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get unlocked detail for one question
+ */
+
+export function useGetQuestionReport<TData = Awaited<ReturnType<typeof getQuestionReport>>, TError = ErrorType<void>>(
+ vaultId: string,
+    vaultQuestionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getQuestionReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetQuestionReportQueryOptions(vaultId,vaultQuestionId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetGuestPersonalReportUrl = (vaultId: string,
+    guestId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/guests/${guestId}`
+}
+
+/**
+ * @summary Get an email-eligible guest personal report
+ */
+export const getGuestPersonalReport = async (vaultId: string,
+    guestId: string, options?: Parameters<typeof customFetch>[1]): Promise<GuestPersonalReport> => {
+
+  return customFetch<GuestPersonalReport>(getGetGuestPersonalReportUrl(vaultId,guestId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGuestPersonalReportQueryKey = (vaultId: string,
+    guestId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/guests/${guestId}`
+    ] as const;
+    }
+
+
+export const getGetGuestPersonalReportQueryOptions = <TData = Awaited<ReturnType<typeof getGuestPersonalReport>>, TError = ErrorType<void>>(vaultId: string,
+    guestId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuestPersonalReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGuestPersonalReportQueryKey(vaultId,guestId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGuestPersonalReport>>> = ({ signal }) => getGuestPersonalReport(vaultId,guestId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined && guestId !== null && guestId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGuestPersonalReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGuestPersonalReportQueryResult = NonNullable<Awaited<ReturnType<typeof getGuestPersonalReport>>>
+export type GetGuestPersonalReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get an email-eligible guest personal report
+ */
+
+export function useGetGuestPersonalReport<TData = Awaited<ReturnType<typeof getGuestPersonalReport>>, TError = ErrorType<void>>(
+ vaultId: string,
+    guestId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGuestPersonalReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGuestPersonalReportQueryOptions(vaultId,guestId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetVaultResultsSummaryUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/summary`
+}
+
+/**
+ * @summary Get tier-appropriate unlocked results summary
+ */
+export const getVaultResultsSummary = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<VaultResultsSummary> => {
+
+  return customFetch<VaultResultsSummary>(getGetVaultResultsSummaryUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVaultResultsSummaryQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/summary`
+    ] as const;
+    }
+
+
+export const getGetVaultResultsSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getVaultResultsSummary>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVaultResultsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVaultResultsSummaryQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVaultResultsSummary>>> = ({ signal }) => getVaultResultsSummary(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVaultResultsSummary>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVaultResultsSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getVaultResultsSummary>>>
+export type GetVaultResultsSummaryQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get tier-appropriate unlocked results summary
+ */
+
+export function useGetVaultResultsSummary<TData = Awaited<ReturnType<typeof getVaultResultsSummary>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVaultResultsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVaultResultsSummaryQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAreaReportUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/areas`
+}
+
+/**
+ * @summary Get paid by-area breakdown
+ */
+export const getAreaReport = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<AreaReport> => {
+
+  return customFetch<AreaReport>(getGetAreaReportUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAreaReportQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/areas`
+    ] as const;
+    }
+
+
+export const getGetAreaReportQueryOptions = <TData = Awaited<ReturnType<typeof getAreaReport>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAreaReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAreaReportQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAreaReport>>> = ({ signal }) => getAreaReport(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAreaReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAreaReportQueryResult = NonNullable<Awaited<ReturnType<typeof getAreaReport>>>
+export type GetAreaReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get paid by-area breakdown
+ */
+
+export function useGetAreaReport<TData = Awaited<ReturnType<typeof getAreaReport>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAreaReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAreaReportQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTimelineReportUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/timeline`
+}
+
+/**
+ * @summary Get paid reveal timeline
+ */
+export const getTimelineReport = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<TimelineReport> => {
+
+  return customFetch<TimelineReport>(getGetTimelineReportUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTimelineReportQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/timeline`
+    ] as const;
+    }
+
+
+export const getGetTimelineReportQueryOptions = <TData = Awaited<ReturnType<typeof getTimelineReport>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTimelineReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTimelineReportQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTimelineReport>>> = ({ signal }) => getTimelineReport(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTimelineReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTimelineReportQueryResult = NonNullable<Awaited<ReturnType<typeof getTimelineReport>>>
+export type GetTimelineReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get paid reveal timeline
+ */
+
+export function useGetTimelineReport<TData = Awaited<ReturnType<typeof getTimelineReport>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTimelineReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTimelineReportQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAnswersArchiveUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/archive`
+}
+
+/**
+ * @summary Get paid compiled unlocked answers archive
+ */
+export const getAnswersArchive = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<AnswersArchive> => {
+
+  return customFetch<AnswersArchive>(getGetAnswersArchiveUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAnswersArchiveQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/archive`
+    ] as const;
+    }
+
+
+export const getGetAnswersArchiveQueryOptions = <TData = Awaited<ReturnType<typeof getAnswersArchive>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnswersArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnswersArchiveQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnswersArchive>>> = ({ signal }) => getAnswersArchive(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnswersArchive>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAnswersArchiveQueryResult = NonNullable<Awaited<ReturnType<typeof getAnswersArchive>>>
+export type GetAnswersArchiveQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get paid compiled unlocked answers archive
+ */
+
+export function useGetAnswersArchive<TData = Awaited<ReturnType<typeof getAnswersArchive>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnswersArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAnswersArchiveQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetFinaleReportUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/finale`
+}
+
+/**
+ * @summary Get paid finale archive
+ */
+export const getFinaleReport = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<FinaleReport> => {
+
+  return customFetch<FinaleReport>(getGetFinaleReportUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFinaleReportQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/finale`
+    ] as const;
+    }
+
+
+export const getGetFinaleReportQueryOptions = <TData = Awaited<ReturnType<typeof getFinaleReport>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinaleReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFinaleReportQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFinaleReport>>> = ({ signal }) => getFinaleReport(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFinaleReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFinaleReportQueryResult = NonNullable<Awaited<ReturnType<typeof getFinaleReport>>>
+export type GetFinaleReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get paid finale archive
+ */
+
+export function useGetFinaleReport<TData = Awaited<ReturnType<typeof getFinaleReport>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFinaleReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFinaleReportQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetPrintArchiveUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reports/print`
+}
+
+/**
+ * @summary Get paid printable archive DTO
+ */
+export const getPrintArchive = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<FinaleReport> => {
+
+  return customFetch<FinaleReport>(getGetPrintArchiveUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPrintArchiveQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reports/print`
+    ] as const;
+    }
+
+
+export const getGetPrintArchiveQueryOptions = <TData = Awaited<ReturnType<typeof getPrintArchive>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPrintArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPrintArchiveQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPrintArchive>>> = ({ signal }) => getPrintArchive(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPrintArchive>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPrintArchiveQueryResult = NonNullable<Awaited<ReturnType<typeof getPrintArchive>>>
+export type GetPrintArchiveQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get paid printable archive DTO
+ */
+
+export function useGetPrintArchive<TData = Awaited<ReturnType<typeof getPrintArchive>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPrintArchive>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPrintArchiveQueryOptions(vaultId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
