@@ -6,6 +6,7 @@ import {
   subcategoriesTable,
   vaultTypesTable,
 } from "./schema/content";
+import type { SensitiveActionTransaction } from "./sensitive-action";
 
 export interface QuestionBankImportQuestion {
   sourceKey: string;
@@ -41,7 +42,55 @@ export interface QuestionBankImport {
   subcategories: QuestionBankImportSubcategory[];
 }
 
-function assertQuestionMetadata(question: QuestionBankImportQuestion): void {
+export interface ContentImportIssue {
+  path: string;
+  message: string;
+}
+
+export function validateQuestionBank(bank: QuestionBankImport): ContentImportIssue[] {
+  const issues: ContentImportIssue[] = [];
+  const add = (path: string, message: string) => issues.push({ path, message });
+  if (!bank || typeof bank !== "object") return [{ path: "bank", message: "A question bank object is required." }];
+  if (!bank.vaultType?.slug?.trim()) add("vaultType.slug", "A non-empty slug is required.");
+  if (!bank.vaultType?.name?.trim()) add("vaultType.name", "A non-empty name is required.");
+  if (!Array.isArray(bank.vaultType?.requiredSubjectTokens) || bank.vaultType.requiredSubjectTokens.some((token) => !token.trim())) add("vaultType.requiredSubjectTokens", "Subject tokens must be non-empty strings.");
+  if (!Number.isInteger(bank.vaultType?.displayOrder)) add("vaultType.displayOrder", "Display order must be an integer.");
+  const seenSubcategories = new Set<string>();
+  const seenSubcategoryOrders = new Set<number>();
+  const seenQuestions = new Set<string>();
+  const subcategoryInputs = Array.isArray(bank.subcategories) ? bank.subcategories : [];
+  for (const [subcategoryIndex, subcategory] of subcategoryInputs.entries()) {
+    const path = `subcategories[${subcategoryIndex}]`;
+    if (!subcategory || typeof subcategory !== "object") { add(path, "Subcategory must be an object."); continue; }
+    if (!subcategory.sourceKey?.trim()) add(`${path}.sourceKey`, "A stable source key is required.");
+    else if (seenSubcategories.has(subcategory.sourceKey)) add(`${path}.sourceKey`, "Source keys must be unique.");
+    else seenSubcategories.add(subcategory.sourceKey);
+    if (!subcategory.name?.trim()) add(`${path}.name`, "A non-empty name is required.");
+    if (!Number.isInteger(subcategory.displayOrder)) add(`${path}.displayOrder`, "Display order must be an integer.");
+    else if (seenSubcategoryOrders.has(subcategory.displayOrder)) add(`${path}.displayOrder`, "Display order must be unique within the vault type.");
+    else seenSubcategoryOrders.add(subcategory.displayOrder);
+    const seenQuestionOrders = new Set<number>();
+    const questionInputs = Array.isArray(subcategory.questions) ? subcategory.questions : [];
+    if (!Array.isArray(subcategory.questions)) add(`${path}.questions`, "Questions must be an array.");
+    for (const [questionIndex, question] of questionInputs.entries()) {
+      const questionPath = `${path}.questions[${questionIndex}]`;
+      if (!question || typeof question !== "object") { add(questionPath, "Question must be an object."); continue; }
+      if (!question.sourceKey?.trim()) add(`${questionPath}.sourceKey`, "A stable source key is required.");
+      else if (seenQuestions.has(question.sourceKey)) add(`${questionPath}.sourceKey`, "Source keys must be unique.");
+      else seenQuestions.add(question.sourceKey);
+      if (!question.prompt?.trim()) add(`${questionPath}.prompt`, "A non-empty prompt is required.");
+      if (!Number.isInteger(question.displayOrder)) add(`${questionPath}.displayOrder`, "Display order must be an integer.");
+      else if (seenQuestionOrders.has(question.displayOrder)) add(`${questionPath}.displayOrder`, "Display order must be unique within the subcategory.");
+      else seenQuestionOrders.add(question.displayOrder);
+      try { assertQuestionMetadata(question); } catch (error) { add(questionPath, error instanceof Error ? error.message : "Invalid question metadata."); }
+      if (!Array.isArray(question.options) || question.options.some((option) => !option.trim())) add(`${questionPath}.options`, "Options must be non-empty strings.");
+    }
+  }
+  if (!Array.isArray(bank.subcategories) || bank.subcategories.length === 0) add("subcategories", "At least one subcategory is required.");
+  return issues;
+}
+
+export function assertQuestionMetadata(question: QuestionBankImportQuestion): void {
   if (question.answerType === "number") {
     if (
       !question.number ||
@@ -85,13 +134,16 @@ function assertQuestionMetadata(question: QuestionBankImportQuestion): void {
  * display order without replacing permanent question or option UUIDs.
  */
 export async function importQuestionBank(bank: QuestionBankImport) {
-  for (const subcategory of bank.subcategories) {
-    for (const question of subcategory.questions) {
-      assertQuestionMetadata(question);
-    }
-  }
+  return db.transaction((tx) => applyQuestionBank(tx, bank));
+}
 
-  return db.transaction(async (tx) => {
+/** Applies a fully validated bank using the caller's transaction. */
+export async function applyQuestionBank(
+  tx: SensitiveActionTransaction,
+  bank: QuestionBankImport,
+) {
+  const issues = validateQuestionBank(bank);
+  if (issues.length) throw new Error(`Question bank has ${issues.length} unresolved validation issue(s).`);
     const [vaultType] = await tx
       .insert(vaultTypesTable)
       .values({
@@ -189,9 +241,6 @@ export async function importQuestionBank(bank: QuestionBankImport) {
           optionCount += 1;
         }
 
-        if (questionInput.options.length === 0) {
-          continue;
-        }
         const existingOptions = await tx
           .select({
             id: questionOptionsTable.id,
@@ -216,5 +265,4 @@ export async function importQuestionBank(bank: QuestionBankImport) {
       questionCount,
       optionCount,
     };
-  });
 }

@@ -7,16 +7,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Copy } from "lucide-react";
 import { getTierLabel } from "@/lib/utils";
+import { useSensitiveAdminAction } from "@/hooks/use-sensitive-admin-action";
 
 export function AdminGiftsTab() {
   const { data, isLoading } = useListAdminGifts();
-  const [refundTarget, setRefundTarget] = useState<string | null>(null);
+  const [refundTarget, setRefundTarget] = useState<{ id: string; requestId: string | null } | null>(null);
   const [resendTarget, setResendTarget] = useState<string | null>(null);
   const [resendReason, setResendReason] = useState("");
   const [resendRequestId, setResendRequestId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const resend = useResendAdminGift();
+  const runSensitive = useSensitiveAdminAction();
 
   if (isLoading) return <div className="p-12 text-center text-text-2">Loading gifts...</div>;
 
@@ -64,6 +66,7 @@ export function AdminGiftsTab() {
                       'bg-bronze-wash text-bronze'
                     }`}>
                       {gift.status}
+                      {gift.refundAttemptStatus && <span className="ml-2 normal-case">refund: {gift.refundAttemptStatus}</span>}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-xs">{gift.latestDeliveryStatus ?? "Not queued"}{gift.latestDeliveryError ? <div className="text-destructive max-w-48 truncate">{gift.latestDeliveryError}</div> : null}</td>
@@ -71,9 +74,9 @@ export function AdminGiftsTab() {
                     {gift.gifterEmail && ["purchased", "redeemed"].includes(gift.status) && <Button data-testid={`gift-resend-${gift.id}`} variant="outline" size="sm" disabled={resend.isPending} onClick={() => {
                       setResendTarget(gift.id); setResendReason(""); setResendRequestId(crypto.randomUUID());
                     }}>Resend</Button>}
-                    {gift.refundableNow && (
-                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setRefundTarget(gift.id)}>
-                        Refund
+                    {(gift.refundableNow || (gift.status === "purchased" && gift.refundRequestId && ["reserved", "stripe_pending", "unknown"].includes(gift.refundAttemptStatus ?? ""))) && (
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setRefundTarget({ id: gift.id, requestId: gift.refundRequestId })}>
+                        {gift.refundRequestId ? "Resume refund" : "Refund"}
                       </Button>
                     )}
                   </td>
@@ -87,15 +90,17 @@ export function AdminGiftsTab() {
         </div>
       </div>
 
-      <RefundGiftDialog giftId={refundTarget} onClose={() => setRefundTarget(null)} />
+      <RefundGiftDialog giftId={refundTarget?.id ?? null} effectiveRequestId={refundTarget?.requestId ?? null} onClose={() => setRefundTarget(null)} />
       <Dialog open={!!resendTarget} onOpenChange={(open) => { if (!open) { setResendTarget(null); setResendRequestId(null); setResendReason(""); } }}>
         <DialogContent><DialogHeader><DialogTitle>Resend Gift Delivery</DialogTitle><DialogDescription>Fresh MFA and a reason are required. The gift will be sent only to the original gifter email.</DialogDescription></DialogHeader>
-          <form onSubmit={(event) => {
+          <form onSubmit={async (event) => {
             event.preventDefault(); if (!resendTarget || !resendRequestId || !resendReason.trim()) return;
-            resend.mutate({ giftId: resendTarget, data: { reason: resendReason.trim(), requestId: resendRequestId } }, {
-              onSuccess: () => { toast({ title: "Gift delivery queued" }); queryClient.invalidateQueries({ queryKey: getListAdminGiftsQueryKey() }); setResendTarget(null); setResendRequestId(null); setResendReason(""); },
-              onError: (err: any) => { toast({ title: err?.response?.status === 401 || err?.response?.status === 403 ? "Fresh MFA Required" : "Gift resend failed", description: err?.response?.status === 401 || err?.response?.status === 403 ? "Please re-authenticate your session to perform this sensitive action." : err?.response?.data?.error || "The delivery could not be queued.", variant: "destructive" }); },
-            });
+            try {
+              await runSensitive(() => resend.mutateAsync({ giftId: resendTarget, data: { reason: resendReason.trim(), requestId: resendRequestId } }));
+              toast({ title: "Gift delivery queued" }); queryClient.invalidateQueries({ queryKey: getListAdminGiftsQueryKey() }); setResendTarget(null); setResendRequestId(null); setResendReason("");
+            } catch (err: any) {
+              toast({ title: "Gift resend failed", description: err?.response?.data?.error || "The delivery could not be queued.", variant: "destructive" });
+            }
           }} className="space-y-4 pt-4"><Input value={resendReason} onChange={(event) => setResendReason(event.target.value)} placeholder="Reason for resend" required minLength={1} />
             <DialogFooter><Button type="button" variant="outline" onClick={() => { setResendTarget(null); setResendRequestId(null); }}>Cancel</Button><Button type="submit" disabled={!resendReason.trim() || resend.isPending}>{resend.isPending ? "Queuing..." : "Resend delivery"}</Button></DialogFooter>
           </form>
@@ -105,29 +110,31 @@ export function AdminGiftsTab() {
   );
 }
 
-function RefundGiftDialog({ giftId, onClose }: { giftId: string | null, onClose: () => void }) {
+function RefundGiftDialog({ giftId, effectiveRequestId, onClose }: { giftId: string | null, effectiveRequestId: string | null, onClose: () => void }) {
   const [reason, setReason] = useState("");
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const refund = useRefundGift();
+  const runSensitive = useSensitiveAdminAction();
 
-  const handleRefund = (e: React.FormEvent) => {
+  const handleRefund = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!giftId || !reason.trim()) return;
 
-    refund.mutate(
-      { giftId, data: { reason: reason.trim() } },
-      {
-        onSuccess: () => {
+    try {
+      await runSensitive(() => refund.mutateAsync(
+        { giftId, data: { reason: reason.trim(), requestId: effectiveRequestId ?? requestId } },
+      ));
           toast({
             title: "Gift Refunded",
             description: "The gift code has been deactivated and refunded.",
           });
           queryClient.invalidateQueries({ queryKey: getListAdminGiftsQueryKey() });
           setReason("");
+          setRequestId(crypto.randomUUID());
           onClose();
-        },
-        onError: (err: any) => {
+    } catch (err: any) {
           const msg = err?.response?.data?.message || "Refund failed.";
           toast({
             title: "Refund Error",
@@ -141,9 +148,7 @@ function RefundGiftDialog({ giftId, onClose }: { giftId: string | null, onClose:
               variant: "destructive"
              });
           }
-        }
-      }
-    );
+    }
   };
 
   return (

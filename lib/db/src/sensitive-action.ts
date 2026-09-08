@@ -7,11 +7,11 @@ export type SensitiveActionTransaction = Parameters<
   Parameters<typeof db.transaction>[0]
 >[0];
 
-export interface SensitiveActionContext {
+export interface SensitiveActionContext<T = unknown> {
   actor: Account;
   action: (typeof auditActionEnum.enumValues)[number];
   targetType: string;
-  targetId: string;
+  targetId: string | ((result: T) => string);
   reason: string;
   details?: Record<string, string | number | boolean | null>;
 }
@@ -22,7 +22,7 @@ export interface SensitiveActionContext {
  * attempts remain solely in Clerk's authentication logs.
  */
 export async function runSensitiveAdminAction<T>(
-  context: SensitiveActionContext,
+  context: SensitiveActionContext<T>,
   action: (transaction: SensitiveActionTransaction) => Promise<T>,
 ): Promise<T> {
   if (context.actor.role !== "admin") {
@@ -37,7 +37,7 @@ export async function runSensitiveAdminAction<T>(
       actorAccountId: context.actor.id,
       action: context.action,
       targetType: context.targetType,
-      targetId: context.targetId,
+      targetId: typeof context.targetId === "function" ? context.targetId(result) : context.targetId,
       reason,
       details: context.details ?? {},
     }, transaction);

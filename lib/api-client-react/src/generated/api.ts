@@ -20,19 +20,46 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminAuditList,
   AdminBillingActionResult,
   AdminBillingList,
+  AdminContentList,
+  AdminDashboard,
+  AdminDeletionInput,
+  AdminEmailDeliveryDetail,
   AdminEmailDeliveryList,
+  AdminFullExportInput,
+  AdminGiftDetail,
   AdminGiftList,
+  AdminOperatorDetail,
+  AdminOperatorList,
   AdminOverageList,
+  AdminRevenueReport,
+  AdminVaultDetail,
+  AdminVaultList,
+  AdminVaultSupportDetail,
   AnswersArchive,
   AreaReport,
   BillingPrice,
   ClusterVerdictInput,
   ClusterVerdictResult,
   CompGrantInput,
+  ContentImportApplyRequest,
+  ContentImportPreview,
+  ContentImportRequest,
+  ContentImportResult,
+  ContentItem,
+  ContentMutationInput,
+  ContentReorderInput,
+  ContentReorderResult,
+  DeleteAdminAccount200,
+  DeleteAdminVault200,
   EmailRetryResult,
   FinaleReport,
+  GetAdminAccountDeletionPreview200,
+  GetAdminOperatorParams,
+  GetAdminRevenueReportParams,
+  GetAdminVaultDeletionPreview200,
   GiftCard,
   GiftCheckoutInput,
   GiftCheckoutSession,
@@ -44,12 +71,20 @@ import type {
   GuestSubmissionInput,
   GuestVault,
   HealthStatus,
+  ListAdminAuditEventsParams,
+  ListAdminContentParams,
+  ListAdminEmailDeliveriesParams,
+  ListAdminOperatorsParams,
+  ListAdminVaultsParams,
+  ManualVaultActionInput,
+  ManualVaultActionResult,
   OutcomeInput,
   OverageDeclineResult,
   OverageStatus,
   QuestionReport,
   RedeemGiftInput,
   RedeemGiftResult,
+  RefundRequestInput,
   ResolvedOutcome,
   RevealReport,
   Scoreboard,
@@ -1154,6 +1189,340 @@ export function useListAdminBilling<TData = Awaited<ReturnType<typeof listAdminB
 
 
 
+export const getGetAdminDashboardUrl = () => {
+
+
+
+
+  return `/api/admin/dashboard`
+}
+
+/**
+ * @summary Get owner dashboard counts and sealed-content-safe health metadata
+ */
+export const getAdminDashboard = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminDashboard> => {
+
+  return customFetch<AdminDashboard>(getGetAdminDashboardUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminDashboardQueryKey = () => {
+    return [
+    `/api/admin/dashboard`
+    ] as const;
+    }
+
+
+export const getGetAdminDashboardQueryOptions = <TData = Awaited<ReturnType<typeof getAdminDashboard>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminDashboardQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminDashboard>>> = ({ signal }) => getAdminDashboard({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminDashboardQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminDashboard>>>
+export type GetAdminDashboardQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get owner dashboard counts and sealed-content-safe health metadata
+ */
+
+export function useGetAdminDashboard<TData = Awaited<ReturnType<typeof getAdminDashboard>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminDashboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminDashboardQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminRevenueReportUrl = (params: GetAdminRevenueReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/reports/revenue?${stringifiedParams}` : `/api/admin/reports/revenue`
+}
+
+/**
+ * @summary Report locally recorded billing and gift activity for a bounded UTC date period
+ */
+export const getAdminRevenueReport = async (params: GetAdminRevenueReportParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminRevenueReport> => {
+
+  return customFetch<AdminRevenueReport>(getGetAdminRevenueReportUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminRevenueReportQueryKey = (params?: GetAdminRevenueReportParams,) => {
+    return [
+    `/api/admin/reports/revenue`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAdminRevenueReportQueryOptions = <TData = Awaited<ReturnType<typeof getAdminRevenueReport>>, TError = ErrorType<void>>(params: GetAdminRevenueReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenueReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminRevenueReportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminRevenueReport>>> = ({ signal }) => getAdminRevenueReport(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenueReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminRevenueReportQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminRevenueReport>>>
+export type GetAdminRevenueReportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Report locally recorded billing and gift activity for a bounded UTC date period
+ */
+
+export function useGetAdminRevenueReport<TData = Awaited<ReturnType<typeof getAdminRevenueReport>>, TError = ErrorType<void>>(
+ params: GetAdminRevenueReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminRevenueReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminRevenueReportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminOperatorsUrl = (params?: ListAdminOperatorsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/operators?${stringifiedParams}` : `/api/admin/operators`
+}
+
+/**
+ * @summary Search operator accounts with safe identity metadata
+ */
+export const listAdminOperators = async (params?: ListAdminOperatorsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminOperatorList> => {
+
+  return customFetch<AdminOperatorList>(getListAdminOperatorsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminOperatorsQueryKey = (params?: ListAdminOperatorsParams,) => {
+    return [
+    `/api/admin/operators`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminOperatorsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminOperators>>, TError = ErrorType<unknown>>(params?: ListAdminOperatorsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOperators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminOperatorsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminOperators>>> = ({ signal }) => listAdminOperators(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminOperators>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminOperatorsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminOperators>>>
+export type ListAdminOperatorsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search operator accounts with safe identity metadata
+ */
+
+export function useListAdminOperators<TData = Awaited<ReturnType<typeof listAdminOperators>>, TError = ErrorType<unknown>>(
+ params?: ListAdminOperatorsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOperators>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminOperatorsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminOperatorUrl = (accountId: string,
+    params?: GetAdminOperatorParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/operators/${accountId}?${stringifiedParams}` : `/api/admin/operators/${accountId}`
+}
+
+/**
+ * @summary Get operator-owned vaults and local billing history
+ */
+export const getAdminOperator = async (accountId: string,
+    params?: GetAdminOperatorParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminOperatorDetail> => {
+
+  return customFetch<AdminOperatorDetail>(getGetAdminOperatorUrl(accountId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminOperatorQueryKey = (accountId: string,
+    params?: GetAdminOperatorParams,) => {
+    return [
+    `/api/admin/operators/${accountId}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAdminOperatorQueryOptions = <TData = Awaited<ReturnType<typeof getAdminOperator>>, TError = ErrorType<void>>(accountId: string,
+    params?: GetAdminOperatorParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOperator>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminOperatorQueryKey(accountId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminOperator>>> = ({ signal }) => getAdminOperator(accountId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: accountId !== null && accountId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminOperator>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminOperatorQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminOperator>>>
+export type GetAdminOperatorQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get operator-owned vaults and local billing history
+ */
+
+export function useGetAdminOperator<TData = Awaited<ReturnType<typeof getAdminOperator>>, TError = ErrorType<void>>(
+ accountId: string,
+    params?: GetAdminOperatorParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminOperator>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminOperatorQueryOptions(accountId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getListAdminGiftsUrl = () => {
 
 
@@ -1219,6 +1588,83 @@ export function useListAdminGifts<TData = Awaited<ReturnType<typeof listAdminGif
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAdminGiftsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminGiftUrl = (giftId: string,) => {
+
+
+
+
+  return `/api/admin/gifts/${giftId}`
+}
+
+/**
+ * @summary Get gift status, redemption, refund, and delivery support detail
+ */
+export const getAdminGift = async (giftId: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminGiftDetail> => {
+
+  return customFetch<AdminGiftDetail>(getGetAdminGiftUrl(giftId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminGiftQueryKey = (giftId: string,) => {
+    return [
+    `/api/admin/gifts/${giftId}`
+    ] as const;
+    }
+
+
+export const getGetAdminGiftQueryOptions = <TData = Awaited<ReturnType<typeof getAdminGift>>, TError = ErrorType<void>>(giftId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminGift>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminGiftQueryKey(giftId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminGift>>> = ({ signal }) => getAdminGift(giftId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: giftId !== null && giftId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminGift>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminGiftQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminGift>>>
+export type GetAdminGiftQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get gift status, redemption, refund, and delivery support detail
+ */
+
+export function useGetAdminGift<TData = Awaited<ReturnType<typeof getAdminGift>>, TError = ErrorType<void>>(
+ giftId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminGift>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminGiftQueryOptions(giftId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -1308,20 +1754,27 @@ export function useListAdminOverages<TData = Awaited<ReturnType<typeof listAdmin
 
 
 
-export const getListAdminEmailDeliveriesUrl = () => {
+export const getListAdminEmailDeliveriesUrl = (params?: ListAdminEmailDeliveriesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/admin/email-deliveries`
+  return stringifiedParams.length > 0 ? `/api/admin/email-deliveries?${stringifiedParams}` : `/api/admin/email-deliveries`
 }
 
 /**
  * @summary List transactional email delivery status and failures
  */
-export const listAdminEmailDeliveries = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminEmailDeliveryList> => {
+export const listAdminEmailDeliveries = async (params?: ListAdminEmailDeliveriesParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminEmailDeliveryList> => {
 
-  return customFetch<AdminEmailDeliveryList>(getListAdminEmailDeliveriesUrl(),
+  return customFetch<AdminEmailDeliveryList>(getListAdminEmailDeliveriesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1334,23 +1787,23 @@ export const listAdminEmailDeliveries = async ( options?: Parameters<typeof cust
 
 
 
-export const getListAdminEmailDeliveriesQueryKey = () => {
+export const getListAdminEmailDeliveriesQueryKey = (params?: ListAdminEmailDeliveriesParams,) => {
     return [
-    `/api/admin/email-deliveries`
+    `/api/admin/email-deliveries`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListAdminEmailDeliveriesQueryOptions = <TData = Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListAdminEmailDeliveriesQueryOptions = <TData = Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError = ErrorType<void>>(params?: ListAdminEmailDeliveriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListAdminEmailDeliveriesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListAdminEmailDeliveriesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminEmailDeliveries>>> = ({ signal }) => listAdminEmailDeliveries({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminEmailDeliveries>>> = ({ signal }) => listAdminEmailDeliveries(params, { signal, ...requestOptions });
 
 
 
@@ -1368,11 +1821,88 @@ export type ListAdminEmailDeliveriesQueryError = ErrorType<void>
  */
 
 export function useListAdminEmailDeliveries<TData = Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError = ErrorType<void>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListAdminEmailDeliveriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListAdminEmailDeliveriesQueryOptions(options)
+  const queryOptions = getListAdminEmailDeliveriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminEmailDeliveryUrl = (emailDeliveryId: string,) => {
+
+
+
+
+  return `/api/admin/email-deliveries/${emailDeliveryId}`
+}
+
+/**
+ * @summary Get delivery support detail without email payload content
+ */
+export const getAdminEmailDelivery = async (emailDeliveryId: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminEmailDeliveryDetail> => {
+
+  return customFetch<AdminEmailDeliveryDetail>(getGetAdminEmailDeliveryUrl(emailDeliveryId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminEmailDeliveryQueryKey = (emailDeliveryId: string,) => {
+    return [
+    `/api/admin/email-deliveries/${emailDeliveryId}`
+    ] as const;
+    }
+
+
+export const getGetAdminEmailDeliveryQueryOptions = <TData = Awaited<ReturnType<typeof getAdminEmailDelivery>>, TError = ErrorType<void>>(emailDeliveryId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminEmailDelivery>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminEmailDeliveryQueryKey(emailDeliveryId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminEmailDelivery>>> = ({ signal }) => getAdminEmailDelivery(emailDeliveryId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: emailDeliveryId !== null && emailDeliveryId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminEmailDelivery>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminEmailDeliveryQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminEmailDelivery>>>
+export type GetAdminEmailDeliveryQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get delivery support detail without email payload content
+ */
+
+export function useGetAdminEmailDelivery<TData = Awaited<ReturnType<typeof getAdminEmailDelivery>>, TError = ErrorType<void>>(
+ emailDeliveryId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminEmailDelivery>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminEmailDeliveryQueryOptions(emailDeliveryId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -1541,14 +2071,14 @@ export const getRefundBillingRecordUrl = (billingRecordId: string,) => {
  * @summary Fresh-MFA admin full refund with a typed reason
  */
 export const refundBillingRecord = async (billingRecordId: string,
-    sensitiveReasonInput: SensitiveReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingActionResult> => {
+    refundRequestInput: RefundRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingActionResult> => {
 
   return customFetch<AdminBillingActionResult>(getRefundBillingRecordUrl(billingRecordId),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(sensitiveReasonInput)
+    body: JSON.stringify(refundRequestInput)
   }
 );}
 
@@ -1557,8 +2087,8 @@ export const refundBillingRecord = async (billingRecordId: string,
 
 
 export const getRefundBillingRecordMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<SensitiveReasonInput>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<RefundRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<RefundRequestInput>}, TContext> => {
 
 const mutationKey = ['refundBillingRecord'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1570,7 +2100,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundBillingRecord>>, {billingRecordId: string;data: BodyType<SensitiveReasonInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundBillingRecord>>, {billingRecordId: string;data: BodyType<RefundRequestInput>}> = (props) => {
           const {billingRecordId,data} = props ?? {};
 
           return  refundBillingRecord(billingRecordId,data,requestOptions)
@@ -1584,18 +2114,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type RefundBillingRecordMutationResult = NonNullable<Awaited<ReturnType<typeof refundBillingRecord>>>
-    export type RefundBillingRecordMutationBody = BodyType<SensitiveReasonInput>
+    export type RefundBillingRecordMutationBody = BodyType<RefundRequestInput>
     export type RefundBillingRecordMutationError = ErrorType<void>
 
     /**
  * @summary Fresh-MFA admin full refund with a typed reason
  */
 export const useRefundBillingRecord = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<RefundRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof refundBillingRecord>>,
         TError,
-        {billingRecordId: string;data: BodyType<SensitiveReasonInput>},
+        {billingRecordId: string;data: BodyType<RefundRequestInput>},
         TContext
       > => {
       return useMutation(getRefundBillingRecordMutationOptions(options));
@@ -1613,14 +2143,14 @@ export const getRefundGiftUrl = (giftId: string,) => {
  * @summary Fresh-MFA admin refund of an unredeemed gift within ninety days
  */
 export const refundGift = async (giftId: string,
-    sensitiveReasonInput: SensitiveReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<GiftRefundResult> => {
+    refundRequestInput: RefundRequestInput, options?: Parameters<typeof customFetch>[1]): Promise<GiftRefundResult> => {
 
   return customFetch<GiftRefundResult>(getRefundGiftUrl(giftId),
   {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(sensitiveReasonInput)
+    body: JSON.stringify(refundRequestInput)
   }
 );}
 
@@ -1629,8 +2159,8 @@ export const refundGift = async (giftId: string,
 
 
 export const getRefundGiftMutationOptions = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<SensitiveReasonInput>}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<RefundRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<RefundRequestInput>}, TContext> => {
 
 const mutationKey = ['refundGift'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1642,7 +2172,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundGift>>, {giftId: string;data: BodyType<SensitiveReasonInput>}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundGift>>, {giftId: string;data: BodyType<RefundRequestInput>}> = (props) => {
           const {giftId,data} = props ?? {};
 
           return  refundGift(giftId,data,requestOptions)
@@ -1656,18 +2186,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type RefundGiftMutationResult = NonNullable<Awaited<ReturnType<typeof refundGift>>>
-    export type RefundGiftMutationBody = BodyType<SensitiveReasonInput>
+    export type RefundGiftMutationBody = BodyType<RefundRequestInput>
     export type RefundGiftMutationError = ErrorType<void>
 
     /**
  * @summary Fresh-MFA admin refund of an unredeemed gift within ninety days
  */
 export const useRefundGift = <TError = ErrorType<void>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<RefundRequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof refundGift>>,
         TError,
-        {giftId: string;data: BodyType<SensitiveReasonInput>},
+        {giftId: string;data: BodyType<RefundRequestInput>},
         TContext
       > => {
       return useMutation(getRefundGiftMutationOptions(options));
@@ -1743,6 +2273,1511 @@ export const useGrantVaultComp = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getGrantVaultCompMutationOptions(options));
+    }
+
+export const getListAdminVaultsUrl = (params?: ListAdminVaultsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/vaults?${stringifiedParams}` : `/api/admin/vaults`
+}
+
+/**
+ * @summary List safe vault health metadata for administrators
+ */
+export const listAdminVaults = async (params?: ListAdminVaultsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminVaultList> => {
+
+  return customFetch<AdminVaultList>(getListAdminVaultsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminVaultsQueryKey = (params?: ListAdminVaultsParams,) => {
+    return [
+    `/api/admin/vaults`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminVaultsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminVaults>>, TError = ErrorType<void>>(params?: ListAdminVaultsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminVaults>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminVaultsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminVaults>>> = ({ signal }) => listAdminVaults(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminVaults>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminVaultsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminVaults>>>
+export type ListAdminVaultsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List safe vault health metadata for administrators
+ */
+
+export function useListAdminVaults<TData = Awaited<ReturnType<typeof listAdminVaults>>, TError = ErrorType<void>>(
+ params?: ListAdminVaultsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminVaults>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminVaultsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminContentUrl = (params?: ListAdminContentParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/content?${stringifiedParams}` : `/api/admin/content`
+}
+
+/**
+ * @summary List searchable content-management metadata
+ */
+export const listAdminContent = async (params?: ListAdminContentParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminContentList> => {
+
+  return customFetch<AdminContentList>(getListAdminContentUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminContentQueryKey = (params?: ListAdminContentParams,) => {
+    return [
+    `/api/admin/content`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminContentQueryOptions = <TData = Awaited<ReturnType<typeof listAdminContent>>, TError = ErrorType<unknown>>(params?: ListAdminContentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminContentQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminContent>>> = ({ signal }) => listAdminContent(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminContentQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminContent>>>
+export type ListAdminContentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List searchable content-management metadata
+ */
+
+export function useListAdminContent<TData = Awaited<ReturnType<typeof listAdminContent>>, TError = ErrorType<unknown>>(
+ params?: ListAdminContentParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminContentQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getPreviewAdminContentImportUrl = () => {
+
+
+
+
+  return `/api/admin/content/import/preview`
+}
+
+/**
+ * @summary Non-mutating strict question-bank import preview
+ */
+export const previewAdminContentImport = async (contentImportRequest: ContentImportRequest, options?: Parameters<typeof customFetch>[1]): Promise<ContentImportPreview> => {
+
+  return customFetch<ContentImportPreview>(getPreviewAdminContentImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contentImportRequest)
+  }
+);}
+
+
+
+
+
+export const getPreviewAdminContentImportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewAdminContentImport>>, TError,{data: BodyType<ContentImportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewAdminContentImport>>, TError,{data: BodyType<ContentImportRequest>}, TContext> => {
+
+const mutationKey = ['previewAdminContentImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewAdminContentImport>>, {data: BodyType<ContentImportRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  previewAdminContentImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewAdminContentImportMutationResult = NonNullable<Awaited<ReturnType<typeof previewAdminContentImport>>>
+    export type PreviewAdminContentImportMutationBody = BodyType<ContentImportRequest>
+    export type PreviewAdminContentImportMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Non-mutating strict question-bank import preview
+ */
+export const usePreviewAdminContentImport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewAdminContentImport>>, TError,{data: BodyType<ContentImportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewAdminContentImport>>,
+        TError,
+        {data: BodyType<ContentImportRequest>},
+        TContext
+      > => {
+      return useMutation(getPreviewAdminContentImportMutationOptions(options));
+    }
+
+export const getValidateAdminContentImportUrl = () => {
+
+
+
+
+  return `/api/admin/content/import/validate`
+}
+
+/**
+ * @summary Strict non-mutating question-bank validation
+ */
+export const validateAdminContentImport = async (contentImportRequest: ContentImportRequest, options?: Parameters<typeof customFetch>[1]): Promise<ContentImportPreview> => {
+
+  return customFetch<ContentImportPreview>(getValidateAdminContentImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contentImportRequest)
+  }
+);}
+
+
+
+
+
+export const getValidateAdminContentImportMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateAdminContentImport>>, TError,{data: BodyType<ContentImportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof validateAdminContentImport>>, TError,{data: BodyType<ContentImportRequest>}, TContext> => {
+
+const mutationKey = ['validateAdminContentImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof validateAdminContentImport>>, {data: BodyType<ContentImportRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  validateAdminContentImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ValidateAdminContentImportMutationResult = NonNullable<Awaited<ReturnType<typeof validateAdminContentImport>>>
+    export type ValidateAdminContentImportMutationBody = BodyType<ContentImportRequest>
+    export type ValidateAdminContentImportMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Strict non-mutating question-bank validation
+ */
+export const useValidateAdminContentImport = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validateAdminContentImport>>, TError,{data: BodyType<ContentImportRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof validateAdminContentImport>>,
+        TError,
+        {data: BodyType<ContentImportRequest>},
+        TContext
+      > => {
+      return useMutation(getValidateAdminContentImportMutationOptions(options));
+    }
+
+export const getApplyAdminContentImportUrl = () => {
+
+
+
+
+  return `/api/admin/content/import/apply`
+}
+
+/**
+ * @summary Fresh-MFA audited all-or-nothing valid question-bank import
+ */
+export const applyAdminContentImport = async (contentImportApplyRequest: ContentImportApplyRequest, options?: Parameters<typeof customFetch>[1]): Promise<ContentImportResult> => {
+
+  return customFetch<ContentImportResult>(getApplyAdminContentImportUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contentImportApplyRequest)
+  }
+);}
+
+
+
+
+
+export const getApplyAdminContentImportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyAdminContentImport>>, TError,{data: BodyType<ContentImportApplyRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof applyAdminContentImport>>, TError,{data: BodyType<ContentImportApplyRequest>}, TContext> => {
+
+const mutationKey = ['applyAdminContentImport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof applyAdminContentImport>>, {data: BodyType<ContentImportApplyRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  applyAdminContentImport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApplyAdminContentImportMutationResult = NonNullable<Awaited<ReturnType<typeof applyAdminContentImport>>>
+    export type ApplyAdminContentImportMutationBody = BodyType<ContentImportApplyRequest>
+    export type ApplyAdminContentImportMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA audited all-or-nothing valid question-bank import
+ */
+export const useApplyAdminContentImport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof applyAdminContentImport>>, TError,{data: BodyType<ContentImportApplyRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof applyAdminContentImport>>,
+        TError,
+        {data: BodyType<ContentImportApplyRequest>},
+        TContext
+      > => {
+      return useMutation(getApplyAdminContentImportMutationOptions(options));
+    }
+
+export const getCreateAdminContentItemUrl = (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',) => {
+
+
+
+
+  return `/api/admin/content/${kind}`
+}
+
+/**
+ * @summary Fresh-MFA audited creation of a content item
+ */
+export const createAdminContentItem = async (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',
+    contentMutationInput: ContentMutationInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentItem> => {
+
+  return customFetch<ContentItem>(getCreateAdminContentItemUrl(kind),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contentMutationInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAdminContentItemMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminContentItem>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentMutationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAdminContentItem>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentMutationInput>}, TContext> => {
+
+const mutationKey = ['createAdminContentItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdminContentItem>>, {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentMutationInput>}> = (props) => {
+          const {kind,data} = props ?? {};
+
+          return  createAdminContentItem(kind,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdminContentItemMutationResult = NonNullable<Awaited<ReturnType<typeof createAdminContentItem>>>
+    export type CreateAdminContentItemMutationBody = BodyType<ContentMutationInput>
+    export type CreateAdminContentItemMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Fresh-MFA audited creation of a content item
+ */
+export const useCreateAdminContentItem = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdminContentItem>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentMutationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAdminContentItem>>,
+        TError,
+        {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentMutationInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAdminContentItemMutationOptions(options));
+    }
+
+export const getUpdateAdminContentItemUrl = (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',
+    contentId: string,) => {
+
+
+
+
+  return `/api/admin/content/${kind}/${contentId}`
+}
+
+/**
+ * @summary Fresh-MFA audited content update; permanent IDs remain unchanged
+ */
+export const updateAdminContentItem = async (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',
+    contentId: string,
+    contentMutationInput: ContentMutationInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentItem> => {
+
+  return customFetch<ContentItem>(getUpdateAdminContentItemUrl(kind,contentId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contentMutationInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateAdminContentItemMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminContentItem>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;data: BodyType<ContentMutationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAdminContentItem>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;data: BodyType<ContentMutationInput>}, TContext> => {
+
+const mutationKey = ['updateAdminContentItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAdminContentItem>>, {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;data: BodyType<ContentMutationInput>}> = (props) => {
+          const {kind,contentId,data} = props ?? {};
+
+          return  updateAdminContentItem(kind,contentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAdminContentItemMutationResult = NonNullable<Awaited<ReturnType<typeof updateAdminContentItem>>>
+    export type UpdateAdminContentItemMutationBody = BodyType<ContentMutationInput>
+    export type UpdateAdminContentItemMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Fresh-MFA audited content update; permanent IDs remain unchanged
+ */
+export const useUpdateAdminContentItem = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAdminContentItem>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;data: BodyType<ContentMutationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAdminContentItem>>,
+        TError,
+        {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;data: BodyType<ContentMutationInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAdminContentItemMutationOptions(options));
+    }
+
+export const getSetAdminContentRetirementUrl = (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',
+    contentId: string,
+    state: 'retire' | 'reactivate',) => {
+
+
+
+
+  return `/api/admin/content/${kind}/${contentId}/${state}`
+}
+
+/**
+ * @summary Fresh-MFA audited retirement or reactivation; never deletes content
+ */
+export const setAdminContentRetirement = async (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',
+    contentId: string,
+    state: 'retire' | 'reactivate',
+    sensitiveReasonInput: SensitiveReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentItem> => {
+
+  return customFetch<ContentItem>(getSetAdminContentRetirementUrl(kind,contentId,state),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sensitiveReasonInput)
+  }
+);}
+
+
+
+
+
+export const getSetAdminContentRetirementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdminContentRetirement>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;state: 'retire' | 'reactivate';data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setAdminContentRetirement>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;state: 'retire' | 'reactivate';data: BodyType<SensitiveReasonInput>}, TContext> => {
+
+const mutationKey = ['setAdminContentRetirement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setAdminContentRetirement>>, {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;state: 'retire' | 'reactivate';data: BodyType<SensitiveReasonInput>}> = (props) => {
+          const {kind,contentId,state,data} = props ?? {};
+
+          return  setAdminContentRetirement(kind,contentId,state,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetAdminContentRetirementMutationResult = NonNullable<Awaited<ReturnType<typeof setAdminContentRetirement>>>
+    export type SetAdminContentRetirementMutationBody = BodyType<SensitiveReasonInput>
+    export type SetAdminContentRetirementMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Fresh-MFA audited retirement or reactivation; never deletes content
+ */
+export const useSetAdminContentRetirement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdminContentRetirement>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;state: 'retire' | 'reactivate';data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setAdminContentRetirement>>,
+        TError,
+        {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';contentId: string;state: 'retire' | 'reactivate';data: BodyType<SensitiveReasonInput>},
+        TContext
+      > => {
+      return useMutation(getSetAdminContentRetirementMutationOptions(options));
+    }
+
+export const getReorderAdminContentUrl = (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',) => {
+
+
+
+
+  return `/api/admin/content/${kind}/reorder`
+}
+
+/**
+ * @summary Fresh-MFA audited complete sibling reorder
+ */
+export const reorderAdminContent = async (kind: 'vault-types' | 'subcategories' | 'questions' | 'options',
+    contentReorderInput: ContentReorderInput, options?: Parameters<typeof customFetch>[1]): Promise<ContentReorderResult> => {
+
+  return customFetch<ContentReorderResult>(getReorderAdminContentUrl(kind),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(contentReorderInput)
+  }
+);}
+
+
+
+
+
+export const getReorderAdminContentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderAdminContent>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentReorderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reorderAdminContent>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentReorderInput>}, TContext> => {
+
+const mutationKey = ['reorderAdminContent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reorderAdminContent>>, {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentReorderInput>}> = (props) => {
+          const {kind,data} = props ?? {};
+
+          return  reorderAdminContent(kind,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReorderAdminContentMutationResult = NonNullable<Awaited<ReturnType<typeof reorderAdminContent>>>
+    export type ReorderAdminContentMutationBody = BodyType<ContentReorderInput>
+    export type ReorderAdminContentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Fresh-MFA audited complete sibling reorder
+ */
+export const useReorderAdminContent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderAdminContent>>, TError,{kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentReorderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reorderAdminContent>>,
+        TError,
+        {kind: 'vault-types' | 'subcategories' | 'questions' | 'options';data: BodyType<ContentReorderInput>},
+        TContext
+      > => {
+      return useMutation(getReorderAdminContentMutationOptions(options));
+    }
+
+export const getGetAdminVaultUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}`
+}
+
+/**
+ * @summary Get safe vault health metadata and reveal scope previews
+ */
+export const getAdminVault = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminVaultDetail> => {
+
+  return customFetch<AdminVaultDetail>(getGetAdminVaultUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminVaultQueryKey = (vaultId: string,) => {
+    return [
+    `/api/admin/vaults/${vaultId}`
+    ] as const;
+    }
+
+
+export const getGetAdminVaultQueryOptions = <TData = Awaited<ReturnType<typeof getAdminVault>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVault>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminVaultQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminVault>>> = ({ signal }) => getAdminVault(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminVault>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminVaultQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminVault>>>
+export type GetAdminVaultQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get safe vault health metadata and reveal scope previews
+ */
+
+export function useGetAdminVault<TData = Awaited<ReturnType<typeof getAdminVault>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVault>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminVaultQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminVaultSupportDetailUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/support`
+}
+
+/**
+ * @summary Get vault entitlement, local billing, overage, and email support status
+ */
+export const getAdminVaultSupportDetail = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminVaultSupportDetail> => {
+
+  return customFetch<AdminVaultSupportDetail>(getGetAdminVaultSupportDetailUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminVaultSupportDetailQueryKey = (vaultId: string,) => {
+    return [
+    `/api/admin/vaults/${vaultId}/support`
+    ] as const;
+    }
+
+
+export const getGetAdminVaultSupportDetailQueryOptions = <TData = Awaited<ReturnType<typeof getAdminVaultSupportDetail>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVaultSupportDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminVaultSupportDetailQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminVaultSupportDetail>>> = ({ signal }) => getAdminVaultSupportDetail(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminVaultSupportDetail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminVaultSupportDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminVaultSupportDetail>>>
+export type GetAdminVaultSupportDetailQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get vault entitlement, local billing, overage, and email support status
+ */
+
+export function useGetAdminVaultSupportDetail<TData = Awaited<ReturnType<typeof getAdminVaultSupportDetail>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVaultSupportDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminVaultSupportDetailQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getManualUnlockVaultUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/unlock`
+}
+
+/**
+ * @summary Fresh-MFA manual unlock for one vault scope
+ */
+export const manualUnlockVault = async (vaultId: string,
+    manualVaultActionInput: ManualVaultActionInput, options?: Parameters<typeof customFetch>[1]): Promise<ManualVaultActionResult> => {
+
+  return customFetch<ManualVaultActionResult>(getManualUnlockVaultUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(manualVaultActionInput)
+  }
+);}
+
+
+
+
+
+export const getManualUnlockVaultMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof manualUnlockVault>>, TError,{vaultId: string;data: BodyType<ManualVaultActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof manualUnlockVault>>, TError,{vaultId: string;data: BodyType<ManualVaultActionInput>}, TContext> => {
+
+const mutationKey = ['manualUnlockVault'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof manualUnlockVault>>, {vaultId: string;data: BodyType<ManualVaultActionInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  manualUnlockVault(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ManualUnlockVaultMutationResult = NonNullable<Awaited<ReturnType<typeof manualUnlockVault>>>
+    export type ManualUnlockVaultMutationBody = BodyType<ManualVaultActionInput>
+    export type ManualUnlockVaultMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA manual unlock for one vault scope
+ */
+export const useManualUnlockVault = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof manualUnlockVault>>, TError,{vaultId: string;data: BodyType<ManualVaultActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof manualUnlockVault>>,
+        TError,
+        {vaultId: string;data: BodyType<ManualVaultActionInput>},
+        TContext
+      > => {
+      return useMutation(getManualUnlockVaultMutationOptions(options));
+    }
+
+export const getResealAdminVaultUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/reseal`
+}
+
+/**
+ * @summary Fresh-MFA exact reseal for one vault scope
+ */
+export const resealAdminVault = async (vaultId: string,
+    manualVaultActionInput: ManualVaultActionInput, options?: Parameters<typeof customFetch>[1]): Promise<ManualVaultActionResult> => {
+
+  return customFetch<ManualVaultActionResult>(getResealAdminVaultUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(manualVaultActionInput)
+  }
+);}
+
+
+
+
+
+export const getResealAdminVaultMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resealAdminVault>>, TError,{vaultId: string;data: BodyType<ManualVaultActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resealAdminVault>>, TError,{vaultId: string;data: BodyType<ManualVaultActionInput>}, TContext> => {
+
+const mutationKey = ['resealAdminVault'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resealAdminVault>>, {vaultId: string;data: BodyType<ManualVaultActionInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  resealAdminVault(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResealAdminVaultMutationResult = NonNullable<Awaited<ReturnType<typeof resealAdminVault>>>
+    export type ResealAdminVaultMutationBody = BodyType<ManualVaultActionInput>
+    export type ResealAdminVaultMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA exact reseal for one vault scope
+ */
+export const useResealAdminVault = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resealAdminVault>>, TError,{vaultId: string;data: BodyType<ManualVaultActionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resealAdminVault>>,
+        TError,
+        {vaultId: string;data: BodyType<ManualVaultActionInput>},
+        TContext
+      > => {
+      return useMutation(getResealAdminVaultMutationOptions(options));
+    }
+
+export const getListAdminAuditEventsUrl = (params?: ListAdminAuditEventsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/audit?${stringifiedParams}` : `/api/admin/audit`
+}
+
+/**
+ * @summary Browse append-only administrative audit events
+ */
+export const listAdminAuditEvents = async (params?: ListAdminAuditEventsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminAuditList> => {
+
+  return customFetch<AdminAuditList>(getListAdminAuditEventsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminAuditEventsQueryKey = (params?: ListAdminAuditEventsParams,) => {
+    return [
+    `/api/admin/audit`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminAuditEventsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminAuditEvents>>, TError = ErrorType<unknown>>(params?: ListAdminAuditEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminAuditEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminAuditEventsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminAuditEvents>>> = ({ signal }) => listAdminAuditEvents(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminAuditEvents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminAuditEventsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminAuditEvents>>>
+export type ListAdminAuditEventsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Browse append-only administrative audit events
+ */
+
+export function useListAdminAuditEvents<TData = Awaited<ReturnType<typeof listAdminAuditEvents>>, TError = ErrorType<unknown>>(
+ params?: ListAdminAuditEventsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminAuditEvents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminAuditEventsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDownloadAdminFullExportUrl = () => {
+
+
+
+
+  return `/api/admin/full-export`
+}
+
+/**
+ * @summary Fresh-MFA audited CSV export including sealed answers
+ */
+export const downloadAdminFullExport = async (adminFullExportInput: AdminFullExportInput, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadAdminFullExportUrl(),
+  {
+    ...options,
+    responseType: 'blob',
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminFullExportInput)
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminFullExportMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof downloadAdminFullExport>>, TError,{data: BodyType<AdminFullExportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof downloadAdminFullExport>>, TError,{data: BodyType<AdminFullExportInput>}, TContext> => {
+
+const mutationKey = ['downloadAdminFullExport'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof downloadAdminFullExport>>, {data: BodyType<AdminFullExportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  downloadAdminFullExport(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DownloadAdminFullExportMutationResult = NonNullable<Awaited<ReturnType<typeof downloadAdminFullExport>>>
+    export type DownloadAdminFullExportMutationBody = BodyType<AdminFullExportInput>
+    export type DownloadAdminFullExportMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA audited CSV export including sealed answers
+ */
+export const useDownloadAdminFullExport = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof downloadAdminFullExport>>, TError,{data: BodyType<AdminFullExportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof downloadAdminFullExport>>,
+        TError,
+        {data: BodyType<AdminFullExportInput>},
+        TContext
+      > => {
+      return useMutation(getDownloadAdminFullExportMutationOptions(options));
+    }
+
+export const getDownloadAdminVaultUnlockedExportUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/unlocked-export`
+}
+
+/**
+ * @summary Download paid-vault unlocked content only
+ */
+export const downloadAdminVaultUnlockedExport = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getDownloadAdminVaultUnlockedExportUrl(vaultId),
+  {
+    ...options,
+    responseType: 'blob',
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDownloadAdminVaultUnlockedExportQueryKey = (vaultId: string,) => {
+    return [
+    `/api/admin/vaults/${vaultId}/unlocked-export`
+    ] as const;
+    }
+
+
+export const getDownloadAdminVaultUnlockedExportQueryOptions = <TData = Awaited<ReturnType<typeof downloadAdminVaultUnlockedExport>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminVaultUnlockedExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDownloadAdminVaultUnlockedExportQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof downloadAdminVaultUnlockedExport>>> = ({ signal }) => downloadAdminVaultUnlockedExport(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof downloadAdminVaultUnlockedExport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type DownloadAdminVaultUnlockedExportQueryResult = NonNullable<Awaited<ReturnType<typeof downloadAdminVaultUnlockedExport>>>
+export type DownloadAdminVaultUnlockedExportQueryError = ErrorType<void>
+
+
+/**
+ * @summary Download paid-vault unlocked content only
+ */
+
+export function useDownloadAdminVaultUnlockedExport<TData = Awaited<ReturnType<typeof downloadAdminVaultUnlockedExport>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof downloadAdminVaultUnlockedExport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getDownloadAdminVaultUnlockedExportQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetAdminVaultDeletionPreviewUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/deletion-preview`
+}
+
+/**
+ * @summary Get metadata-only deletion impact preview
+ */
+export const getAdminVaultDeletionPreview = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<GetAdminVaultDeletionPreview200> => {
+
+  return customFetch<GetAdminVaultDeletionPreview200>(getGetAdminVaultDeletionPreviewUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminVaultDeletionPreviewQueryKey = (vaultId: string,) => {
+    return [
+    `/api/admin/vaults/${vaultId}/deletion-preview`
+    ] as const;
+    }
+
+
+export const getGetAdminVaultDeletionPreviewQueryOptions = <TData = Awaited<ReturnType<typeof getAdminVaultDeletionPreview>>, TError = ErrorType<unknown>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVaultDeletionPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminVaultDeletionPreviewQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminVaultDeletionPreview>>> = ({ signal }) => getAdminVaultDeletionPreview(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminVaultDeletionPreview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminVaultDeletionPreviewQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminVaultDeletionPreview>>>
+export type GetAdminVaultDeletionPreviewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get metadata-only deletion impact preview
+ */
+
+export function useGetAdminVaultDeletionPreview<TData = Awaited<ReturnType<typeof getAdminVaultDeletionPreview>>, TError = ErrorType<unknown>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminVaultDeletionPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminVaultDeletionPreviewQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeleteAdminVaultUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/delete`
+}
+
+/**
+ * @summary Fresh-MFA audited vault deletion
+ */
+export const deleteAdminVault = async (vaultId: string,
+    adminDeletionInput: AdminDeletionInput, options?: Parameters<typeof customFetch>[1]): Promise<DeleteAdminVault200> => {
+
+  return customFetch<DeleteAdminVault200>(getDeleteAdminVaultUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminDeletionInput)
+  }
+);}
+
+
+
+
+
+export const getDeleteAdminVaultMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminVault>>, TError,{vaultId: string;data: BodyType<AdminDeletionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminVault>>, TError,{vaultId: string;data: BodyType<AdminDeletionInput>}, TContext> => {
+
+const mutationKey = ['deleteAdminVault'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminVault>>, {vaultId: string;data: BodyType<AdminDeletionInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  deleteAdminVault(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminVaultMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminVault>>>
+    export type DeleteAdminVaultMutationBody = BodyType<AdminDeletionInput>
+    export type DeleteAdminVaultMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Fresh-MFA audited vault deletion
+ */
+export const useDeleteAdminVault = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminVault>>, TError,{vaultId: string;data: BodyType<AdminDeletionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminVault>>,
+        TError,
+        {vaultId: string;data: BodyType<AdminDeletionInput>},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminVaultMutationOptions(options));
+    }
+
+export const getGetAdminAccountDeletionPreviewUrl = (accountId: string,) => {
+
+
+
+
+  return `/api/admin/accounts/${accountId}/deletion-preview`
+}
+
+/**
+ * @summary Get account deletion impact and required typed phrase
+ */
+export const getAdminAccountDeletionPreview = async (accountId: string, options?: Parameters<typeof customFetch>[1]): Promise<GetAdminAccountDeletionPreview200> => {
+
+  return customFetch<GetAdminAccountDeletionPreview200>(getGetAdminAccountDeletionPreviewUrl(accountId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminAccountDeletionPreviewQueryKey = (accountId: string,) => {
+    return [
+    `/api/admin/accounts/${accountId}/deletion-preview`
+    ] as const;
+    }
+
+
+export const getGetAdminAccountDeletionPreviewQueryOptions = <TData = Awaited<ReturnType<typeof getAdminAccountDeletionPreview>>, TError = ErrorType<void>>(accountId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAccountDeletionPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminAccountDeletionPreviewQueryKey(accountId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminAccountDeletionPreview>>> = ({ signal }) => getAdminAccountDeletionPreview(accountId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: accountId !== null && accountId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminAccountDeletionPreview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminAccountDeletionPreviewQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminAccountDeletionPreview>>>
+export type GetAdminAccountDeletionPreviewQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get account deletion impact and required typed phrase
+ */
+
+export function useGetAdminAccountDeletionPreview<TData = Awaited<ReturnType<typeof getAdminAccountDeletionPreview>>, TError = ErrorType<void>>(
+ accountId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAccountDeletionPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminAccountDeletionPreviewQueryOptions(accountId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeleteAdminAccountUrl = (accountId: string,) => {
+
+
+
+
+  return `/api/admin/accounts/${accountId}/delete`
+}
+
+/**
+ * @summary Fresh-MFA audited operator account anonymization and vault deletion
+ */
+export const deleteAdminAccount = async (accountId: string,
+    adminDeletionInput: AdminDeletionInput, options?: Parameters<typeof customFetch>[1]): Promise<DeleteAdminAccount200> => {
+
+  return customFetch<DeleteAdminAccount200>(getDeleteAdminAccountUrl(accountId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminDeletionInput)
+  }
+);}
+
+
+
+
+
+export const getDeleteAdminAccountMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminAccount>>, TError,{accountId: string;data: BodyType<AdminDeletionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAdminAccount>>, TError,{accountId: string;data: BodyType<AdminDeletionInput>}, TContext> => {
+
+const mutationKey = ['deleteAdminAccount'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAdminAccount>>, {accountId: string;data: BodyType<AdminDeletionInput>}> = (props) => {
+          const {accountId,data} = props ?? {};
+
+          return  deleteAdminAccount(accountId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAdminAccountMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAdminAccount>>>
+    export type DeleteAdminAccountMutationBody = BodyType<AdminDeletionInput>
+    export type DeleteAdminAccountMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Fresh-MFA audited operator account anonymization and vault deletion
+ */
+export const useDeleteAdminAccount = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAdminAccount>>, TError,{accountId: string;data: BodyType<AdminDeletionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAdminAccount>>,
+        TError,
+        {accountId: string;data: BodyType<AdminDeletionInput>},
+        TContext
+      > => {
+      return useMutation(getDeleteAdminAccountMutationOptions(options));
     }
 
 export const getListUnlockedRevealWorkUrl = (vaultId: string,) => {

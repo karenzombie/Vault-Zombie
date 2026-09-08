@@ -143,6 +143,702 @@ export interface SensitiveReasonInput {
   reason: string;
 }
 
+export type RefundRequestInput = SensitiveReasonInput & {
+  /** Stable client action ID retained for uncertain retry reconciliation. */
+  requestId: string;
+};
+
+/**
+ * A vault type, subcategory, question, or option with its permanent ID.
+ */
+export interface ContentItem { [key: string]: unknown }
+
+export type ContentMutationInput = SensitiveReasonInput & ContentItem;
+
+export type ContentReorderInput = SensitiveReasonInput & {
+  /** @minItems 1 */
+  ids: string[];
+};
+
+export interface ContentReorderResult {
+  ids: string[];
+}
+
+export interface AdminContentList {
+  vaultTypes: ContentItem[];
+  subcategories: ContentItem[];
+  questions: ContentItem[];
+  options: ContentItem[];
+}
+
+export type QuestionBankImportSubcategoriesItemQuestionsItemAnswerType = typeof QuestionBankImportSubcategoriesItemQuestionsItemAnswerType[keyof typeof QuestionBankImportSubcategoriesItemQuestionsItemAnswerType];
+
+
+export const QuestionBankImportSubcategoriesItemQuestionsItemAnswerType = {
+  free_text: 'free_text',
+  number: 'number',
+  multiple_choice: 'multiple_choice',
+  name_pick: 'name_pick',
+} as const;
+
+export type QuestionBankImportSubcategoriesItemQuestionsItemFreeTextMode = typeof QuestionBankImportSubcategoriesItemQuestionsItemFreeTextMode[keyof typeof QuestionBankImportSubcategoriesItemQuestionsItemFreeTextMode];
+
+
+export const QuestionBankImportSubcategoriesItemQuestionsItemFreeTextMode = {
+  scoreable: 'scoreable',
+  keepsake: 'keepsake',
+} as const;
+
+export type QuestionBankImportSubcategoriesItemQuestionsItemFitTag = typeof QuestionBankImportSubcategoriesItemQuestionsItemFitTag[keyof typeof QuestionBankImportSubcategoriesItemQuestionsItemFitTag];
+
+
+export const QuestionBankImportSubcategoriesItemQuestionsItemFitTag = {
+  short: 'short',
+  long: 'long',
+} as const;
+
+export type QuestionBankImportVaultType = {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+  /** @items.minLength 1 */
+  requiredSubjectTokens: string[];
+  displayOrder: number;
+};
+
+export type QuestionBankImportSubcategoriesItemQuestionsItemNumber = {
+  /** @minLength 1 */
+  unit: string;
+  minimum: number;
+  maximum: number;
+  /** @minimum 0 */
+  closeBand: number;
+};
+
+export type QuestionBankImportSubcategoriesItemQuestionsItem = {
+  /** @minLength 1 */
+  sourceKey: string;
+  /** @minLength 1 */
+  prompt: string;
+  answerType: QuestionBankImportSubcategoriesItemQuestionsItemAnswerType;
+  freeTextMode?: QuestionBankImportSubcategoriesItemQuestionsItemFreeTextMode;
+  number?: QuestionBankImportSubcategoriesItemQuestionsItemNumber;
+  fitTag?: QuestionBankImportSubcategoriesItemQuestionsItemFitTag;
+  displayOrder: number;
+  /** @items.minLength 1 */
+  options: string[];
+};
+
+export type QuestionBankImportSubcategoriesItem = {
+  /** @minLength 1 */
+  sourceKey: string;
+  /** @minLength 1 */
+  name: string;
+  iconKey?: string;
+  displayOrder: number;
+  questions: QuestionBankImportSubcategoriesItemQuestionsItem[];
+};
+
+export interface QuestionBankImport {
+  vaultType: QuestionBankImportVaultType;
+  /** @minItems 1 */
+  subcategories: QuestionBankImportSubcategoriesItem[];
+}
+
+export interface ContentImportRequest {
+  bank: QuestionBankImport;
+}
+
+export type ContentImportApplyRequest = ContentImportRequest & SensitiveReasonInput;
+
+export type ContentImportPreviewIssuesItem = {
+  path: string;
+  message: string;
+};
+
+export interface ContentImportPreview {
+  /** @minimum 0 */
+  unresolvedCount: number;
+  canApply: boolean;
+  issues: ContentImportPreviewIssuesItem[];
+}
+
+export interface ContentImportResult {
+  vaultTypeId: string;
+  subcategoryCount: number;
+  questionCount: number;
+  optionCount: number;
+}
+
+export type AdminDashboardRevealProgress = {
+  slotsTotal: number;
+  slotsLanded: number;
+  answersTotal: number;
+  answersUnlocked: number;
+};
+
+export type AdminDashboardGuestMetrics = {
+  averageGuestsPerVault: number;
+  capExceededEventCount: number;
+};
+
+export interface AdminCountBucket {
+  key: string;
+  count: number;
+}
+
+export interface AdminDashboard {
+  operatorCount: number;
+  vaultCount: number;
+  guestCount: number;
+  submissionCount: number;
+  vaultsByState: AdminCountBucket[];
+  vaultsByType: AdminCountBucket[];
+  vaultsByTier: AdminCountBucket[];
+  revealProgress: AdminDashboardRevealProgress;
+  guestMetrics: AdminDashboardGuestMetrics;
+  unresolvedOverageCount: number;
+  failedEmailCount: number;
+}
+
+export type AdminRevenueReportFilters = { [key: string]: unknown };
+
+export type AdminRevenueReportReconciliation = {
+  feesAvailable: boolean;
+  netAvailable: boolean;
+  payoutsAvailable: boolean;
+  message: string;
+};
+
+export interface AdminRevenueReport {
+  from: string;
+  to: string;
+  filters: AdminRevenueReportFilters;
+  grossConfirmedAmountCents: number;
+  refundedAmountCents: number;
+  disputedAmountCents: number;
+  compAmountCents: number;
+  giftIssuedAmountCents: number;
+  giftRedeemedAmountCents: number;
+  recordCount: number;
+  reconciliation: AdminRevenueReportReconciliation;
+}
+
+export type AdminOperatorListOperatorsItem = {
+  id: string;
+  displayName: string;
+  email: string;
+  status: string;
+  createdAt: string;
+  vaultCount: number;
+};
+
+export interface AdminOperatorList {
+  operators: AdminOperatorListOperatorsItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export type AdminOperatorDetailOperator = {
+  id: string;
+  displayName: string;
+  email: string;
+  status: string;
+  createdAt: string;
+  vaultCount: number;
+};
+
+export type AdminOperatorDetailVaultsItem = {
+  id: string;
+  name: string;
+  status: string;
+  planTier: string;
+  createdAt: string;
+  /** @nullable */
+  sealedAt: string | null;
+  operatorName: string;
+  vaultTypeName: string;
+};
+
+export type AdminOperatorDetailBillingRecordsItemTargetTier = typeof AdminOperatorDetailBillingRecordsItemTargetTier[keyof typeof AdminOperatorDetailBillingRecordsItemTargetTier];
+
+
+export const AdminOperatorDetailBillingRecordsItemTargetTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type AdminOperatorDetailBillingRecordsItemCurrency = typeof AdminOperatorDetailBillingRecordsItemCurrency[keyof typeof AdminOperatorDetailBillingRecordsItemCurrency];
+
+
+export const AdminOperatorDetailBillingRecordsItemCurrency = {
+  usd: 'usd',
+} as const;
+
+export type AdminOperatorDetailBillingRecordsItemStatus = typeof AdminOperatorDetailBillingRecordsItemStatus[keyof typeof AdminOperatorDetailBillingRecordsItemStatus];
+
+
+export const AdminOperatorDetailBillingRecordsItemStatus = {
+  pending: 'pending',
+  paid: 'paid',
+  failed: 'failed',
+  expired: 'expired',
+  refunded: 'refunded',
+  disputed: 'disputed',
+  comped: 'comped',
+} as const;
+
+export type AdminOperatorDetailBillingRecordsItemSource = typeof AdminOperatorDetailBillingRecordsItemSource[keyof typeof AdminOperatorDetailBillingRecordsItemSource];
+
+
+export const AdminOperatorDetailBillingRecordsItemSource = {
+  stripe: 'stripe',
+  gift: 'gift',
+  comp: 'comp',
+} as const;
+
+export type AdminOperatorDetailBillingRecordsItem = {
+  id: string;
+  /** @nullable */
+  vaultId: string | null;
+  /** @nullable */
+  operatorId: string | null;
+  targetTier: AdminOperatorDetailBillingRecordsItemTargetTier;
+  amountCents: number;
+  currency: AdminOperatorDetailBillingRecordsItemCurrency;
+  status: AdminOperatorDetailBillingRecordsItemStatus;
+  source: AdminOperatorDetailBillingRecordsItemSource;
+  /** @nullable */
+  stripeRefundId?: string | null;
+  /** @nullable */
+  refundRequestId?: string | null;
+  /** @nullable */
+  refundAttemptStatus?: string | null;
+  createdAt: string;
+};
+
+export interface AdminOperatorDetail {
+  operator: AdminOperatorDetailOperator;
+  vaults: AdminOperatorDetailVaultsItem[];
+  billingRecords: AdminOperatorDetailBillingRecordsItem[];
+  totalBillingRecords: number;
+  limit: number;
+  offset: number;
+}
+
+export type AdminGiftDetailGiftTargetTier = typeof AdminGiftDetailGiftTargetTier[keyof typeof AdminGiftDetailGiftTargetTier];
+
+
+export const AdminGiftDetailGiftTargetTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type AdminGiftDetailGiftStatus = typeof AdminGiftDetailGiftStatus[keyof typeof AdminGiftDetailGiftStatus];
+
+
+export const AdminGiftDetailGiftStatus = {
+  pending: 'pending',
+  purchased: 'purchased',
+  redeemed: 'redeemed',
+  refunded: 'refunded',
+  failed: 'failed',
+  expired: 'expired',
+  disputed: 'disputed',
+} as const;
+
+export type AdminGiftDetailGiftCurrency = typeof AdminGiftDetailGiftCurrency[keyof typeof AdminGiftDetailGiftCurrency];
+
+
+export const AdminGiftDetailGiftCurrency = {
+  usd: 'usd',
+} as const;
+
+/**
+ * @nullable
+ */
+export type AdminGiftDetailGiftLatestDeliveryStatus = typeof AdminGiftDetailGiftLatestDeliveryStatus[keyof typeof AdminGiftDetailGiftLatestDeliveryStatus] | null;
+
+
+export const AdminGiftDetailGiftLatestDeliveryStatus = {
+  queued: 'queued',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  suppressed: 'suppressed',
+} as const;
+
+export type AdminGiftDetailGift = {
+  id: string;
+  code: string;
+  targetTier: AdminGiftDetailGiftTargetTier;
+  status: AdminGiftDetailGiftStatus;
+  amountCents: number;
+  currency: AdminGiftDetailGiftCurrency;
+  /** @nullable */
+  fromLine?: string | null;
+  /** @nullable */
+  toLine?: string | null;
+  /** @nullable */
+  gifterEmail?: string | null;
+  createdAt: string;
+  /** @nullable */
+  redeemedAt: string | null;
+  /** @nullable */
+  refundedAt: string | null;
+  /** @nullable */
+  redeemedVaultId: string | null;
+  /** @nullable */
+  stripeRefundId: string | null;
+  /** @nullable */
+  stripePaymentIntentId: string | null;
+  /** @nullable */
+  refundRequestId: string | null;
+  /** @nullable */
+  refundAttemptStatus: string | null;
+  refundableNow: boolean;
+  /** @nullable */
+  latestDeliveryStatus: AdminGiftDetailGiftLatestDeliveryStatus;
+  /** @nullable */
+  latestDeliveryError: string | null;
+};
+
+export type AdminGiftDetailDeliveriesItemStatus = typeof AdminGiftDetailDeliveriesItemStatus[keyof typeof AdminGiftDetailDeliveriesItemStatus];
+
+
+export const AdminGiftDetailDeliveriesItemStatus = {
+  queued: 'queued',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  suppressed: 'suppressed',
+} as const;
+
+export type AdminGiftDetailDeliveriesItem = {
+  id: string;
+  dedupeKey: string;
+  eventType: string;
+  recipientEmail: string;
+  status: AdminGiftDetailDeliveriesItemStatus;
+  attempts: number;
+  /** @nullable */
+  providerId: string | null;
+  /** @nullable */
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  sentAt: string | null;
+};
+
+export interface AdminGiftDetail {
+  gift: AdminGiftDetailGift;
+  deliveries: AdminGiftDetailDeliveriesItem[];
+}
+
+export type AdminEmailDeliveryDetailDeliveryStatus = typeof AdminEmailDeliveryDetailDeliveryStatus[keyof typeof AdminEmailDeliveryDetailDeliveryStatus];
+
+
+export const AdminEmailDeliveryDetailDeliveryStatus = {
+  queued: 'queued',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  suppressed: 'suppressed',
+} as const;
+
+export type AdminEmailDeliveryDetailDelivery = {
+  id: string;
+  dedupeKey: string;
+  eventType: string;
+  recipientEmail: string;
+  status: AdminEmailDeliveryDetailDeliveryStatus;
+  attempts: number;
+  /** @nullable */
+  providerId: string | null;
+  /** @nullable */
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  sentAt: string | null;
+};
+
+export interface AdminEmailDeliveryDetail {
+  delivery: AdminEmailDeliveryDetailDelivery;
+}
+
+export type AdminVaultSupportDetailBillingRecordsItemTargetTier = typeof AdminVaultSupportDetailBillingRecordsItemTargetTier[keyof typeof AdminVaultSupportDetailBillingRecordsItemTargetTier];
+
+
+export const AdminVaultSupportDetailBillingRecordsItemTargetTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type AdminVaultSupportDetailBillingRecordsItemCurrency = typeof AdminVaultSupportDetailBillingRecordsItemCurrency[keyof typeof AdminVaultSupportDetailBillingRecordsItemCurrency];
+
+
+export const AdminVaultSupportDetailBillingRecordsItemCurrency = {
+  usd: 'usd',
+} as const;
+
+export type AdminVaultSupportDetailBillingRecordsItemStatus = typeof AdminVaultSupportDetailBillingRecordsItemStatus[keyof typeof AdminVaultSupportDetailBillingRecordsItemStatus];
+
+
+export const AdminVaultSupportDetailBillingRecordsItemStatus = {
+  pending: 'pending',
+  paid: 'paid',
+  failed: 'failed',
+  expired: 'expired',
+  refunded: 'refunded',
+  disputed: 'disputed',
+  comped: 'comped',
+} as const;
+
+export type AdminVaultSupportDetailBillingRecordsItemSource = typeof AdminVaultSupportDetailBillingRecordsItemSource[keyof typeof AdminVaultSupportDetailBillingRecordsItemSource];
+
+
+export const AdminVaultSupportDetailBillingRecordsItemSource = {
+  stripe: 'stripe',
+  gift: 'gift',
+  comp: 'comp',
+} as const;
+
+export type AdminVaultSupportDetailBillingRecordsItem = {
+  id: string;
+  /** @nullable */
+  vaultId: string | null;
+  /** @nullable */
+  operatorId: string | null;
+  targetTier: AdminVaultSupportDetailBillingRecordsItemTargetTier;
+  amountCents: number;
+  currency: AdminVaultSupportDetailBillingRecordsItemCurrency;
+  status: AdminVaultSupportDetailBillingRecordsItemStatus;
+  source: AdminVaultSupportDetailBillingRecordsItemSource;
+  /** @nullable */
+  stripeRefundId?: string | null;
+  /** @nullable */
+  refundRequestId?: string | null;
+  /** @nullable */
+  refundAttemptStatus?: string | null;
+  createdAt: string;
+};
+
+/**
+ * @nullable
+ */
+export type AdminVaultSupportDetailOverageEventsItemOutcome = typeof AdminVaultSupportDetailOverageEventsItemOutcome[keyof typeof AdminVaultSupportDetailOverageEventsItemOutcome] | null;
+
+
+export const AdminVaultSupportDetailOverageEventsItemOutcome = {
+  upgraded: 'upgraded',
+  declined: 'declined',
+} as const;
+
+export type AdminVaultSupportDetailOverageEventsItem = {
+  id: string;
+  vaultId: string;
+  guestCap: number;
+  submissionCount: number;
+  createdAt: string;
+  /** @nullable */
+  resolvedAt: string | null;
+  /** @nullable */
+  outcome: AdminVaultSupportDetailOverageEventsItemOutcome;
+};
+
+export type AdminVaultSupportDetailEmailDeliveriesItemStatus = typeof AdminVaultSupportDetailEmailDeliveriesItemStatus[keyof typeof AdminVaultSupportDetailEmailDeliveriesItemStatus];
+
+
+export const AdminVaultSupportDetailEmailDeliveriesItemStatus = {
+  queued: 'queued',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  suppressed: 'suppressed',
+} as const;
+
+export type AdminVaultSupportDetailEmailDeliveriesItem = {
+  id: string;
+  dedupeKey: string;
+  eventType: string;
+  recipientEmail: string;
+  status: AdminVaultSupportDetailEmailDeliveriesItemStatus;
+  attempts: number;
+  /** @nullable */
+  providerId: string | null;
+  /** @nullable */
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  sentAt: string | null;
+};
+
+export type AdminVaultDetailRevealSlotsItemKind = typeof AdminVaultDetailRevealSlotsItemKind[keyof typeof AdminVaultDetailRevealSlotsItemKind];
+
+
+export const AdminVaultDetailRevealSlotsItemKind = {
+  scheduled: 'scheduled',
+  milestone: 'milestone',
+} as const;
+
+export type AdminVaultDetailScopePreviewsItemScope = typeof AdminVaultDetailScopePreviewsItemScope[keyof typeof AdminVaultDetailScopePreviewsItemScope];
+
+
+export const AdminVaultDetailScopePreviewsItemScope = {
+  reveal_slot: 'reveal_slot',
+  milestone: 'milestone',
+  entire_vault: 'entire_vault',
+} as const;
+
+export type AdminVaultDetailVault = {
+  id: string;
+  name: string;
+  status: string;
+  planTier: string;
+  createdAt: string;
+  /** @nullable */
+  sealedAt: string | null;
+  operatorName: string;
+  vaultTypeName: string;
+};
+
+export type AdminVaultDetailTotals = {
+  guestCount: number;
+  predictionCount: number;
+  answerCount: number;
+};
+
+export type AdminVaultDetailRevealSlotsItem = {
+  id: string;
+  kind: AdminVaultDetailRevealSlotsItemKind;
+  label: string;
+  revealDate: string;
+};
+
+export type AdminVaultDetailScopePreviewsItem = {
+  scope: AdminVaultDetailScopePreviewsItemScope;
+  /** @nullable */
+  revealSlotId: string | null;
+  label: string;
+  answerCount: number;
+  predictionCount: number;
+  guestCount: number;
+  overrideAnswerCount: number;
+  resealAvailable: boolean;
+};
+
+export interface AdminVaultDetail {
+  vault: AdminVaultDetailVault;
+  totals: AdminVaultDetailTotals;
+  /** Count of answers currently readable through the canonical unlocked-answer policy. */
+  unlockedAnswerCount: number;
+  revealSlots: AdminVaultDetailRevealSlotsItem[];
+  /** Exact mutation scopes and counts; reseal availability is derived from answer override metadata. */
+  scopePreviews: AdminVaultDetailScopePreviewsItem[];
+}
+
+export interface AdminVaultSupportDetail {
+  vault: AdminVaultDetail;
+  billingRecords: AdminVaultSupportDetailBillingRecordsItem[];
+  overageEvents: AdminVaultSupportDetailOverageEventsItem[];
+  emailDeliveries: AdminVaultSupportDetailEmailDeliveriesItem[];
+}
+
+export type AdminVaultListVaultsItem = {
+  id: string;
+  name: string;
+  status: string;
+  planTier: string;
+  createdAt: string;
+  /** @nullable */
+  sealedAt: string | null;
+  operatorName: string;
+  vaultTypeName: string;
+};
+
+export interface AdminVaultList {
+  vaults: AdminVaultListVaultsItem[];
+}
+
+export type ManualVaultActionInputScope = typeof ManualVaultActionInputScope[keyof typeof ManualVaultActionInputScope];
+
+
+export const ManualVaultActionInputScope = {
+  reveal_slot: 'reveal_slot',
+  milestone: 'milestone',
+  entire_vault: 'entire_vault',
+} as const;
+
+export type ManualVaultActionInput = SensitiveReasonInput & {
+  scope: ManualVaultActionInputScope;
+  revealSlotId?: string;
+  /** @minLength 1 */
+  confirmation: string;
+  sendEmails?: boolean;
+};
+
+export type AdminFullExportInputConfirmation = typeof AdminFullExportInputConfirmation[keyof typeof AdminFullExportInputConfirmation];
+
+
+export const AdminFullExportInputConfirmation = {
+  EXPORT_SEALED_DATA: 'EXPORT SEALED DATA',
+} as const;
+
+export type AdminFullExportInput = SensitiveReasonInput & {
+  confirmation: AdminFullExportInputConfirmation;
+};
+
+export type AdminDeletionInput = SensitiveReasonInput & {
+  /** @minLength 1 */
+  confirmation: string;
+};
+
+export type ManualVaultActionResultScope = typeof ManualVaultActionResultScope[keyof typeof ManualVaultActionResultScope];
+
+
+export const ManualVaultActionResultScope = {
+  reveal_slot: 'reveal_slot',
+  milestone: 'milestone',
+  entire_vault: 'entire_vault',
+} as const;
+
+export interface ManualVaultActionResult {
+  scope: ManualVaultActionResultScope;
+  /** @nullable */
+  revealSlotId: string | null;
+  answerCount: number;
+  predictionCount: number;
+  guestCount: number;
+  emailsQueued?: boolean;
+}
+
+export type AdminAuditListEventsItemDetails = { [key: string]: unknown };
+
+export type AdminAuditListEventsItem = {
+  id: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  reason: string;
+  details: AdminAuditListEventsItemDetails;
+  occurredAt: string;
+  adminName: string;
+};
+
+export interface AdminAuditList {
+  events: AdminAuditListEventsItem[];
+}
+
 export type GiftResendInput = SensitiveReasonInput & {
   requestId: string;
 };
@@ -183,6 +879,8 @@ export interface AdminBillingActionResult {
   vaultId: string;
   status: AdminBillingActionResultStatus;
   currentTier: AdminBillingActionResultCurrentTier;
+  requestId?: string;
+  refundAttemptStatus?: string;
 }
 
 export type AdminBillingListRecordsItemTargetTier = typeof AdminBillingListRecordsItemTargetTier[keyof typeof AdminBillingListRecordsItemTargetTier];
@@ -237,6 +935,10 @@ export type AdminBillingListRecordsItem = {
   source: AdminBillingListRecordsItemSource;
   /** @nullable */
   stripeRefundId?: string | null;
+  /** @nullable */
+  refundRequestId?: string | null;
+  /** @nullable */
+  refundAttemptStatus?: string | null;
   createdAt: string;
 };
 
@@ -311,6 +1013,10 @@ export type AdminGiftListGiftsItem = {
   stripeRefundId: string | null;
   /** @nullable */
   stripePaymentIntentId: string | null;
+  /** @nullable */
+  refundRequestId: string | null;
+  /** @nullable */
+  refundAttemptStatus: string | null;
   refundableNow: boolean;
   /** @nullable */
   latestDeliveryStatus: AdminGiftListGiftsItemLatestDeliveryStatus;
@@ -379,6 +1085,9 @@ export interface AdminEmailDelivery {
 
 export interface AdminEmailDeliveryList {
   deliveries: AdminEmailDelivery[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export type EmailRetryResultStatus = typeof EmailRetryResultStatus[keyof typeof EmailRetryResultStatus];
@@ -416,6 +1125,8 @@ export interface GiftRefundResult {
   giftId: string;
   status: GiftRefundResultStatus;
   stripeRefundId: string;
+  requestId: string;
+  refundAttemptStatus: string;
 }
 
 export type BillingAttemptFromTier = typeof BillingAttemptFromTier[keyof typeof BillingAttemptFromTier];
@@ -1051,4 +1762,109 @@ export type UnsubscribeGuestEmailParams = {
  */
 token: string;
 };
+
+export type GetAdminRevenueReportParams = {
+from: string;
+to: string;
+source?: GetAdminRevenueReportSource;
+tier?: string;
+status?: string;
+};
+
+export type GetAdminRevenueReportSource = typeof GetAdminRevenueReportSource[keyof typeof GetAdminRevenueReportSource];
+
+
+export const GetAdminRevenueReportSource = {
+  stripe: 'stripe',
+  gift: 'gift',
+  comp: 'comp',
+} as const;
+
+export type ListAdminOperatorsParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+};
+
+export type GetAdminOperatorParams = {
+/**
+ * @minimum 1
+ * @maximum 100
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+};
+
+export type ListAdminEmailDeliveriesParams = {
+status?: ListAdminEmailDeliveriesStatus;
+/**
+ * @maxLength 100
+ */
+eventType?: string;
+/**
+ * @maxLength 100
+ */
+q?: string;
+/**
+ * @minimum 1
+ * @maximum 250
+ */
+limit?: number;
+/**
+ * @minimum 0
+ */
+offset?: number;
+};
+
+export type ListAdminEmailDeliveriesStatus = typeof ListAdminEmailDeliveriesStatus[keyof typeof ListAdminEmailDeliveriesStatus];
+
+
+export const ListAdminEmailDeliveriesStatus = {
+  queued: 'queued',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  suppressed: 'suppressed',
+} as const;
+
+export type ListAdminVaultsParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+};
+
+export type ListAdminContentParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+};
+
+export type ListAdminAuditEventsParams = {
+action?: string;
+admin?: string;
+target?: string;
+};
+
+export type GetAdminVaultDeletionPreview200 = { [key: string]: unknown };
+
+export type DeleteAdminVault200 = { [key: string]: unknown };
+
+export type GetAdminAccountDeletionPreview200 = { [key: string]: unknown };
+
+export type DeleteAdminAccount200 = { [key: string]: unknown };
 

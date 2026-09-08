@@ -7,7 +7,7 @@ import {
   GetOperatorVaultBillingStatusParams,
   GetOperatorVaultBillingStatusResponse,
 } from "@workspace/api-zod";
-import { billingRecordsTable, db, vaultsTable } from "@workspace/db";
+import { billingRecordsTable, db, findUnresolvedRefundReservation, vaultsTable } from "@workspace/db";
 import { findStripePrice, getStripeClient, TIER_ORDER, VALID_PRICE_TRANSITIONS, type PaidTier } from "../lib/stripe";
 import { requireOperator } from "../middlewares/auth";
 import { getTrustedAppUrl } from "../lib/app-url";
@@ -132,6 +132,8 @@ billingRouter.post("/operator/vaults/:vaultId/checkout", requireOperator, async 
         eq(vaultsTable.operatorId, req.account!.id),
       )).limit(1).for("update");
       if (!lockedVault) return { kind: "missing" as const };
+      const refundReservation = await findUnresolvedRefundReservation(tx, { vaultId: lockedVault.id });
+      if (refundReservation) return { kind: "refund-reserved" as const };
       const [pending] = await tx.select()
         .from(billingRecordsTable)
         .where(and(
@@ -168,6 +170,10 @@ billingRouter.post("/operator/vaults/:vaultId/checkout", requireOperator, async 
     }
     if (attempt.kind === "pending-other-tier") {
       res.status(409).json({ error: "A Checkout attempt for another tier is already pending for this vault." });
+      return;
+    }
+    if (attempt.kind === "refund-reserved") {
+      res.status(409).json({ error: "A refund is in progress for this vault." });
       return;
     }
     const { billingRecord } = attempt;

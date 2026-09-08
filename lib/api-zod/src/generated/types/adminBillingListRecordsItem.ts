@@ -23,5 +23,9 @@ export type AdminBillingListRecordsItem = {
   source: AdminBillingListRecordsItemSource;
   /** @nullable */
   stripeRefundId?: string | null;
+  /** @nullable */
+  refundRequestId?: string | null;
+  /** @nullable */
+  refundAttemptStatus?: string | null;
   createdAt: Date;
 };

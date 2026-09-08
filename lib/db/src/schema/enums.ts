@@ -71,4 +71,6 @@ export const auditActionEnum = pgEnum("audit_action", [
   "admin_full_export",
   "email_retry",
   "gift_resend",
+  "content_mutation",
+  "content_import",
 ]);

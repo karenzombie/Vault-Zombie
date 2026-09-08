@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { ClerkProvider, RedirectToSignIn, useAuth } from '@clerk/react';
+import { getGetAdminDashboardQueryKey, useGetAdminDashboard } from '@workspace/api-client-react';
 
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/public/landing';
@@ -60,7 +61,21 @@ const AuthenticatedRevealReport = requireOperator(RevealReportPage);
 const AuthenticatedQuestionReport = requireOperator(QuestionReportPage);
 const AuthenticatedGuestReport = requireOperator(GuestPersonalReportPage);
 const AuthenticatedGiftRedeem = requireOperator(GiftRedeemPage);
-const AuthenticatedAdmin = requireOperator(AdminPage);
+function MissingAdminConfiguration() {
+  return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">Administrator access is unavailable because authentication is not configured.</div>;
+}
+
+function AuthenticatedAdminRoute() {
+  const { isLoaded, isSignedIn } = useAuth();
+  const dashboard = useGetAdminDashboard({ query: { enabled: isLoaded && isSignedIn, retry: false, queryKey: getGetAdminDashboardQueryKey() } });
+  if (!isLoaded) return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Checking your session…</div>;
+  if (!isSignedIn) return <RedirectToSignIn />;
+  if (dashboard.isLoading) return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Verifying administrator access…</div>;
+  if (dashboard.isError) return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">403 — Administrator access is required. Complete MFA and retry if your session is stale.</div>;
+  return <AdminPage />;
+}
+
+const AuthenticatedAdmin = PUBLISHABLE_KEY ? AuthenticatedAdminRoute : MissingAdminConfiguration;
 
 function Router() {
   return (
@@ -94,7 +109,11 @@ function Router() {
         <Route path="/operator" component={AuthenticatedOperator} />
         <Route path="/operator/gifts/redeem" component={AuthenticatedGiftRedeem} />
 
+        {/* Admin Routes */}
         <Route path="/admin" component={AuthenticatedAdmin} />
+        <Route path="/admin/:tab" component={AuthenticatedAdmin} />
+        <Route path="/admin/:tab/:id" component={AuthenticatedAdmin} />
+
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
         <Route component={NotFound} />

@@ -125,7 +125,16 @@ export async function requireAdmin(
     }
 
     const secondFactorAge = req.factorVerificationAge?.[1];
-    if (!clerkUser.twoFactorEnabled || secondFactorAge == null || secondFactorAge < 0) {
+    // Clerk's backend Session resource exposes factor age but not the strategy
+    // that produced it. Require TOTP enrollment and reject accounts with a
+    // configured phone number so SMS cannot satisfy the generic age claim.
+    // Backup codes remain allowed as the owner's recovery factor.
+    if (
+      !clerkUser.totpEnabled ||
+      clerkUser.phoneNumbers.length > 0 ||
+      secondFactorAge == null ||
+      secondFactorAge < 0
+    ) {
       return forbidden(
         res,
         "ADMIN_TOTP_REQUIRED",
@@ -149,11 +158,18 @@ export function requireFreshMfa(
     secondFactorAge < 0 ||
     secondFactorAge > FRESH_MFA_LIMIT_MINUTES
   ) {
-    return forbidden(
-      res,
-      "FRESH_MFA_REQUIRED",
-      "Verify with your authenticator app to continue.",
-    );
+    return res.status(403).json({
+      clerk_error: {
+        type: "forbidden",
+        reason: "reverification-error",
+        metadata: {
+          reverification: {
+            level: "second_factor",
+            afterMinutes: FRESH_MFA_LIMIT_MINUTES,
+          },
+        },
+      },
+    });
   }
   return next();
 }

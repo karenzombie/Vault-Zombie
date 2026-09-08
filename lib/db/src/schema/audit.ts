@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   index,
   jsonb,
@@ -5,6 +6,7 @@ import {
   text,
   timestamp,
   uuid,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -38,6 +40,9 @@ export const auditEventsTable = pgTable(
     index("audit_events_actor_idx").on(table.actorAccountId),
     index("audit_events_target_idx").on(table.targetType, table.targetId),
     index("audit_events_occurred_idx").on(table.occurredAt),
+    uniqueIndex("audit_events_one_completed_refund_target_unique")
+      .on(table.targetType, table.targetId)
+      .where(sql`${table.action} = 'refund'`),
   ],
 );
 

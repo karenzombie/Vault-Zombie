@@ -327,7 +327,13 @@ export async function customFetch<T = unknown>(
   options: CustomFetchOptions = {},
 ): Promise<T> {
   input = applyBaseUrl(input);
-  const { responseType = "auto", headers: headersInit, ...init } = options;
+  const requestUrl = resolveUrl(input);
+  // Orval correctly emits Blob return types for OpenAPI binary responses but
+  // does not pass a responseType to custom mutators. Keep binary parsing here
+  // so regeneration cannot silently turn CSV attachments into text.
+  const generatedBinaryDownload = requestUrl.endsWith("/admin/full-export") ||
+    requestUrl.endsWith("/unlocked-export");
+  const { responseType = generatedBinaryDownload ? "blob" : "auto", headers: headersInit, ...init } = options;
 
   const method = resolveMethod(input, init.method);
 

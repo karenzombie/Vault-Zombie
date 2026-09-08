@@ -29,6 +29,7 @@ export const billingRecordsTable = pgTable(
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     stripeChargeId: text("stripe_charge_id"),
     stripeRefundId: text("stripe_refund_id"),
+    appliedAt: timestamp("applied_at", { withTimezone: true }),
     source: text("source").notNull().default("stripe"),
     giftCode: text("gift_code"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -60,6 +61,34 @@ export const stripeWebhookEventsTable = pgTable(
     index("stripe_webhook_events_billing_idx").on(table.billingRecordId),
   ],
 );
+
+/** Durable boundary between a fresh-MFA refund request and Stripe reconciliation. */
+export const refundAttemptsTable = pgTable("refund_attempts", {
+  id: uuid("id").primaryKey(),
+  targetType: text("target_type").notNull(),
+  billingRecordId: uuid("billing_record_id").references(() => billingRecordsTable.id),
+  giftId: uuid("gift_id").references(() => giftsTable.id),
+  actorAccountId: uuid("actor_account_id").notNull().references(() => accountsTable.id),
+  reason: text("reason").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  status: text("status").notNull().default("pending"),
+  stripeRefundId: text("stripe_refund_id"),
+  stripeStatus: text("stripe_status"),
+  lastError: text("last_error"),
+  attemptedAt: timestamp("attempted_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+}, (table) => [
+  uniqueIndex("refund_attempts_idempotency_unique").on(table.idempotencyKey),
+  uniqueIndex("refund_attempts_billing_unresolved_unique")
+    .on(table.billingRecordId)
+    .where(sql`${table.status} in ('reserved', 'stripe_pending', 'unknown') and ${table.billingRecordId} is not null`),
+  uniqueIndex("refund_attempts_gift_unresolved_unique")
+    .on(table.giftId)
+    .where(sql`${table.status} in ('reserved', 'stripe_pending', 'unknown') and ${table.giftId} is not null`),
+  index("refund_attempts_status_idx").on(table.status),
+]);
 
 export const billingRecordRelations = relations(billingRecordsTable, ({ one, many }) => ({
   vault: one(vaultsTable, { fields: [billingRecordsTable.vaultId], references: [vaultsTable.id] }),

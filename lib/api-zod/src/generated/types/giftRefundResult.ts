@@ -11,4 +11,6 @@ export interface GiftRefundResult {
   giftId: string;
   status: GiftRefundResultStatus;
   stripeRefundId: string;
+  requestId: string;
+  refundAttemptStatus: string;
 }
