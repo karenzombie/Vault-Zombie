@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VaultZombie Style Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&family=Tilt+Warp&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    /* Foundation */
+    --ink:        #1C1B19;
+    --parchment:  #F6F4F0;
+    --white:      #FFFFFF;
+    --text-2:     #55514A;
+    --gray:       #8A857C;
+    --hairline:   #E4DED4;
+
+    /* Accent */
+    --bronze:     #8A6D3B;
+    --brass:      #C9A96A;
+    --brass-lt:   #E7D6B4;
+    --bronze-wash:#F0E9DC;
+
+    /* Type */
+    --display: "Tilt Warp", system-ui, sans-serif;
+    --body: "Afacad Flux", ui-sans-serif, -apple-system, sans-serif;
+
+    /* Radius */
+    --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 14px; --r-pill: 999px;
+  }
+
+  body {
+    font-family: var(--body);
+    background: var(--parchment);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 20px 80px;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; }
+
+  /* Section scaffolding */
+  section { margin-bottom: 40px; }
+  .sec-label {
+    font-family: var(--body);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--bronze); margin-bottom: 16px;
+  }
+  .panel {
+    background: var(--white);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-xl);
+    padding: 24px;
+  }
+  .panel + .panel { margin-top: 16px; }
+  .desc { font-size: 15px; color: var(--text-2); max-width: 62ch; margin-bottom: 4px; }
+
+  /* ---------- Masthead ---------- */
+  .mast {
+    background: var(--ink);
+    border-radius: var(--r-xl);
+    padding: 48px 28px 40px;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .mast .wordmark {
+    font-family: var(--display);
+    font-size: 52px; line-height: 1; letter-spacing: -0.01em;
+    color: var(--parchment);
+  }
+  .mast .wordmark .z { color: var(--brass); }
+  .mast .tagline {
+    font-family: var(--body); font-weight: 400;
+    color: var(--brass); opacity: 0.85; margin-top: 16px; font-size: 15px;
+    letter-spacing: 0.02em;
+  }
+  .mast .meta {
+    font-family: var(--body); font-size: 12px; color: var(--gray);
+    margin-top: 20px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  /* ---------- Color ---------- */
+  .swatch-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .swatch {
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .swatch .chip { height: 64px; }
+  .swatch .info { padding: 10px 12px; }
+  .swatch .nm { font-size: 14px; font-weight: 600; }
+  .swatch .hx { font-size: 12px; color: var(--gray); font-variant-numeric: tabular-nums; }
+  .swatch .role { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+  /* ---------- Typography ---------- */
+  .type-row { padding: 16px 0; border-top: 1px solid var(--hairline); }
+  .type-row:first-child { border-top: none; padding-top: 0; }
+  .type-row .tag { font-size: 12px; color: var(--gray); margin-bottom: 6px; }
+  .type-row .tag b { color: var(--text-2); font-weight: 600; }
+  .d-xl { font-family: var(--display); font-size: 40px; line-height: 1.02; color: var(--ink); }
+  .d-lg { font-family: var(--display); font-size: 28px; line-height: 1.08; color: var(--ink); }
+  .h1 { font-family: var(--body); font-weight: 700; font-size: 28px; letter-spacing: -0.01em; }
+  .h2 { font-family: var(--body); font-weight: 600; font-size: 21px; }
+  .h3 { font-family: var(--body); font-weight: 600; font-size: 17px; }
+  .bd { font-family: var(--body); font-weight: 400; font-size: 16px; max-width: 60ch; }
+  .sm { font-family: var(--body); font-weight: 400; font-size: 13px; color: var(--text-2); }
+
+  /* ---------- Spacing ---------- */
+  .space-row { display: flex; align-items: center; gap: 14px; padding: 7px 0; }
+  .space-row .bar { background: var(--bronze); height: 14px; border-radius: 3px; }
+  .space-row .val { font-size: 13px; color: var(--text-2); font-variant-numeric: tabular-nums; width: 96px; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    font-family: var(--body); font-weight: 600; font-size: 15px;
+    padding: 11px 20px; border-radius: var(--r-md); border: none;
+    cursor: pointer; transition: background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .btn-primary { background: var(--ink); color: var(--brass-lt); }
+  .btn-primary:hover { background: #2C2A26; }
+  .btn-secondary { background: transparent; color: var(--bronze); border: 1px solid #D8C9A9; }
+  .btn-secondary:hover { background: var(--bronze-wash); }
+  .btn-disabled { background: var(--hairline); color: var(--gray); cursor: not-allowed; }
+  .btn-line { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn-note { font-size: 12px; color: var(--gray); margin-top: 12px; }
+
+  /* ---------- Components ---------- */
+  .eyebrow {
+    font-family: var(--body); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    display: inline-block; padding: 3px 9px; border-radius: var(--r-pill);
+    background: var(--ink); color: var(--brass);
+  }
+  .vault-card {
+    background: var(--parchment);
+    border: 1px solid var(--hairline);
+    border-radius: var(--r-lg);
+    padding: 22px;
+  }
+  .vault-card .vt { font-family: var(--display); font-size: 24px; line-height: 1.1; color: var(--ink); margin: 12px 0 6px; }
+  .vault-card .vd { font-size: 14px; color: var(--text-2); margin-bottom: 16px; }
+  .prompt-chip {
+    font-size: 14px; font-weight: 500; color: var(--text-2);
+    background: var(--bronze-wash); padding: 12px 14px; border-radius: var(--r-md);
+    margin-top: 8px;
+  }
+
+  /* ---------- Do / Don't ---------- */
+  .rules { display: grid; gap: 10px; }
+  .rule { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+  .rule .mk { font-weight: 700; flex-shrink: 0; width: 18px; }
+  .rule.do .mk { color: #4E7A46; }
+  .rule.dont .mk { color: #A24B3A; }
+  .rule .txt { color: var(--text-2); }
+  .rule .txt b { color: var(--ink); font-weight: 600; }
+
+  .footer { text-align: center; font-size: 12px; color: var(--gray); margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- MASTHEAD -->
+  <div class="mast">
+    <div class="wordmark">Vault<span class="z">Zombie</span></div>
+    <div class="tagline">Sealed predictions, unlocked over time.</div>
+    <div class="meta">Style guide · v1</div>
+  </div>
+
+  <!-- COLOR -->
+  <section>
+    <div class="sec-label">Color</div>
+    <div class="panel">
+      <p class="desc" style="margin-bottom:18px;">Foundation carries the interface. Bronze and brass are accents only, saved for interactive elements and highlights.</p>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="chip" style="background:#1C1B19;"></div><div class="info"><div class="nm">Ink</div><div class="hx">#1C1B19</div><div class="role">Primary text, dark surfaces</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#55514A;"></div><div class="info"><div class="nm">Text 2</div><div class="hx">#55514A</div><div class="role">Secondary text</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#8A857C;"></div><div class="info"><div class="nm">Gray</div><div class="hx">#8A857C</div><div class="role">Muted labels, meta</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#E4DED4;"></div><div class="info"><div class="nm">Hairline</div><div class="hx">#E4DED4</div><div class="role">Borders, dividers</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#F6F4F0;border-bottom:1px solid #E4DED4;"></div><div class="info"><div class="nm">Parchment</div><div class="hx">#F6F4F0</div><div class="role">Page background</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#FFFFFF;border-bottom:1px solid #E4DED4;"></div><div class="info"><div class="nm">White</div><div class="hx">#FFFFFF</div><div class="role">Card surface</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#8A6D3B;"></div><div class="info"><div class="nm">Bronze</div><div class="hx">#8A6D3B</div><div class="role">Accent, secondary buttons, links</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#C9A96A;"></div><div class="info"><div class="nm">Brass</div><div class="hx">#C9A96A</div><div class="role">Highlights, accent on dark</div></div></div>
+      </div>
+      <p class="sm" style="margin-top:16px;">Contrast note: keep body text in Ink or Text 2. Bronze is safe for large text, icons, and borders, but sits below AA for small body copy on white, so avoid it for paragraphs.</p>
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHY -->
+  <section>
+    <div class="sec-label">Typography</div>
+    <div class="panel">
+      <p class="desc" style="margin-bottom:8px;"><b style="color:var(--ink);">Tilt Warp</b> is display only: the wordmark, hero lines, and reveal moments. <b style="color:var(--ink);">Afacad Flux</b> (variable, 100 to 1000) carries everything functional.</p>
+    </div>
+    <div class="panel">
+      <div class="type-row"><div class="tag"><b>Display XL</b> · Tilt Warp · reveal moments</div><div class="d-xl">You called it.</div></div>
+      <div class="type-row"><div class="tag"><b>Display L</b> · Tilt Warp · card titles</div><div class="d-lg">Marriage Vault</div></div>
+      <div class="type-row"><div class="tag"><b>Heading 1</b> · Afacad Flux 700</div><div class="h1">Your vault unlocks in 6 months</div></div>
+      <div class="type-row"><div class="tag"><b>Heading 2</b> · Afacad Flux 600</div><div class="h2">Careers &amp; Money</div></div>
+      <div class="type-row"><div class="tag"><b>Heading 3</b> · Afacad Flux 600</div><div class="h3">Who will out-earn who?</div></div>
+      <div class="type-row"><div class="tag"><b>Body</b> · Afacad Flux 400</div><div class="bd">Guests seal a prediction in under a minute. Every six months a fresh batch unlocks, and the couple marks who called it.</div></div>
+      <div class="type-row"><div class="tag"><b>Small</b> · Afacad Flux 400</div><div class="sm">12 predictions sealed · 4 guests waiting</div></div>
+    </div>
+  </section>
+
+  <!-- SPACING -->
+  <section>
+    <div class="sec-label">Spacing &amp; radius</div>
+    <div class="panel">
+      <p class="desc" style="margin-bottom:14px;">4px base scale. Use these steps for padding and gaps so rhythm stays consistent.</p>
+      <div class="space-row"><span class="val">4 · xs</span><span class="bar" style="width:4px;"></span></div>
+      <div class="space-row"><span class="val">8 · sm</span><span class="bar" style="width:8px;"></span></div>
+      <div class="space-row"><span class="val">12 · md</span><span class="bar" style="width:12px;"></span></div>
+      <div class="space-row"><span class="val">16 · lg</span><span class="bar" style="width:16px;"></span></div>
+      <div class="space-row"><span class="val">24 · xl</span><span class="bar" style="width:24px;"></span></div>
+      <div class="space-row"><span class="val">32 · 2xl</span><span class="bar" style="width:32px;"></span></div>
+      <div class="space-row"><span class="val">48 · 3xl</span><span class="bar" style="width:48px;"></span></div>
+      <p class="sm" style="margin-top:14px;">Radius: 6 (chips) · 8 (buttons, inputs) · 12 (cards) · 14 (panels) · pill (tags).</p>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section>
+    <div class="sec-label">Buttons</div>
+    <div class="panel">
+      <div class="btn-line">
+        <button class="btn btn-primary">Open vault</button>
+        <button class="btn btn-secondary">Share</button>
+        <button class="btn btn-disabled" disabled>Sealed</button>
+      </div>
+      <p class="btn-note">Primary: Ink fill, brass label, for the main action. Secondary: bronze outline, for supporting actions. Disabled: hairline fill. Hover states are built in (tap or hover to see them).</p>
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section>
+    <div class="sec-label">Components</div>
+    <div class="panel">
+      <div class="vault-card">
+        <span class="eyebrow">Sealed</span>
+        <div class="vt">Marriage Vault</div>
+        <div class="vd">12 predictions locked. Next drop in 6 months.</div>
+        <div class="btn-line">
+          <button class="btn btn-primary">Open vault</button>
+          <button class="btn btn-secondary">Share</button>
+        </div>
+        <div class="prompt-chip">How many cities will they live in before year 5?</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USAGE -->
+  <section>
+    <div class="sec-label">Usage rules</div>
+    <div class="panel">
+      <div class="rules">
+        <div class="rule do"><span class="mk">✓</span><span class="txt"><b>Save Tilt Warp for moments.</b> Wordmark, hero, and the reveal. Never a functional heading or anything guests read fast.</span></div>
+        <div class="rule do"><span class="mk">✓</span><span class="txt"><b>Let the foundation lead.</b> Most of any screen is Ink text on Parchment or White. Accents stay rare.</span></div>
+        <div class="rule do"><span class="mk">✓</span><span class="txt"><b>One primary action per view.</b> A single Ink button, everything else secondary.</span></div>
+        <div class="rule dont"><span class="mk">✕</span><span class="txt"><b>Don't set body copy in bronze.</b> It reads as accent and fails contrast at small sizes.</span></div>
+        <div class="rule dont"><span class="mk">✕</span><span class="txt"><b>Don't stack Tilt Warp lines.</b> Two warped headings together get noisy and hurt legibility.</span></div>
+        <div class="rule dont"><span class="mk">✕</span><span class="txt"><b>Don't mix in cool grays.</b> Keep neutrals warm so they sit with the parchment and bronze.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">VaultZombie · Ink &amp; Bronze · Tilt Warp + Afacad Flux</div>
+
+</div>
+</body>
+</html>

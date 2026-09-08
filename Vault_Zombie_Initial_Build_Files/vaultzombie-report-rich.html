@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VaultZombie Report Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&family=Tilt+Warp&display=swap" rel="stylesheet">
+<style>
+  /* Reference implementation of VaultZombie-Report-Design-Guide.md.
+     Every component in section 5 of the guide appears below, assembled into one
+     vault results summary. Base tokens come from vaultzombie-style-guide.html.
+     No charting library. No shadows. Plain SVG and CSS only. */
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --ink:#1C1B19; --parchment:#F6F4F0; --white:#FFFFFF; --text-2:#55514A; --gray:#8A857C; --hairline:#E4DED4;
+    --bronze:#8A6D3B; --brass:#C9A96A; --brass-lt:#E7D6B4; --bronze-wash:#F0E9DC;
+    --success:#4E7A46; --success-wash:#E7EFE4;
+    --error:#A24B3A; --error-wash:#F2E3DF;
+    --sortof:#8A6D3B; --sortof-wash:#F0E9DC;
+    --vault-accent:var(--bronze);
+    --display:"Tilt Warp",system-ui,sans-serif;
+    --body:"Afacad Flux",ui-sans-serif,-apple-system,sans-serif;
+    --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:14px; --r-pill:999px;
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px; --s7:48px;
+  }
+  body { font-family:var(--body); background:var(--parchment); color:var(--ink); line-height:1.5; -webkit-font-smoothing:antialiased; padding:var(--s6) var(--s4) 80px; }
+  .wrap { max-width:680px; margin:0 auto; }
+  a { color:var(--bronze); }
+  :focus-visible { outline:2px solid var(--bronze); outline-offset:2px; border-radius:var(--r-sm); }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+
+  /* icons and medallions (guide 4) */
+  .ic { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .med { width:40px; height:40px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .med.bronze { background:var(--bronze-wash); color:var(--vault-accent); }
+  .med.brass  { background:var(--brass-lt); color:var(--bronze); }
+  .med.green  { background:var(--success-wash); color:var(--success); }
+  .med.rust   { background:var(--error-wash); color:var(--error); }
+  .med.ink    { background:var(--ink); color:var(--brass); }
+  .oc { width:22px; height:22px; flex-shrink:0; vertical-align:middle; }
+
+  /* masthead */
+  .mast { background:var(--ink); color:var(--parchment); border-radius:var(--r-xl); padding:var(--s7) var(--s5) var(--s6); text-align:center; margin-bottom:var(--s5); }
+  .mast .wm { font-family:var(--display); font-size:20px; letter-spacing:-.01em; color:var(--parchment); }
+  .mast .wm .z { color:var(--brass); }
+  .mast .seal { margin:var(--s5) auto var(--s4); display:block; }
+  .mast .eyebrow { font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--brass); }
+  .mast h1 { font-family:var(--display); font-size:40px; line-height:1.02; margin-top:var(--s2); color:var(--parchment); }
+  .mast .sub { margin-top:var(--s3); font-size:15px; color:var(--brass-lt); opacity:.9; }
+
+  /* panels and section headers (guide 5.1) */
+  .panel { background:var(--white); border:1px solid var(--hairline); border-radius:var(--r-xl); padding:var(--s5); margin-bottom:var(--s4); }
+  .sec { display:flex; align-items:center; gap:var(--s3); margin-bottom:var(--s4); }
+  .sec .h { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--bronze); }
+  .sec .s { font-size:15px; color:var(--text-2); }
+
+  /* stat callouts (guide 5.2) */
+  .callouts { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--s3); }
+  .callout { display:flex; align-items:center; gap:var(--s3); background:var(--parchment); border:1px solid var(--hairline); border-radius:var(--r-lg); padding:var(--s4); }
+  .callout .n { font-family:var(--display); font-size:28px; line-height:1; color:var(--ink); }
+  .callout .l { font-size:13px; color:var(--gray); margin-top:var(--s1); }
+  .callout .l b { color:var(--text-2); font-weight:600; }
+
+  /* ring gauge and breakdown (guide 5.3) */
+  .gauge { display:grid; grid-template-columns:150px 1fr; gap:var(--s5); align-items:center; }
+  .gauge > svg { width:150px; height:150px; }
+  .brk { display:flex; align-items:center; gap:var(--s3); padding:var(--s2) 0; border-top:1px solid var(--hairline); }
+  .brk:first-child { border-top:none; padding-top:0; }
+  .brk .nm { width:74px; font-size:14px; font-weight:600; }
+  .brk .track { flex:1; height:8px; background:var(--hairline); border-radius:4px; overflow:hidden; }
+  .brk .fill { height:100%; border-radius:4px; }
+  .brk .ct { width:34px; text-align:right; font-size:13px; color:var(--text-2); font-variant-numeric:tabular-nums; }
+
+  /* pictograph (guide 5.4) */
+  .picto { display:flex; flex-wrap:wrap; gap:var(--s1) var(--s2); margin-bottom:var(--s3); }
+  .person { width:20px; height:26px; display:inline-block; }
+  .person svg { width:100%; height:100%; fill:currentColor; stroke:none; }
+  .legend { display:flex; flex-wrap:wrap; gap:var(--s4); font-size:13px; color:var(--text-2); }
+  .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; background:var(--c); }
+  .caption { font-size:14px; color:var(--text-2); margin-top:var(--s3); }
+
+  /* diverging bars (guide 5.5) */
+  .dvg-row { display:grid; grid-template-columns:40px 1fr; gap:var(--s3); align-items:center; padding:var(--s2) 0; border-top:1px solid var(--hairline); }
+  .dvg-row:first-of-type { border-top:none; padding-top:0; }
+  .dvg-top { display:flex; justify-content:space-between; font-size:14px; margin-bottom:var(--s1); }
+  .dvg-name { font-weight:600; }
+  .dvg-meta { color:var(--gray); font-size:13px; }
+  .dvg-track { position:relative; display:flex; height:16px; }
+  .dvg-track::before { content:""; position:absolute; left:50%; top:-2px; bottom:-2px; width:2px; background:var(--ink); transform:translateX(-50%); }
+  .dvg-side { width:50%; display:flex; align-items:center; }
+  .dvg-side.left { justify-content:flex-end; }
+  .dvg-fill { height:100%; font-size:11px; font-weight:700; color:var(--white); display:flex; align-items:center; padding:0 6px; }
+  .dvg-fill.hit  { background:var(--success); border-radius:0 6px 6px 0; }
+  .dvg-fill.miss { background:var(--error);   border-radius:6px 0 0 6px; justify-content:flex-end; }
+  .dvg-key { display:flex; justify-content:space-between; font-size:12px; color:var(--gray); margin-top:var(--s2); }
+
+  /* timeline (guide 5.6) */
+  .timeline { position:relative; }
+  .timeline::before { content:""; position:absolute; left:23px; top:10px; bottom:26px; width:2px; background:var(--hairline); }
+  .tl-row { display:grid; grid-template-columns:48px 1fr; gap:var(--s3); padding-bottom:var(--s4); }
+  .tl-node { width:48px; height:48px; border:2px solid var(--white); position:relative; z-index:1; }
+  .tl-body { padding-top:var(--s1); }
+  .tl-top { display:flex; justify-content:space-between; font-size:14px; }
+  .tl-top b { font-weight:700; }
+  .tl-top span { color:var(--gray); font-size:13px; }
+  .tl-bar { height:6px; background:var(--hairline); border-radius:3px; margin:var(--s1) 0; overflow:hidden; }
+  .tl-bar i { display:block; height:100%; background:var(--success); border-radius:3px; }
+  .tl-note { font-size:13px; color:var(--text-2); }
+  .tl-row.locked .tl-top b, .tl-row.locked .tl-note { color:var(--gray); }
+
+  /* scoreboard (guide 5.7) */
+  .lolli { display:grid; grid-template-columns:28px 1fr; gap:var(--s3); align-items:center; padding:var(--s2) 0; border-top:1px solid var(--hairline); }
+  .lolli:first-of-type { border-top:none; padding-top:0; }
+  .lolli .rank { font-family:var(--display); font-size:16px; color:var(--gray); text-align:center; }
+  .lolli.lead .rank { color:var(--bronze); }
+  .lolli .lt { display:flex; justify-content:space-between; font-size:14px; margin-bottom:var(--s1); }
+  .lolli .nm { font-weight:600; display:inline-flex; align-items:center; gap:6px; }
+  .lolli .nm .ic { width:16px; height:16px; color:var(--brass); }
+  .lolli .v { color:var(--text-2); font-variant-numeric:tabular-nums; }
+  .lolli .track { position:relative; height:12px; }
+  .lolli .base { position:absolute; left:0; right:0; top:5px; height:2px; background:var(--hairline); }
+  .lolli .line { position:absolute; left:0; top:5px; height:2px; background:var(--bronze); }
+  .lolli.lead .line { background:var(--brass); }
+  .lolli .dot { position:absolute; top:0; width:12px; height:12px; border-radius:50%; background:var(--bronze); transform:translateX(-50%); }
+  .lolli.lead .dot { background:var(--brass); }
+  .spot { display:flex; align-items:center; gap:var(--s3); background:var(--bronze-wash); border-radius:var(--r-lg); padding:var(--s3) var(--s4); margin-top:var(--s4); font-size:14px; }
+  .spot b { color:var(--ink); }
+  .slices { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--s3); margin-top:var(--s4); }
+  .slice { border:1px solid var(--hairline); border-radius:var(--r-lg); padding:var(--s3); text-align:center; }
+  .slice .med { margin:0 auto var(--s2); width:36px; height:36px; }
+  .slice .t { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--bronze); }
+  .slice .w { font-weight:700; font-size:15px; margin-top:2px; }
+  .slice .d { font-size:12px; color:var(--gray); }
+
+  /* per-question (guide 5.8, 5.9) */
+  .q { border-top:1px solid var(--hairline); padding-top:var(--s4); margin-top:var(--s4); }
+  .q:first-of-type { border-top:none; padding-top:0; margin-top:0; }
+  .q .qt { font-weight:700; font-size:16px; }
+  .q .qm { font-size:12px; color:var(--gray); margin-top:2px; }
+  .spread { width:100%; height:auto; margin-top:var(--s2); }
+  .optbar { margin-top:var(--s2); }
+  .optbar .ot { display:flex; justify-content:space-between; font-size:14px; margin-bottom:var(--s1); }
+  .optbar .olab { display:inline-flex; align-items:center; gap:6px; }
+  .optbar .olab .ic { width:16px; height:16px; }
+  .optbar .oval { color:var(--gray); font-size:13px; }
+  .optbar .otrack { height:10px; background:var(--hairline); border-radius:5px; overflow:hidden; }
+  .optbar .ofill { height:100%; background:var(--brass-lt); border-radius:5px; }
+  .optbar.win .ofill { background:var(--success); }
+
+  /* standouts and operator note (guide 5.10) */
+  .standouts { display:grid; grid-template-columns:1fr 1fr; gap:var(--s3); }
+  .so { border:1px solid var(--hairline); border-radius:var(--r-lg); padding:var(--s4); }
+  .so .tag { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .so .tag.hit { color:var(--success); } .so .tag.miss { color:var(--error); }
+  .so .pr { font-size:15px; margin-top:var(--s2); }
+  .so .by { font-size:12px; color:var(--gray); margin-top:var(--s1); }
+  .opnote { display:flex; flex-direction:column; gap:2px; background:var(--bronze-wash); border-radius:var(--r-md); padding:var(--s2) var(--s3); margin-top:var(--s3); }
+  .oplab { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--bronze); }
+  .optxt { font-size:14px; color:var(--ink); }
+
+  /* certificate archive (guide 5.12) */
+  .cert { position:relative; border:1px solid var(--bronze); border-radius:8px; padding:28px 20px 22px; background:var(--white); }
+  .cert::before { content:""; position:absolute; inset:5px; border:1px solid var(--hairline); border-radius:4px; pointer-events:none; }
+  .cert .cdia { position:absolute; width:9px; height:9px; background:var(--bronze); transform:rotate(45deg); }
+  .cert .cdia.tl { top:-5px; left:-5px; } .cert .cdia.tr { top:-5px; right:-5px; }
+  .cert .cdia.bl { bottom:-5px; left:-5px; } .cert .cdia.br { bottom:-5px; right:-5px; }
+  .cert .ceye { text-align:center; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--bronze); }
+  .cert .cname { text-align:center; font-family:var(--display); font-size:28px; margin-top:var(--s1); }
+  .cert .cdate { text-align:center; font-size:13px; color:var(--gray); margin-bottom:var(--s4); }
+  .arow { display:grid; grid-template-columns:22px 1fr auto; gap:var(--s2); align-items:start; padding:var(--s2) 0; border-top:1px solid var(--hairline); font-size:14px; }
+  .arow .ap { font-weight:600; }
+  .arow .ag { color:var(--text-2); font-size:13px; }
+  .arow .ar { font-size:12px; color:var(--gray); white-space:nowrap; }
+
+  .foot { text-align:center; font-size:12px; color:var(--gray); margin-top:var(--s5); }
+
+  @media (max-width:560px) {
+    body { padding:var(--s4) var(--s3) 60px; }
+    .callouts, .standouts, .slices { grid-template-columns:1fr; }
+    .gauge { grid-template-columns:1fr; justify-items:center; }
+    .mast h1 { font-size:32px; }
+  }
+  @media print {
+    body { background:#fff; padding:0; }
+    .panel { break-inside:avoid; border-color:#ccc; }
+    .mast { background:#fff; color:#000; border:1px solid #000; }
+    .mast .wm, .mast .wm .z, .mast h1, .mast .sub, .mast .eyebrow { color:#000; }
+    a { color:#000; }
+  }
+</style>
+</head>
+<body>
+
+<!-- icon sprite, included once per page (guide 4) -->
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="ic-heart" viewBox="0 0 24 24"><path d="M12 20s-6.5-4.4-9-8.3C1.2 8.7 2.6 5 6.2 5c2 0 3.2 1.2 3.8 2.2C10.6 6.2 11.8 5 13.8 5c3.6 0 5 3.7 3.2 6.7C18.5 15.6 12 20 12 20z"/></symbol>
+  <symbol id="ic-home" viewBox="0 0 24 24"><path d="M3.5 11.5 12 5l8.5 6.5"/><path d="M6 10.5V19h12v-8.5"/></symbol>
+  <symbol id="ic-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 18a5.5 5.5 0 0 1 11 0"/><circle cx="16.5" cy="8.5" r="2.5"/><path d="M14.8 18a5 5 0 0 1 6.7-4.7"/></symbol>
+  <symbol id="ic-plane" viewBox="0 0 24 24"><path d="M21 4 3 11l6 2 2 6z"/><path d="M21 4 11 15"/></symbol>
+  <symbol id="ic-coin" viewBox="0 0 24 24"><ellipse cx="12" cy="8" rx="7" ry="3"/><path d="M5 8v6c0 1.7 3.1 3 7 3s7-1.3 7-3V8"/><path d="M5 11c0 1.7 3.1 3 7 3s7-1.3 7-3"/></symbol>
+  <symbol id="ic-car" viewBox="0 0 24 24"><path d="M4 13l1.8-4.5A2 2 0 0 1 7.7 7h8.6a2 2 0 0 1 1.9 1.5L20 13"/><rect x="3.5" y="13" width="17" height="5" rx="1.5"/><circle cx="7.5" cy="18.5" r="1.4"/><circle cx="16.5" cy="18.5" r="1.4"/></symbol>
+  <symbol id="ic-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="ic-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.8-4.3 4.1 1 5.8L12 16.8 6.8 19.5l1-5.8L3.5 9.6l5.9-.8z"/></symbol>
+  <symbol id="ic-trophy" viewBox="0 0 24 24"><path d="M8 5h8v3.5a4 4 0 0 1-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 0 0 2.7 3M16 6h2.5a2.5 2.5 0 0 1-2.7 3"/><path d="M12 12v3"/><path d="M9.5 19h5l-.7-3.5h-3.6z"/></symbol>
+  <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="8.5" rx="2"/><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></symbol>
+  <symbol id="ic-dial" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.2"/><path d="M12 4v2.4M12 17.6V20M4 12h2.4M17.6 12H20"/></symbol>
+  <symbol id="ic-rings" viewBox="0 0 24 24"><circle cx="9.5" cy="14" r="4.6"/><circle cx="15" cy="14" r="4.6"/><path d="M9.5 5l1.8 2.6-1.8 2.6-1.8-2.6z"/></symbol>
+  <symbol id="ic-cap" viewBox="0 0 24 24"><path d="M12 6 21 10l-9 4-9-4z"/><path d="M7 12.5V16c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5v-3.5"/></symbol>
+  <symbol id="ic-baby" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20a6 6 0 0 1 12 0"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><path d="M6 12.5l3.5 3.5 8-8.5"/></symbol>
+  <symbol id="ic-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></symbol>
+  <symbol id="ic-tilde" viewBox="0 0 24 24"><path d="M5 14q3-5 6.5 0t6.5 0"/></symbol>
+  <symbol id="ic-person-fill" viewBox="0 0 20 26"><circle cx="10" cy="6" r="4"/><path d="M2 25a8 8 0 0 1 16 0z"/></symbol>
+  <!-- outcome badges, shape plus color (guide 4) -->
+  <symbol id="oc-hit" viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="#E7EFE4" stroke="#4E7A46" stroke-width="2"/><path d="M11 17 l4 4 8 -9" fill="none" stroke="#4E7A46" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="oc-sortof" viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="#F0E9DC" stroke="#8A6D3B" stroke-width="2"/><path d="M10 19 q3.5 -5 7 0 t7 0" fill="none" stroke="#8A6D3B" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  <symbol id="oc-miss" viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="#F2E3DF" stroke="#A24B3A" stroke-width="2"/><path d="M12 12 l10 10 M22 12 l-10 10" stroke="#A24B3A" stroke-width="2.6" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="wrap">
+
+  <!-- MASTHEAD with the opened wax seal (guide 5.11), the one hero graphic -->
+  <header class="mast">
+    <div class="wm">Vault<span class="z">Zombie</span></div>
+    <svg class="seal" width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="Opened seal">
+      <circle cx="48" cy="48" r="30" fill="#C9A96A"/>
+      <circle cx="48" cy="48" r="33" fill="none" stroke="#C9A96A" stroke-width="8" stroke-linecap="round" stroke-dasharray="0.1 11"/>
+      <circle cx="48" cy="48" r="22" fill="none" stroke="#1C1B19" stroke-width="2"/>
+      <rect x="41" y="46" width="14" height="12" rx="2" fill="#F6F4F0"/>
+      <path d="M43 46 v-4 a5 5 0 0 1 10 0 v1" fill="none" stroke="#F6F4F0" stroke-width="3" stroke-linecap="round" transform="rotate(-28 43 46)"/>
+      <path d="M18 40 l14 6 -8 8 16 3 -6 9" fill="none" stroke="#1C1B19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
+    </svg>
+    <div class="eyebrow">Vault results · through Year 2 of 5</div>
+    <h1>Maya &amp; Jordan</h1>
+    <div class="sub">The Bradfields · Marriage vault · sealed June 14, 2026 · Annual Keepsake</div>
+  </header>
+
+  <!-- STAT CALLOUTS (guide 5.2) -->
+  <section class="panel">
+    <div class="sec"><span class="med bronze"><svg class="ic"><use href="#ic-target"/></svg></span><div><div class="h">The headline</div><div class="s">Two reveals in, 118 predictions scored.</div></div></div>
+    <div class="callouts">
+      <div class="callout"><span class="med green"><svg class="ic"><use href="#ic-check"/></svg></span><div><div class="n">64%</div><div class="l"><b>called it</b> · up 6 points since Year 1</div></div></div>
+      <div class="callout"><span class="med bronze"><svg class="ic"><use href="#ic-people"/></svg></span><div><div class="n">56</div><div class="l"><b>guests</b> · 14 answered every prompt</div></div></div>
+      <div class="callout"><span class="med ink"><svg class="ic"><use href="#ic-lock"/></svg></span><div><div class="n">200</div><div class="l"><b>still sealed</b> · next drop June 14, 2029</div></div></div>
+      <div class="callout"><span class="med brass"><svg class="ic"><use href="#ic-trophy"/></svg></span><div><div class="n">Rosa</div><div class="l"><b>leads the board</b> · 24 of 26 called</div></div></div>
+    </div>
+  </section>
+
+  <!-- RING GAUGE with outcome breakdown (guide 5.3) -->
+  <section class="panel">
+    <div class="sec"><span class="med green"><svg class="ic"><use href="#ic-dial"/></svg></span><div><div class="h">How the room did</div><div class="s">Every scored answer, Year 1 and Year 2 together.</div></div></div>
+    <div class="gauge">
+      <svg viewBox="0 0 140 140" role="img" aria-label="64 percent called it">
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#E4DED4" stroke-width="16"/>
+        <circle cx="70" cy="70" r="54" fill="none" stroke="#4E7A46" stroke-width="16" stroke-linecap="round" stroke-dasharray="217.1 122.2" transform="rotate(-90 70 70)"/>
+        <text x="70" y="68" text-anchor="middle" dominant-baseline="middle" font-family="Tilt Warp" font-size="36" fill="#1C1B19">64%</text>
+        <text x="70" y="90" text-anchor="middle" font-family="Afacad Flux" font-size="12" fill="#8A857C">called it</text>
+      </svg>
+      <div>
+        <div class="brk"><svg class="oc"><use href="#oc-hit"/></svg><span class="nm">Came true</span><div class="track"><div class="fill" style="width:64%;background:var(--success)"></div></div><span class="ct">76</span></div>
+        <div class="brk"><svg class="oc"><use href="#oc-sortof"/></svg><span class="nm">Sort of</span><div class="track"><div class="fill" style="width:19%;background:var(--sortof)"></div></div><span class="ct">22</span></div>
+        <div class="brk"><svg class="oc"><use href="#oc-miss"/></svg><span class="nm">Nope</span><div class="track"><div class="fill" style="width:17%;background:var(--error)"></div></div><span class="ct">20</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PICTOGRAPH, the guest icon array (guide 5.4) -->
+  <section class="panel">
+    <div class="sec"><span class="med bronze"><svg class="ic"><use href="#ic-people"/></svg></span><div><div class="h">The room</div><div class="s">56 guests sealed predictions. One figure each.</div></div></div>
+    <div class="picto" aria-label="56 guests, colored by how many they called">
+      <span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--success)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span>
+      <span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--bronze)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span>
+      <span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span><span class="person" style="color:var(--hairline)"><svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg></span>
+    </div>
+    <div class="legend"><span style="--c:var(--success)">Top of the board</span><span style="--c:var(--bronze)">Called more than half</span><span style="--c:var(--hairline)">Still finding their form</span></div>
+    <p class="caption">Forty-six of fifty-six guests called more than half their predictions right.</p>
+  </section>
+
+  <!-- DIVERGING BARS by area of life (guide 5.5) -->
+  <section class="panel">
+    <div class="sec"><span class="med bronze"><svg class="ic"><use href="#ic-home"/></svg></span><div><div class="h">By area of life</div><div class="s">Called it leans right, missed leans left. Sort of sits in the label.</div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-heart"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Love &amp; Conflict</span><span class="dvg-meta">14 called · 2 sort of · 1 missed</span></div><div class="dvg-track"><div class="dvg-side left"><div class="dvg-fill miss" style="width:7%"></div></div><div class="dvg-side"><div class="dvg-fill hit" style="width:100%">14</div></div></div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-star"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Habits &amp; Everyday Life</span><span class="dvg-meta">13 called · 3 sort of · 2 missed</span></div><div class="dvg-track"><div class="dvg-side left"><div class="dvg-fill miss" style="width:14%"></div></div><div class="dvg-side"><div class="dvg-fill hit" style="width:93%">13</div></div></div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-home"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Home &amp; Residence</span><span class="dvg-meta">11 called · 4 sort of · 3 missed</span></div><div class="dvg-track"><div class="dvg-side left"><div class="dvg-fill miss" style="width:21%"></div></div><div class="dvg-side"><div class="dvg-fill hit" style="width:79%">11</div></div></div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-people"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Kids, Pets &amp; Family</span><span class="dvg-meta">10 called · 5 sort of · 2 missed</span></div><div class="dvg-track"><div class="dvg-side left"><div class="dvg-fill miss" style="width:14%"></div></div><div class="dvg-side"><div class="dvg-fill hit" style="width:71%">10</div></div></div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-coin"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Careers &amp; Money</span><span class="dvg-meta">9 called · 3 sort of · 4 missed</span></div><div class="dvg-track"><div class="dvg-side left"><div class="dvg-fill miss" style="width:29%"></div></div><div class="dvg-side"><div class="dvg-fill hit" style="width:64%">9</div></div></div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-plane"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Travel &amp; Adventure</span><span class="dvg-meta">8 called · 2 sort of · 5 missed</span></div><div class="dvg-track"><div class="dvg-side left"><div class="dvg-fill miss" style="width:36%">5</div></div><div class="dvg-side"><div class="dvg-fill hit" style="width:57%">8</div></div></div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-car"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Cars &amp; Big Purchases</span><span class="dvg-meta">6 called · 2 sort of · 3 missed</span></div><div class="dvg-track"><div class="dvg-side left"><div class="dvg-fill miss" style="width:21%"></div></div><div class="dvg-side"><div class="dvg-fill hit" style="width:43%">6</div></div></div></div></div>
+    <div class="dvg-row"><span class="med bronze"><svg class="ic"><use href="#ic-target"/></svg></span><div><div class="dvg-top"><span class="dvg-name">Milestones &amp; Wildcards</span><span class="dvg-meta">5 called · 1 sort of · 0 missed</span></div><div class="dvg-track"><div class="dvg-side left"></div><div class="dvg-side"><div class="dvg-fill hit" style="width:36%">5</div></div></div></div></div>
+    <div class="dvg-key"><span>Missed</span><span>Called it</span></div>
+  </section>
+
+  <!-- REVEAL TIMELINE (guide 5.6) -->
+  <section class="panel">
+    <div class="sec"><span class="med bronze"><svg class="ic"><use href="#ic-dial"/></svg></span><div><div class="h">Reveal by reveal</div><div class="s">Accuracy at each drop. Later drops are still sealed.</div></div></div>
+    <div class="timeline">
+      <div class="tl-row"><span class="med green tl-node"><svg class="ic"><use href="#ic-lock"/></svg></span><div class="tl-body"><div class="tl-top"><b>Year 1 · June 14, 2027</b><span>58% called</span></div><div class="tl-bar"><i style="width:58%"></i></div><div class="tl-note">The first-year stuff. Everyone knew who cooks.</div></div></div>
+      <div class="tl-row"><span class="med green tl-node"><svg class="ic"><use href="#ic-dial"/></svg></span><div class="tl-body"><div class="tl-top"><b>Year 2 · June 14, 2028</b><span>70% called</span></div><div class="tl-bar"><i style="width:70%"></i></div><div class="tl-note">The move to Austin surprised nobody but Marcus.</div></div></div>
+      <div class="tl-row locked"><span class="med ink tl-node"><svg class="ic"><use href="#ic-lock"/></svg></span><div class="tl-body"><div class="tl-top"><b>Year 3 · June 14, 2029</b><span>sealed</span></div><div class="tl-bar"></div><div class="tl-note">64 predictions waiting.</div></div></div>
+      <div class="tl-row locked"><span class="med ink tl-node"><svg class="ic"><use href="#ic-lock"/></svg></span><div class="tl-body"><div class="tl-top"><b>Year 4 · June 14, 2030</b><span>sealed</span></div><div class="tl-bar"></div><div class="tl-note">71 predictions waiting.</div></div></div>
+      <div class="tl-row locked"><span class="med brass tl-node"><svg class="ic"><use href="#ic-trophy"/></svg></span><div class="tl-body"><div class="tl-top"><b>Year 5 · June 14, 2031</b><span>final</span></div><div class="tl-bar"></div><div class="tl-note">The grand summary lands here.</div></div></div>
+    </div>
+  </section>
+
+  <!-- SCOREBOARD, lollipop with spotlight and slices (guide 5.7) -->
+  <section class="panel">
+    <div class="sec"><span class="med brass"><svg class="ic"><use href="#ic-trophy"/></svg></span><div><div class="h">Who knew you best</div><div class="s">Full point for a jackpot, half for close, nothing for a miss.</div></div></div>
+    <div class="lolli lead"><span class="rank">1</span><div><div class="lt"><span class="nm">Grandma Rose <svg class="ic"><use href="#ic-trophy"/></svg></span><span class="v">24 called</span></div><div class="track"><div class="base"></div><div class="line" style="width:100%"></div><span class="dot" style="left:100%"></span></div></div></div>
+    <div class="lolli"><span class="rank">2</span><div><div class="lt"><span class="nm">Dev</span><span class="v">20 called</span></div><div class="track"><div class="base"></div><div class="line" style="width:83%"></div><span class="dot" style="left:83%"></span></div></div></div>
+    <div class="lolli"><span class="rank">3</span><div><div class="lt"><span class="nm">Priya</span><span class="v">17 called</span></div><div class="track"><div class="base"></div><div class="line" style="width:71%"></div><span class="dot" style="left:71%"></span></div></div></div>
+    <div class="lolli"><span class="rank">4</span><div><div class="lt"><span class="nm">Marcus</span><span class="v">13 called</span></div><div class="track"><div class="base"></div><div class="line" style="width:54%"></div><span class="dot" style="left:54%"></span></div></div></div>
+    <div class="lolli"><span class="rank">5</span><div><div class="lt"><span class="nm">Nan</span><span class="v">11 called</span></div><div class="track"><div class="base"></div><div class="line" style="width:46%"></div><span class="dot" style="left:46%"></span></div></div></div>
+    <div class="spot"><span class="med bronze"><svg class="ic"><use href="#ic-star"/></svg></span><div><b>Your standing:</b> 3rd of 56. You are ahead of 53 guests and two called-its behind Dev.</div></div>
+    <div class="slices">
+      <div class="slice"><span class="med green"><svg class="ic"><use href="#ic-heart"/></svg></span><div class="t">Sharpest on love</div><div class="w">Aunt Rosa</div><div class="d">7 of 7 called</div></div>
+      <div class="slice"><span class="med brass"><svg class="ic"><use href="#ic-star"/></svg></span><div class="t">Boldest guesser</div><div class="w">Marcus</div><div class="d">Swung big, hit 3</div></div>
+      <div class="slice"><span class="med bronze"><svg class="ic"><use href="#ic-target"/></svg></span><div class="t">Dark-horse call</div><div class="w">Priya</div><div class="d">Only one to call Austin</div></div>
+    </div>
+  </section>
+
+  <!-- PER-QUESTION DETAIL: number spread, option split, free text (guide 5.8, 5.9) -->
+  <section class="panel">
+    <div class="sec"><span class="med bronze"><svg class="ic"><use href="#ic-target"/></svg></span><div><div class="h">Question by question</div><div class="s">Three question types, three charts.</div></div></div>
+
+    <div class="q">
+      <div class="qt">How many bedrooms will their main home have?</div>
+      <div class="qm">Number · Home &amp; Residence · Year 2 · close band ±1</div>
+      <svg class="spread" viewBox="0 0 320 74" role="img" aria-label="Guesses from 1 to 5, actual 3">
+        <line x1="30" y1="40" x2="300" y2="40" stroke="#E4DED4" stroke-width="2"/>
+        <line x1="57" y1="40" x2="273" y2="40" stroke="#8A6D3B" stroke-width="2" opacity="0.5"/>
+        <circle cx="57" cy="40" r="6" fill="#8A6D3B" opacity="0.85"/>
+        <circle cx="111" cy="40" r="6" fill="#8A6D3B" opacity="0.85"/>
+        <circle cx="165" cy="40" r="6" fill="#8A6D3B" opacity="0.85"/>
+        <circle cx="219" cy="40" r="6" fill="#8A6D3B" opacity="0.85"/>
+        <circle cx="273" cy="40" r="6" fill="#8A6D3B" opacity="0.85"/>
+        <path d="M165 20 l9 9 -9 9 -9 -9 z" fill="#1C1B19"/>
+        <text x="165" y="14" text-anchor="middle" font-family="Afacad Flux" font-size="11" font-weight="700" fill="#1C1B19">Actual: 3</text>
+        <text x="57" y="62" text-anchor="middle" font-family="Afacad Flux" font-size="10" fill="#8A857C">1</text>
+        <text x="111" y="62" text-anchor="middle" font-family="Afacad Flux" font-size="10" fill="#8A857C">2</text>
+        <text x="165" y="62" text-anchor="middle" font-family="Afacad Flux" font-size="10" fill="#8A857C">3</text>
+        <text x="219" y="62" text-anchor="middle" font-family="Afacad Flux" font-size="10" fill="#8A857C">4</text>
+        <text x="273" y="62" text-anchor="middle" font-family="Afacad Flux" font-size="10" fill="#8A857C">5</text>
+      </svg>
+      <p class="caption">Twenty-one guests said three. Dev and Priya said two, close enough for half.</p>
+    </div>
+
+    <div class="q">
+      <div class="qt">Who does more of the cooking?</div>
+      <div class="qm">Name-pick · Habits &amp; Everyday Life · Year 1</div>
+      <div class="optbar win"><div class="ot"><span class="olab">Maya <svg class="ic" style="color:var(--success)"><use href="#ic-check"/></svg></span><span class="oval">38 guests</span></div><div class="otrack"><div class="ofill" style="width:100%"></div></div></div>
+      <div class="optbar"><div class="ot"><span class="olab">Jordan</span><span class="oval">12 guests</span></div><div class="otrack"><div class="ofill" style="width:32%"></div></div></div>
+      <div class="optbar"><div class="ot"><span class="olab">Split it</span><span class="oval">6 guests</span></div><div class="otrack"><div class="ofill" style="width:16%"></div></div></div>
+    </div>
+
+    <div class="q">
+      <div class="qt">What city or town will they call home?</div>
+      <div class="qm">Free text, scoreable · Home &amp; Residence · Year 2</div>
+      <div class="optbar win"><div class="ot"><span class="olab">Austin <svg class="ic" style="color:var(--success)"><use href="#ic-check"/></svg></span><span class="oval">19 guests, 6 spellings</span></div><div class="otrack"><div class="ofill" style="width:100%"></div></div></div>
+      <div class="optbar"><div class="ot"><span class="olab">Los Angeles</span><span class="oval">14 guests</span></div><div class="otrack"><div class="ofill" style="width:74%"></div></div></div>
+      <div class="optbar"><div class="ot"><span class="olab">Denver</span><span class="oval">9 guests</span></div><div class="otrack"><div class="ofill" style="width:47%"></div></div></div>
+      <div class="optbar"><div class="ot"><span class="olab">Somewhere in Texas <svg class="oc" style="width:16px;height:16px"><use href="#oc-sortof"/></svg></span><span class="oval">4 guests, sort of</span></div><div class="otrack"><div class="ofill" style="width:21%"></div></div></div>
+      <div class="opnote"><span class="oplab">Operator note</span><span class="optxt">Moved to Austin in March 2028 for Jordan's job.</span></div>
+    </div>
+  </section>
+
+  <!-- STANDOUTS with operator notes (guide 5.10) -->
+  <section class="panel">
+    <div class="sec"><span class="med brass"><svg class="ic"><use href="#ic-star"/></svg></span><div><div class="h">Standouts</div><div class="s">The one the room got, and the one nobody saw.</div></div></div>
+    <div class="standouts">
+      <div class="so"><span class="tag hit"><svg class="oc" style="width:18px;height:18px"><use href="#oc-hit"/></svg> The room called it</span><div class="pr">"They will adopt a scruffy rescue dog within the first year."</div><div class="by">Sealed by 41 of 56 guests</div><div class="opnote"><span class="oplab">Operator note</span><span class="optxt">Meet Biscuit. Adopted October 2026.</span></div></div>
+      <div class="so"><span class="tag miss"><svg class="oc" style="width:18px;height:18px"><use href="#oc-miss"/></svg> Nobody saw it coming</span><div class="pr">"Who will change careers first?"</div><div class="by">55 of 56 said Jordan</div><div class="opnote"><span class="oplab">Operator note</span><span class="optxt">Maya left law for pastry school in 2027.</span></div></div>
+    </div>
+  </section>
+
+  <!-- CERTIFICATE FRAME and archive rows (guide 5.12), the running archive -->
+  <section class="panel" style="padding:var(--s4);">
+    <div class="cert">
+      <span class="cdia tl"></span><span class="cdia tr"></span><span class="cdia bl"></span><span class="cdia br"></span>
+      <div class="ceye">The archive so far</div>
+      <div class="cname">Maya &amp; Jordan</div>
+      <div class="cdate">Sealed June 14, 2026 · Complete at the final reveal, June 14, 2031</div>
+      <div class="arow"><svg class="oc"><use href="#oc-hit"/></svg><div><div class="ap">Who does more of the cooking?</div><div class="ag">Maya · 38 of 56 called it</div></div><span class="ar">Year 1</span></div>
+      <div class="arow"><svg class="oc"><use href="#oc-hit"/></svg><div><div class="ap">Will they get a pet or a kid first?</div><div class="ag">Pet · Biscuit, October 2026</div></div><span class="ar">Year 1</span></div>
+      <div class="arow"><svg class="oc"><use href="#oc-sortof"/></svg><div><div class="ap">How many trips will they take in a typical year?</div><div class="ag">Actual 4 · most said 3 or 5</div></div><span class="ar">Year 1</span></div>
+      <div class="arow"><svg class="oc"><use href="#oc-miss"/></svg><div><div class="ap">Who will change careers first?</div><div class="ag">Maya · pastry school, 2027</div></div><span class="ar">Year 1</span></div>
+      <div class="arow"><svg class="oc"><use href="#oc-hit"/></svg><div><div class="ap">What city or town will they call home?</div><div class="ag">Austin · 19 called it</div></div><span class="ar">Year 2</span></div>
+      <div class="arow"><svg class="oc"><use href="#oc-hit"/></svg><div><div class="ap">How many bedrooms will their main home have?</div><div class="ag">3 · 21 called it, 9 close</div></div><span class="ar">Year 2</span></div>
+      <div class="arow"><svg class="oc"><use href="#oc-sortof"/></svg><div><div class="ap">What is the first big trip they take as a married couple?</div><div class="ag">Portugal · "Europe" scored sort of</div></div><span class="ar">Year 2</span></div>
+      <div class="arow" style="opacity:.55"><svg class="ic" style="width:22px;height:22px;color:var(--gray)"><use href="#ic-lock"/></svg><div><div class="ap">200 predictions still sealed</div><div class="ag">Years 3, 4, and 5 fill in as they land</div></div><span class="ar">Sealed</span></div>
+    </div>
+  </section>
+
+  <div class="foot">VaultZombie · Report reference · Built from VaultZombie-Report-Design-Guide.md</div>
+</div>
+</body>
+</html>
