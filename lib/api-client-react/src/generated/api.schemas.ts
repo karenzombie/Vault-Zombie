@@ -272,3 +272,290 @@ export interface Scoreboard {
   entries: ScoreboardEntry[];
 }
 
+export interface OutcomeCounts {
+  full: number;
+  half: number;
+  zero: number;
+  scored: number;
+}
+
+export type VaultHealthReportPlanTier = typeof VaultHealthReportPlanTier[keyof typeof VaultHealthReportPlanTier];
+
+
+export const VaultHealthReportPlanTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface VaultHealthReport {
+  vaultId: string;
+  planTier: VaultHealthReportPlanTier;
+  status: string;
+  predictionCount: number;
+  guestCount: number;
+  revealSlots: GuestTiming[];
+  completedRevealCount: number;
+  /** @nullable */
+  nextRevealDate: string | null;
+}
+
+/**
+ * @nullable
+ */
+export type ReportAnswerOutcomeTier = typeof ReportAnswerOutcomeTier[keyof typeof ReportAnswerOutcomeTier] | null;
+
+
+export const ReportAnswerOutcomeTier = {
+  full: 'full',
+  half: 'half',
+  zero: 'zero',
+} as const;
+
+export type ReportAnswer = AnswerValue & ({
+  revealSlotId: string;
+  /** @nullable */
+  outcomeTier: ReportAnswerOutcomeTier;
+  /** @nullable */
+  optionLabel: string | null;
+});
+
+/**
+ * @nullable
+ */
+export type QuestionReportFreeTextMode = typeof QuestionReportFreeTextMode[keyof typeof QuestionReportFreeTextMode] | null;
+
+
+export const QuestionReportFreeTextMode = {
+  scoreable: 'scoreable',
+  keepsake: 'keepsake',
+} as const;
+
+export type QuestionReportOptionsItem = {
+  id: string;
+  label: string;
+};
+
+export type QuestionReportOptionCountsItem = {
+  optionId: string;
+  label: string;
+  count: number;
+};
+
+export type QuestionReportOutcomesItem = {
+  revealSlotId: string;
+  /** @nullable */
+  trueTextValue?: string | null;
+  /** @nullable */
+  trueNumberValue?: number | null;
+  /** @nullable */
+  trueOptionId?: string | null;
+  /** @nullable */
+  trueOptionLabel?: string | null;
+  /** @nullable */
+  operatorNote: string | null;
+};
+
+export interface QuestionReport {
+  vaultQuestionId: string;
+  prompt: string;
+  answerType: string;
+  /** @nullable */
+  freeTextMode: QuestionReportFreeTextMode;
+  answers: ReportAnswer[];
+  options: QuestionReportOptionsItem[];
+  optionCounts: QuestionReportOptionCountsItem[];
+  outcomes: QuestionReportOutcomesItem[];
+}
+
+export interface RevealReport {
+  revealSlotId: string;
+  label: string;
+  revealDate: string;
+  questions: QuestionReport[];
+}
+
+/**
+ * @nullable
+ */
+export type GuestPersonalReportAnswersItemFreeTextMode = typeof GuestPersonalReportAnswersItemFreeTextMode[keyof typeof GuestPersonalReportAnswersItemFreeTextMode] | null;
+
+
+export const GuestPersonalReportAnswersItemFreeTextMode = {
+  scoreable: 'scoreable',
+  keepsake: 'keepsake',
+} as const;
+
+export type GuestPersonalReportAnswersItem = ReportAnswer & ({
+  prompt: string;
+  /** @nullable */
+  operatorNote: string | null;
+  /** @nullable */
+  freeTextMode: GuestPersonalReportAnswersItemFreeTextMode;
+});
+
+export interface GuestPersonalReport {
+  guestId: string;
+  displayName: string;
+  /** @nullable */
+  rank: number | null;
+  score: OutcomeCounts;
+  answers: GuestPersonalReportAnswersItem[];
+}
+
+export type AreaReportAreasItem = {
+  id: string;
+  name: string;
+  iconKey: string;
+  outcomes: OutcomeCounts;
+};
+
+export interface AreaReport {
+  areas: AreaReportAreasItem[];
+}
+
+export type TimelineReportRevealsItem = {
+  revealSlotId: string;
+  label: string;
+  revealDate: string;
+  outcomes: OutcomeCounts;
+};
+
+export interface TimelineReport {
+  reveals: TimelineReportRevealsItem[];
+}
+
+export interface AnswersArchive {
+  questions: QuestionReport[];
+}
+
+export type VaultResultsSummaryPlanTier = typeof VaultResultsSummaryPlanTier[keyof typeof VaultResultsSummaryPlanTier];
+
+
+export const VaultResultsSummaryPlanTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type VaultResultsSummaryDepth = typeof VaultResultsSummaryDepth[keyof typeof VaultResultsSummaryDepth];
+
+
+export const VaultResultsSummaryDepth = {
+  trimmed: 'trimmed',
+  full: 'full',
+} as const;
+
+export type VaultResultsSummaryVaultSubjectValues = {[key: string]: string};
+
+export type VaultResultsSummaryVault = {
+  name: string;
+  subjectValues: VaultResultsSummaryVaultSubjectValues;
+  status: string;
+  /** @nullable */
+  sealedAt: string | null;
+};
+
+/**
+ * @nullable
+ */
+export type VaultResultsSummaryQuestionsItemFreeTextMode = typeof VaultResultsSummaryQuestionsItemFreeTextMode[keyof typeof VaultResultsSummaryQuestionsItemFreeTextMode] | null;
+
+
+export const VaultResultsSummaryQuestionsItemFreeTextMode = {
+  scoreable: 'scoreable',
+  keepsake: 'keepsake',
+} as const;
+
+export type VaultResultsSummaryQuestionsItemOutcomesItem = {
+  revealSlotId: string;
+  /** @nullable */
+  operatorNote: string | null;
+};
+
+export type VaultResultsSummaryQuestionsItem = {
+  vaultQuestionId: string;
+  prompt: string;
+  answerType: string;
+  /** @nullable */
+  freeTextMode: VaultResultsSummaryQuestionsItemFreeTextMode;
+  outcomes: VaultResultsSummaryQuestionsItemOutcomesItem[];
+};
+
+export type VaultResultsSummaryStandoutsItemOutcomeTier = typeof VaultResultsSummaryStandoutsItemOutcomeTier[keyof typeof VaultResultsSummaryStandoutsItemOutcomeTier];
+
+
+export const VaultResultsSummaryStandoutsItemOutcomeTier = {
+  full: 'full',
+  half: 'half',
+  zero: 'zero',
+} as const;
+
+export type VaultResultsSummaryStandoutsItem = {
+  vaultQuestionId: string;
+  prompt: string;
+  outcomeTier: VaultResultsSummaryStandoutsItemOutcomeTier;
+  /** @nullable */
+  operatorNote: string | null;
+};
+
+export type VaultResultsSummaryAreasItem = { [key: string]: unknown };
+
+export type VaultResultsSummaryTimelineItem = { [key: string]: unknown };
+
+export interface VaultResultsSummary {
+  vaultId: string;
+  planTier: VaultResultsSummaryPlanTier;
+  depth: VaultResultsSummaryDepth;
+  vault: VaultResultsSummaryVault;
+  outcomes: OutcomeCounts;
+  questions: VaultResultsSummaryQuestionsItem[];
+  standouts: VaultResultsSummaryStandoutsItem[];
+  areas?: VaultResultsSummaryAreasItem[];
+  timeline?: VaultResultsSummaryTimelineItem[];
+  scoreboard?: ScoreboardEntry[];
+}
+
+export type FinaleReportPlanTier = typeof FinaleReportPlanTier[keyof typeof FinaleReportPlanTier];
+
+
+export const FinaleReportPlanTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type FinaleReportStandoutsItemOutcomeTier = typeof FinaleReportStandoutsItemOutcomeTier[keyof typeof FinaleReportStandoutsItemOutcomeTier];
+
+
+export const FinaleReportStandoutsItemOutcomeTier = {
+  full: 'full',
+  half: 'half',
+  zero: 'zero',
+} as const;
+
+export type FinaleReportStandoutsItem = {
+  vaultQuestionId: string;
+  prompt: string;
+  outcomeTier: FinaleReportStandoutsItemOutcomeTier;
+  /** @nullable */
+  operatorNote: string | null;
+};
+
+export type FinaleReport = AnswersArchive & ({
+  vaultId: string;
+  planTier: FinaleReportPlanTier;
+  outcomeCounts: OutcomeCounts;
+  certificate: boolean;
+  scoreboard: ScoreboardEntry[];
+  winner: ScoreboardEntry | null;
+  areas: AreaReport;
+  timeline: TimelineReport;
+  standouts: FinaleReportStandoutsItem[];
+  guestCount: number;
+  predictionCount: number;
+  completionReady: boolean;
+});
+

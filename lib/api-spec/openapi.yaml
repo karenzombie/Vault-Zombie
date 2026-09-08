@@ -155,6 +155,96 @@ paths:
         "401": { description: Authentication required }
         "403": { description: Vault is not owned by this operator }
         "404": { description: Vault not found }
+  /operator/vaults/{vaultId}/reports/health:
+    get:
+      operationId: getVaultHealthReport
+      tags: [operator]
+      summary: Get vault health counts and metadata only
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Health metadata with no prediction content, content: { application/json: { schema: { $ref: "#/components/schemas/VaultHealthReport" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault not found }
+  /operator/vaults/{vaultId}/reports/reveals/{revealSlotId}:
+    get:
+      operationId: getRevealReport
+      tags: [operator]
+      summary: Get the unlocked report for one reveal
+      parameters: [{ $ref: "#/components/parameters/VaultId" }, { $ref: "#/components/parameters/RevealSlotId" }]
+      responses:
+        "200": { description: Unlocked reveal report, content: { application/json: { schema: { $ref: "#/components/schemas/RevealReport" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault or reveal not found }
+  /operator/vaults/{vaultId}/reports/questions/{vaultQuestionId}:
+    get:
+      operationId: getQuestionReport
+      tags: [operator]
+      summary: Get unlocked detail for one question
+      parameters: [{ $ref: "#/components/parameters/VaultId" }, { $ref: "#/components/parameters/VaultQuestionId" }]
+      responses:
+        "200": { description: Unlocked question detail, content: { application/json: { schema: { $ref: "#/components/schemas/QuestionReport" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault or unlocked question not found }
+  /operator/vaults/{vaultId}/reports/guests/{guestId}:
+    get:
+      operationId: getGuestPersonalReport
+      tags: [operator]
+      summary: Get an email-eligible guest personal report
+      parameters: [{ $ref: "#/components/parameters/VaultId" }, { $ref: "#/components/parameters/GuestId" }]
+      responses:
+        "200": { description: Personal results without email address, content: { application/json: { schema: { $ref: "#/components/schemas/GuestPersonalReport" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: "Guest is absent, has no email, or vault not found" }
+  /operator/vaults/{vaultId}/reports/summary:
+    get:
+      operationId: getVaultResultsSummary
+      tags: [operator]
+      summary: Get tier-appropriate unlocked results summary
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Lockbox trimmed or paid full summary, content: { application/json: { schema: { $ref: "#/components/schemas/VaultResultsSummary" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault not found }
+  /operator/vaults/{vaultId}/reports/areas:
+    get:
+      operationId: getAreaReport
+      tags: [operator]
+      summary: Get paid by-area breakdown
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses: { "200": { description: Area report, content: { application/json: { schema: { $ref: "#/components/schemas/AreaReport" } } } }, "401": { description: Authentication required }, "403": { description: Paid plan and ownership required }, "404": { description: Vault not found } }
+  /operator/vaults/{vaultId}/reports/timeline:
+    get:
+      operationId: getTimelineReport
+      tags: [operator]
+      summary: Get paid reveal timeline
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses: { "200": { description: Timeline report, content: { application/json: { schema: { $ref: "#/components/schemas/TimelineReport" } } } }, "401": { description: Authentication required }, "403": { description: Paid plan and ownership required }, "404": { description: Vault not found } }
+  /operator/vaults/{vaultId}/reports/archive:
+    get:
+      operationId: getAnswersArchive
+      tags: [operator]
+      summary: Get paid compiled unlocked answers archive
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses: { "200": { description: Archive, content: { application/json: { schema: { $ref: "#/components/schemas/AnswersArchive" } } } }, "401": { description: Authentication required }, "403": { description: Paid plan and ownership required }, "404": { description: Vault not found } }
+  /operator/vaults/{vaultId}/reports/finale:
+    get:
+      operationId: getFinaleReport
+      tags: [operator]
+      summary: Get paid finale archive
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses: { "200": { description: Finale report, content: { application/json: { schema: { $ref: "#/components/schemas/FinaleReport" } } } }, "401": { description: Authentication required }, "403": { description: Paid plan and ownership required }, "404": { description: Vault not found } }
+  /operator/vaults/{vaultId}/reports/print:
+    get:
+      operationId: getPrintArchive
+      tags: [operator]
+      summary: Get paid printable archive DTO
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses: { "200": { description: Print archive, content: { application/json: { schema: { $ref: "#/components/schemas/FinaleReport" } } } }, "401": { description: Authentication required }, "403": { description: Paid plan and ownership required }, "404": { description: Vault not found } }
 components:
   parameters:
     VaultId:
@@ -177,6 +267,11 @@ components:
       in: path
       required: true
       schema: { type: string, minLength: 32, maxLength: 256 }
+    GuestId:
+      name: guestId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   schemas:
     HealthStatus:
       type: object
@@ -348,4 +443,153 @@ components:
       required: [entries]
       properties:
         entries: { type: array, items: { $ref: "#/components/schemas/ScoreboardEntry" } }
+    OutcomeCounts:
+      type: object
+      required: [full, half, zero, scored]
+      properties:
+        full: { type: integer }
+        half: { type: integer }
+        zero: { type: integer }
+        scored: { type: integer }
+    VaultHealthReport:
+      type: object
+      required: [vaultId, planTier, status, predictionCount, guestCount, revealSlots, completedRevealCount, nextRevealDate]
+      properties:
+        vaultId: { type: string, format: uuid }
+        planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        status: { type: string }
+        predictionCount: { type: integer }
+        guestCount: { type: integer }
+        revealSlots: { type: array, items: { $ref: "#/components/schemas/GuestTiming" } }
+        completedRevealCount: { type: integer }
+        nextRevealDate: { type: ["string", "null"], format: date }
+    ReportAnswer:
+      allOf:
+        - $ref: "#/components/schemas/AnswerValue"
+        - type: object
+          required: [revealSlotId, outcomeTier, optionLabel]
+          properties:
+            revealSlotId: { type: string, format: uuid }
+            outcomeTier: { type: ["string", "null"], enum: [full, half, zero, null] }
+            optionLabel: { type: ["string", "null"] }
+    QuestionReport:
+      type: object
+      required: [vaultQuestionId, prompt, answerType, freeTextMode, answers, options, optionCounts, outcomes]
+      properties:
+        vaultQuestionId: { type: string, format: uuid }
+        prompt: { type: string }
+        answerType: { type: string }
+        freeTextMode: { type: ["string", "null"], enum: [scoreable, keepsake, null] }
+        answers: { type: array, items: { $ref: "#/components/schemas/ReportAnswer" } }
+        options: { type: array, items: { type: object, required: [id, label], properties: { id: { type: string, format: uuid }, label: { type: string } } } }
+        optionCounts: { type: array, items: { type: object, required: [optionId, label, count], properties: { optionId: { type: string, format: uuid }, label: { type: string }, count: { type: integer } } } }
+        outcomes: { type: array, items: { type: object, required: [revealSlotId, operatorNote], properties: { revealSlotId: { type: string, format: uuid }, trueTextValue: { type: ["string", "null"] }, trueNumberValue: { type: ["number", "null"] }, trueOptionId: { type: ["string", "null"], format: uuid }, trueOptionLabel: { type: ["string", "null"] }, operatorNote: { type: ["string", "null"] } } } }
+    RevealReport:
+      type: object
+      required: [revealSlotId, label, revealDate, questions]
+      properties:
+        revealSlotId: { type: string, format: uuid }
+        label: { type: string }
+        revealDate: { type: string, format: date }
+        questions: { type: array, items: { $ref: "#/components/schemas/QuestionReport" } }
+    GuestPersonalReport:
+      type: object
+      required: [guestId, displayName, rank, score, answers]
+      properties:
+        guestId: { type: string, format: uuid }
+        displayName: { type: string }
+        rank: { type: ["integer", "null"] }
+        score: { $ref: "#/components/schemas/OutcomeCounts" }
+        answers:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/ReportAnswer"
+              - type: object
+                required: [prompt, operatorNote, freeTextMode]
+                properties:
+                  prompt: { type: string }
+                  operatorNote: { type: ["string", "null"] }
+                  freeTextMode: { type: ["string", "null"], enum: [scoreable, keepsake, null] }
+    AreaReport:
+      type: object
+      required: [areas]
+      properties:
+        areas: { type: array, items: { type: object, required: [id, name, iconKey, outcomes], properties: { id: { type: string, format: uuid }, name: { type: string }, iconKey: { type: string }, outcomes: { $ref: "#/components/schemas/OutcomeCounts" } } } }
+    TimelineReport:
+      type: object
+      required: [reveals]
+      properties:
+        reveals: { type: array, items: { type: object, required: [revealSlotId, label, revealDate, outcomes], properties: { revealSlotId: { type: string, format: uuid }, label: { type: string }, revealDate: { type: string, format: date }, outcomes: { $ref: "#/components/schemas/OutcomeCounts" } } } }
+    AnswersArchive:
+      type: object
+      required: [questions]
+      properties: { questions: { type: array, items: { $ref: "#/components/schemas/QuestionReport" } } }
+    VaultResultsSummary:
+      type: object
+      required: [vaultId, planTier, depth, vault, outcomes, questions, standouts]
+      properties:
+        vaultId: { type: string, format: uuid }
+        planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        depth: { type: string, enum: [trimmed, full] }
+        vault:
+          type: object
+          required: [name, subjectValues, status, sealedAt]
+          properties:
+            name: { type: string }
+            subjectValues: { type: object, additionalProperties: { type: string } }
+            status: { type: string }
+            sealedAt: { type: ["string", "null"], format: date-time }
+        outcomes: { $ref: "#/components/schemas/OutcomeCounts" }
+        questions:
+          type: array
+          items:
+            type: object
+            required: [vaultQuestionId, prompt, answerType, freeTextMode, outcomes]
+            properties:
+              vaultQuestionId: { type: string, format: uuid }
+              prompt: { type: string }
+              answerType: { type: string }
+              freeTextMode: { type: ["string", "null"], enum: [scoreable, keepsake, null] }
+              outcomes: { type: array, items: { type: object, required: [revealSlotId, operatorNote], properties: { revealSlotId: { type: string, format: uuid }, operatorNote: { type: ["string", "null"] } } } }
+        standouts:
+          type: array
+          items:
+            type: object
+            required: [vaultQuestionId, prompt, outcomeTier, operatorNote]
+            properties:
+              vaultQuestionId: { type: string, format: uuid }
+              prompt: { type: string }
+              outcomeTier: { type: string, enum: [full, half, zero] }
+              operatorNote: { type: ["string", "null"] }
+        areas: { type: array, items: { type: object } }
+        timeline: { type: array, items: { type: object } }
+        scoreboard: { type: array, items: { $ref: "#/components/schemas/ScoreboardEntry" } }
+    FinaleReport:
+      allOf:
+        - $ref: "#/components/schemas/AnswersArchive"
+        - type: object
+          required: [vaultId, planTier, outcomeCounts, certificate, scoreboard, winner, areas, timeline, standouts, guestCount, predictionCount, completionReady]
+          properties:
+            vaultId: { type: string, format: uuid }
+            planTier: { type: string, enum: [safe, vault, deep_vault] }
+            outcomeCounts: { $ref: "#/components/schemas/OutcomeCounts" }
+            certificate: { type: boolean }
+            scoreboard: { type: array, items: { $ref: "#/components/schemas/ScoreboardEntry" } }
+            winner: { anyOf: [{ $ref: "#/components/schemas/ScoreboardEntry" }, { type: "null" }] }
+            areas: { $ref: "#/components/schemas/AreaReport" }
+            timeline: { $ref: "#/components/schemas/TimelineReport" }
+            standouts:
+              type: array
+              items:
+                type: object
+                required: [vaultQuestionId, prompt, outcomeTier, operatorNote]
+                properties:
+                  vaultQuestionId: { type: string, format: uuid }
+                  prompt: { type: string }
+                  outcomeTier: { type: string, enum: [full, half, zero] }
+                  operatorNote: { type: ["string", "null"] }
+            guestCount: { type: integer }
+            predictionCount: { type: integer }
+            completionReady: { type: boolean }
 

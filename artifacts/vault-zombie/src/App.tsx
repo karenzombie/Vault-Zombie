@@ -1,10 +1,10 @@
-import { type ReactNode } from 'react';
+import { type ComponentType, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
-import { ClerkProvider } from '@clerk/react';
+import { ClerkProvider, RedirectToSignIn, useAuth } from '@clerk/react';
 
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/public/landing';
@@ -14,9 +14,47 @@ import AdminPlaceholder from '@/pages/admin/admin';
 import SignInPage from '@/pages/auth/sign-in';
 import SignUpPage from '@/pages/auth/sign-up';
 
+/* Reports */
+import HealthReportPage from '@/pages/operator/reports/health';
+import SummaryReportPage from '@/pages/operator/reports/summary';
+import ScoreboardReportPage from '@/pages/operator/reports/scoreboard';
+import AreaReportPage from '@/pages/operator/reports/area';
+import TimelineReportPage from '@/pages/operator/reports/timeline';
+import ArchiveReportPage from '@/pages/operator/reports/archive';
+import KeepsakeReportPage from '@/pages/operator/reports/keepsake';
+import FinaleReportPage from '@/pages/operator/reports/finale';
+import QuestionReportPage from '@/pages/operator/reports/question';
+import GuestPersonalReportPage from '@/pages/operator/reports/guest';
+import RevealReportPage from '@/pages/operator/reports/reveal';
+
 const queryClient = new QueryClient();
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
+
+function requireOperator<T extends object>(Component: ComponentType<T>) {
+  if (!PUBLISHABLE_KEY) return Component;
+  return function AuthenticatedOperatorRoute(props: T) {
+    const { isLoaded, isSignedIn } = useAuth();
+    if (!isLoaded) {
+      return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Checking your session…</div>;
+    }
+    if (!isSignedIn) return <RedirectToSignIn />;
+    return <Component {...props} />;
+  };
+}
+
+const AuthenticatedOperator = requireOperator(OperatorPage);
+const AuthenticatedHealthReport = requireOperator(HealthReportPage);
+const AuthenticatedSummaryReport = requireOperator(SummaryReportPage);
+const AuthenticatedScoreboardReport = requireOperator(ScoreboardReportPage);
+const AuthenticatedAreaReport = requireOperator(AreaReportPage);
+const AuthenticatedTimelineReport = requireOperator(TimelineReportPage);
+const AuthenticatedArchiveReport = requireOperator(ArchiveReportPage);
+const AuthenticatedKeepsakeReport = requireOperator(KeepsakeReportPage);
+const AuthenticatedFinaleReport = requireOperator(FinaleReportPage);
+const AuthenticatedRevealReport = requireOperator(RevealReportPage);
+const AuthenticatedQuestionReport = requireOperator(QuestionReportPage);
+const AuthenticatedGuestReport = requireOperator(GuestPersonalReportPage);
 
 function Router() {
   return (
@@ -24,7 +62,23 @@ function Router() {
       <Switch>
         <Route path="/" component={Landing} />
         <Route path="/g/:token" component={GuestFlow} />
-        <Route path="/operator" component={OperatorPage} />
+
+        {/* Operator Reports Routes */}
+        <Route path="/operator/vaults/:vaultId/reports/health" component={AuthenticatedHealthReport} />
+        <Route path="/operator/vaults/:vaultId/reports/summary" component={AuthenticatedSummaryReport} />
+        <Route path="/operator/vaults/:vaultId/reports/scoreboard" component={AuthenticatedScoreboardReport} />
+        <Route path="/operator/vaults/:vaultId/reports/area" component={AuthenticatedAreaReport} />
+        <Route path="/operator/vaults/:vaultId/reports/timeline" component={AuthenticatedTimelineReport} />
+        <Route path="/operator/vaults/:vaultId/reports/archive" component={AuthenticatedArchiveReport} />
+        <Route path="/operator/vaults/:vaultId/reports/keepsake" component={AuthenticatedKeepsakeReport} />
+        <Route path="/operator/vaults/:vaultId/reports/finale" component={AuthenticatedFinaleReport} />
+        <Route path="/operator/vaults/:vaultId/reports/reveals/:revealSlotId" component={AuthenticatedRevealReport} />
+        <Route path="/operator/vaults/:vaultId/reports/questions/:questionId" component={AuthenticatedQuestionReport} />
+        <Route path="/operator/vaults/:vaultId/reports/guests/:guestId" component={AuthenticatedGuestReport} />
+
+        {/* Main Operator Route */}
+        <Route path="/operator" component={AuthenticatedOperator} />
+
         <Route path="/admin" component={AdminPlaceholder} />
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />

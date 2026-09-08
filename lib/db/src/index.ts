@@ -22,3 +22,4 @@ export * from "./sensitive-action";
 export * from "./vault-setup";
 export * from "./guest-flow";
 export * from "./reveal-scoring";
+export * from "./reports";

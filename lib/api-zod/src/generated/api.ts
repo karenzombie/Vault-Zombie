@@ -222,3 +222,518 @@ export const GetOperatorScoreboardResponse = zod.object({
 })
 
 
+/**
+ * @summary Get vault health counts and metadata only
+ */
+export const GetVaultHealthReportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetVaultHealthReportResponse = zod.object({
+  "vaultId": zod.string().uuid(),
+  "planTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "status": zod.string(),
+  "predictionCount": zod.number().int(),
+  "guestCount": zod.number().int(),
+  "revealSlots": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date()
+})),
+  "completedRevealCount": zod.number().int(),
+  "nextRevealDate": zod.coerce.date().nullable()
+})
+
+
+/**
+ * @summary Get the unlocked report for one reveal
+ */
+export const GetRevealReportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid(),
+  "revealSlotId": zod.coerce.string().uuid()
+})
+
+export const GetRevealReportResponse = zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date(),
+  "questions": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "answerType": zod.string(),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+}).and(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "outcomeTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullable(),
+  "optionLabel": zod.string().nullable()
+}))),
+  "options": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "label": zod.string()
+})),
+  "optionCounts": zod.array(zod.object({
+  "optionId": zod.string().uuid(),
+  "label": zod.string(),
+  "count": zod.number().int()
+})),
+  "outcomes": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "trueTextValue": zod.string().nullish(),
+  "trueNumberValue": zod.number().nullish(),
+  "trueOptionId": zod.string().uuid().nullish(),
+  "trueOptionLabel": zod.string().nullish(),
+  "operatorNote": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
+ * @summary Get unlocked detail for one question
+ */
+export const GetQuestionReportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid(),
+  "vaultQuestionId": zod.coerce.string().uuid()
+})
+
+export const GetQuestionReportResponse = zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "answerType": zod.string(),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+}).and(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "outcomeTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullable(),
+  "optionLabel": zod.string().nullable()
+}))),
+  "options": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "label": zod.string()
+})),
+  "optionCounts": zod.array(zod.object({
+  "optionId": zod.string().uuid(),
+  "label": zod.string(),
+  "count": zod.number().int()
+})),
+  "outcomes": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "trueTextValue": zod.string().nullish(),
+  "trueNumberValue": zod.number().nullish(),
+  "trueOptionId": zod.string().uuid().nullish(),
+  "trueOptionLabel": zod.string().nullish(),
+  "operatorNote": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Get an email-eligible guest personal report
+ */
+export const GetGuestPersonalReportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid(),
+  "guestId": zod.coerce.string().uuid()
+})
+
+export const GetGuestPersonalReportResponse = zod.object({
+  "guestId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "rank": zod.number().int().nullable(),
+  "score": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+}),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+}).and(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "outcomeTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullable(),
+  "optionLabel": zod.string().nullable()
+})).and(zod.object({
+  "prompt": zod.string(),
+  "operatorNote": zod.string().nullable(),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable()
+})))
+})
+
+
+/**
+ * @summary Get tier-appropriate unlocked results summary
+ */
+export const GetVaultResultsSummaryParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetVaultResultsSummaryResponse = zod.object({
+  "vaultId": zod.string().uuid(),
+  "planTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "depth": zod.enum(['trimmed', 'full']),
+  "vault": zod.object({
+  "name": zod.string(),
+  "subjectValues": zod.record(zod.string(), zod.string()),
+  "status": zod.string(),
+  "sealedAt": zod.coerce.date().nullable()
+}),
+  "outcomes": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+}),
+  "questions": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "answerType": zod.string(),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "outcomes": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "operatorNote": zod.string().nullable()
+}))
+})),
+  "standouts": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "outcomeTier": zod.enum(['full', 'half', 'zero']),
+  "operatorNote": zod.string().nullable()
+})),
+  "areas": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "timeline": zod.array(zod.object({
+
+}).passthrough()).optional(),
+  "scoreboard": zod.array(zod.object({
+  "guestId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "total": zod.number()
+})).optional()
+})
+
+
+/**
+ * @summary Get paid by-area breakdown
+ */
+export const GetAreaReportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetAreaReportResponse = zod.object({
+  "areas": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "iconKey": zod.string(),
+  "outcomes": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+})
+}))
+})
+
+
+/**
+ * @summary Get paid reveal timeline
+ */
+export const GetTimelineReportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetTimelineReportResponse = zod.object({
+  "reveals": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date(),
+  "outcomes": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+})
+}))
+})
+
+
+/**
+ * @summary Get paid compiled unlocked answers archive
+ */
+export const GetAnswersArchiveParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetAnswersArchiveResponse = zod.object({
+  "questions": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "answerType": zod.string(),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+}).and(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "outcomeTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullable(),
+  "optionLabel": zod.string().nullable()
+}))),
+  "options": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "label": zod.string()
+})),
+  "optionCounts": zod.array(zod.object({
+  "optionId": zod.string().uuid(),
+  "label": zod.string(),
+  "count": zod.number().int()
+})),
+  "outcomes": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "trueTextValue": zod.string().nullish(),
+  "trueNumberValue": zod.number().nullish(),
+  "trueOptionId": zod.string().uuid().nullish(),
+  "trueOptionLabel": zod.string().nullish(),
+  "operatorNote": zod.string().nullable()
+}))
+}))
+})
+
+
+/**
+ * @summary Get paid finale archive
+ */
+export const GetFinaleReportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetFinaleReportResponse = zod.object({
+  "questions": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "answerType": zod.string(),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+}).and(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "outcomeTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullable(),
+  "optionLabel": zod.string().nullable()
+}))),
+  "options": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "label": zod.string()
+})),
+  "optionCounts": zod.array(zod.object({
+  "optionId": zod.string().uuid(),
+  "label": zod.string(),
+  "count": zod.number().int()
+})),
+  "outcomes": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "trueTextValue": zod.string().nullish(),
+  "trueNumberValue": zod.number().nullish(),
+  "trueOptionId": zod.string().uuid().nullish(),
+  "trueOptionLabel": zod.string().nullish(),
+  "operatorNote": zod.string().nullable()
+}))
+}))
+}).and(zod.object({
+  "vaultId": zod.string().uuid(),
+  "planTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "outcomeCounts": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+}),
+  "certificate": zod.boolean(),
+  "scoreboard": zod.array(zod.object({
+  "guestId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "total": zod.number()
+})),
+  "winner": zod.union([zod.object({
+  "guestId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "total": zod.number()
+}),zod.null()]),
+  "areas": zod.object({
+  "areas": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "iconKey": zod.string(),
+  "outcomes": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+})
+}))
+}),
+  "timeline": zod.object({
+  "reveals": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date(),
+  "outcomes": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+})
+}))
+}),
+  "standouts": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "outcomeTier": zod.enum(['full', 'half', 'zero']),
+  "operatorNote": zod.string().nullable()
+})),
+  "guestCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "completionReady": zod.boolean()
+}))
+
+
+/**
+ * @summary Get paid printable archive DTO
+ */
+export const GetPrintArchiveParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetPrintArchiveResponse = zod.object({
+  "questions": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "answerType": zod.string(),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+}).and(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "outcomeTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullable(),
+  "optionLabel": zod.string().nullable()
+}))),
+  "options": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "label": zod.string()
+})),
+  "optionCounts": zod.array(zod.object({
+  "optionId": zod.string().uuid(),
+  "label": zod.string(),
+  "count": zod.number().int()
+})),
+  "outcomes": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "trueTextValue": zod.string().nullish(),
+  "trueNumberValue": zod.number().nullish(),
+  "trueOptionId": zod.string().uuid().nullish(),
+  "trueOptionLabel": zod.string().nullish(),
+  "operatorNote": zod.string().nullable()
+}))
+}))
+}).and(zod.object({
+  "vaultId": zod.string().uuid(),
+  "planTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "outcomeCounts": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+}),
+  "certificate": zod.boolean(),
+  "scoreboard": zod.array(zod.object({
+  "guestId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "total": zod.number()
+})),
+  "winner": zod.union([zod.object({
+  "guestId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "total": zod.number()
+}),zod.null()]),
+  "areas": zod.object({
+  "areas": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "iconKey": zod.string(),
+  "outcomes": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+})
+}))
+}),
+  "timeline": zod.object({
+  "reveals": zod.array(zod.object({
+  "revealSlotId": zod.string().uuid(),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date(),
+  "outcomes": zod.object({
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "scored": zod.number().int()
+})
+}))
+}),
+  "standouts": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "outcomeTier": zod.enum(['full', 'half', 'zero']),
+  "operatorNote": zod.string().nullable()
+})),
+  "guestCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "completionReady": zod.boolean()
+}))
+
+

@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&family=Tilt+Warp&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import './reports.css';
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -130,6 +131,18 @@
   --muted-border: hsl(from hsl(var(--muted)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --accent-border: hsl(from hsl(var(--accent)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
+
+  /* Report Specific Variables */
+  --hit: #8A6D3B; /* Deep bronze */
+  --hit-wash: #F6F4F0; /* Cream */
+  --sortof: #8A6D3B; /* Bronze */
+  --sortof-wash: #F0E9DC;
+  --miss: #8A857C; /* Gray */
+  --miss-wash: #E4DED4;
+  --error: #A24B3A; /* Errors only */
+  --error-wash: #F2E3DF;
+
+  --vault-accent: #C9A96A; /* Default bronze accent */
 }
 
 .dark {
@@ -181,6 +194,8 @@
   .text-pop { color: hsl(var(--pop)); }
   .bg-pop-tint { background-color: hsl(var(--pop-tint)); }
   .text-bronze { color: hsl(var(--bronze)); }
+  .text-vault-accent { color: var(--vault-accent); }
+  .border-vault-accent { border-color: var(--vault-accent); }
   .bg-bronze-wash { background-color: hsl(var(--bronze-wash)); }
   .text-text-2 { color: hsl(var(--text-2)); }
   .text-gray { color: hsl(var(--gray)); }
