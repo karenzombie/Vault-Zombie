@@ -18,3 +18,4 @@ export * from "./audit";
 export * from "./content-import";
 export * from "./schedule";
 export * from "./sealed-content";
+export * from "./sensitive-action";
