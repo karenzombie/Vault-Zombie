@@ -9,4 +9,7 @@ import type { AdminEmailDelivery } from './adminEmailDelivery';
 
 export interface AdminEmailDeliveryList {
   deliveries: AdminEmailDelivery[];
+  total: number;
+  limit: number;
+  offset: number;
 }

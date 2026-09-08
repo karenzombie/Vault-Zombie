@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
 import { getTierLabel } from "@/lib/utils";
+import { useSensitiveAdminAction } from "@/hooks/use-sensitive-admin-action";
 
 export function AdminCompTab() {
   const [vaultId, setVaultId] = useState("");
@@ -14,25 +15,25 @@ export function AdminCompTab() {
   
   const { toast } = useToast();
   const grantComp = useGrantVaultComp();
+  const runSensitive = useSensitiveAdminAction();
 
-  const handleGrant = (e: React.FormEvent) => {
+  const handleGrant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vaultId.trim() || !reason.trim()) return;
 
     if (!confirm(`Are you sure you want to comp ${vaultId} to ${tier}?`)) return;
 
-    grantComp.mutate(
-      { vaultId: vaultId.trim(), data: { targetTier: tier, reason: reason.trim() } },
-      {
-        onSuccess: () => {
+    try {
+      await runSensitive(() => grantComp.mutateAsync(
+        { vaultId: vaultId.trim(), data: { targetTier: tier, reason: reason.trim() } },
+      ));
           toast({
             title: "Comp Granted",
             description: `Vault ${vaultId} upgraded to ${tier}.`,
           });
           setVaultId("");
           setReason("");
-        },
-        onError: (err: any) => {
+    } catch (err: any) {
           const msg = err?.response?.data?.message || "Failed to grant comp.";
           toast({
             title: "Error",
@@ -46,9 +47,7 @@ export function AdminCompTab() {
               variant: "destructive"
              });
           }
-        }
-      }
-    );
+    }
   };
 
   return (

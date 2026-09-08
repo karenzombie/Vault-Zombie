@@ -308,8 +308,169 @@ export const ListAdminBillingResponse = zod.object({
   "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'refunded', 'disputed', 'comped']),
   "source": zod.enum(['stripe', 'gift', 'comp']),
   "stripeRefundId": zod.string().nullish(),
+  "refundRequestId": zod.string().uuid().nullish(),
+  "refundAttemptStatus": zod.string().nullish(),
   "createdAt": zod.coerce.date()
 }))
+})
+
+
+/**
+ * @summary Get owner dashboard counts and sealed-content-safe health metadata
+ */
+export const GetAdminDashboardResponse = zod.object({
+  "operatorCount": zod.number().int(),
+  "vaultCount": zod.number().int(),
+  "guestCount": zod.number().int(),
+  "submissionCount": zod.number().int(),
+  "vaultsByState": zod.array(zod.object({
+  "key": zod.string(),
+  "count": zod.number().int()
+})),
+  "vaultsByType": zod.array(zod.object({
+  "key": zod.string(),
+  "count": zod.number().int()
+})),
+  "vaultsByTier": zod.array(zod.object({
+  "key": zod.string(),
+  "count": zod.number().int()
+})),
+  "revealProgress": zod.object({
+  "slotsTotal": zod.number().int(),
+  "slotsLanded": zod.number().int(),
+  "answersTotal": zod.number().int(),
+  "answersUnlocked": zod.number().int()
+}),
+  "guestMetrics": zod.object({
+  "averageGuestsPerVault": zod.number(),
+  "capExceededEventCount": zod.number().int()
+}),
+  "unresolvedOverageCount": zod.number().int(),
+  "failedEmailCount": zod.number().int()
+})
+
+
+/**
+ * @summary Report locally recorded billing and gift activity for a bounded UTC date period
+ */
+export const GetAdminRevenueReportQueryParams = zod.object({
+  "from": zod.date(),
+  "to": zod.date(),
+  "source": zod.enum(['stripe', 'gift', 'comp']).optional(),
+  "tier": zod.coerce.string().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const GetAdminRevenueReportResponse = zod.object({
+  "from": zod.coerce.date(),
+  "to": zod.coerce.date(),
+  "filters": zod.record(zod.string(), zod.unknown()),
+  "grossConfirmedAmountCents": zod.number().int(),
+  "refundedAmountCents": zod.number().int(),
+  "disputedAmountCents": zod.number().int(),
+  "compAmountCents": zod.number().int(),
+  "giftIssuedAmountCents": zod.number().int(),
+  "giftRedeemedAmountCents": zod.number().int(),
+  "recordCount": zod.number().int(),
+  "reconciliation": zod.object({
+  "feesAvailable": zod.boolean(),
+  "netAvailable": zod.boolean(),
+  "payoutsAvailable": zod.boolean(),
+  "message": zod.string()
+})
+})
+
+
+/**
+ * @summary Search operator accounts with safe identity metadata
+ */
+export const listAdminOperatorsQueryQMax = 100;
+
+export const listAdminOperatorsQueryLimitDefault = 50;
+export const listAdminOperatorsQueryLimitMax = 100;
+
+export const listAdminOperatorsQueryOffsetDefault = 0;
+export const listAdminOperatorsQueryOffsetMin = 0;
+
+
+
+export const ListAdminOperatorsQueryParams = zod.object({
+  "q": zod.coerce.string().max(listAdminOperatorsQueryQMax).optional(),
+  "limit": zod.coerce.number().int().min(1).max(listAdminOperatorsQueryLimitMax).default(listAdminOperatorsQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(listAdminOperatorsQueryOffsetMin).default(listAdminOperatorsQueryOffsetDefault)
+})
+
+export const ListAdminOperatorsResponse = zod.object({
+  "operators": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "email": zod.string().email(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "vaultCount": zod.number().int()
+})),
+  "total": zod.number().int(),
+  "limit": zod.number().int(),
+  "offset": zod.number().int()
+})
+
+
+/**
+ * @summary Get operator-owned vaults and local billing history
+ */
+export const GetAdminOperatorParams = zod.object({
+  "accountId": zod.coerce.string().uuid()
+})
+
+export const getAdminOperatorQueryLimitDefault = 50;
+export const getAdminOperatorQueryLimitMax = 100;
+
+export const getAdminOperatorQueryOffsetDefault = 0;
+export const getAdminOperatorQueryOffsetMin = 0;
+
+
+
+export const GetAdminOperatorQueryParams = zod.object({
+  "limit": zod.coerce.number().int().min(1).max(getAdminOperatorQueryLimitMax).default(getAdminOperatorQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(getAdminOperatorQueryOffsetMin).default(getAdminOperatorQueryOffsetDefault)
+})
+
+export const GetAdminOperatorResponse = zod.object({
+  "operator": zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "email": zod.string().email(),
+  "status": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "vaultCount": zod.number().int()
+}),
+  "vaults": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "planTier": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sealedAt": zod.coerce.date().nullable(),
+  "operatorName": zod.string(),
+  "vaultTypeName": zod.string()
+})),
+  "billingRecords": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "vaultId": zod.string().uuid().nullable(),
+  "operatorId": zod.string().uuid().nullable(),
+  "targetTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "amountCents": zod.number().int(),
+  "currency": zod.enum(['usd']),
+  "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'refunded', 'disputed', 'comped']),
+  "source": zod.enum(['stripe', 'gift', 'comp']),
+  "stripeRefundId": zod.string().nullish(),
+  "refundRequestId": zod.string().uuid().nullish(),
+  "refundAttemptStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "totalBillingRecords": zod.number().int(),
+  "limit": zod.number().int(),
+  "offset": zod.number().int()
 })
 
 
@@ -333,9 +494,57 @@ export const ListAdminGiftsResponse = zod.object({
   "redeemedVaultId": zod.string().uuid().nullable(),
   "stripeRefundId": zod.string().nullable(),
   "stripePaymentIntentId": zod.string().nullable(),
+  "refundRequestId": zod.string().uuid().nullable(),
+  "refundAttemptStatus": zod.string().nullable(),
   "refundableNow": zod.boolean(),
   "latestDeliveryStatus": zod.union([zod.literal('queued'),zod.literal('sending'),zod.literal('sent'),zod.literal('failed'),zod.literal('suppressed'),zod.literal(null)]).nullable(),
   "latestDeliveryError": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Get gift status, redemption, refund, and delivery support detail
+ */
+export const GetAdminGiftParams = zod.object({
+  "giftId": zod.coerce.string().uuid()
+})
+
+export const GetAdminGiftResponse = zod.object({
+  "gift": zod.object({
+  "id": zod.string().uuid(),
+  "code": zod.string(),
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "status": zod.enum(['pending', 'purchased', 'redeemed', 'refunded', 'failed', 'expired', 'disputed']),
+  "amountCents": zod.number().int(),
+  "currency": zod.enum(['usd']),
+  "fromLine": zod.string().nullish(),
+  "toLine": zod.string().nullish(),
+  "gifterEmail": zod.string().email().nullish(),
+  "createdAt": zod.coerce.date(),
+  "redeemedAt": zod.coerce.date().nullable(),
+  "refundedAt": zod.coerce.date().nullable(),
+  "redeemedVaultId": zod.string().uuid().nullable(),
+  "stripeRefundId": zod.string().nullable(),
+  "stripePaymentIntentId": zod.string().nullable(),
+  "refundRequestId": zod.string().uuid().nullable(),
+  "refundAttemptStatus": zod.string().nullable(),
+  "refundableNow": zod.boolean(),
+  "latestDeliveryStatus": zod.union([zod.literal('queued'),zod.literal('sending'),zod.literal('sent'),zod.literal('failed'),zod.literal('suppressed'),zod.literal(null)]).nullable(),
+  "latestDeliveryError": zod.string().nullable()
+}),
+  "deliveries": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "dedupeKey": zod.string(),
+  "eventType": zod.string(),
+  "recipientEmail": zod.string().email(),
+  "status": zod.enum(['queued', 'sending', 'sent', 'failed', 'suppressed']),
+  "attempts": zod.number().int(),
+  "providerId": zod.string().nullable(),
+  "lastError": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "sentAt": zod.coerce.date().nullable()
 }))
 })
 
@@ -359,6 +568,26 @@ export const ListAdminOveragesResponse = zod.object({
 /**
  * @summary List transactional email delivery status and failures
  */
+export const listAdminEmailDeliveriesQueryEventTypeMax = 100;
+
+export const listAdminEmailDeliveriesQueryQMax = 100;
+
+export const listAdminEmailDeliveriesQueryLimitDefault = 100;
+export const listAdminEmailDeliveriesQueryLimitMax = 250;
+
+export const listAdminEmailDeliveriesQueryOffsetDefault = 0;
+export const listAdminEmailDeliveriesQueryOffsetMin = 0;
+
+
+
+export const ListAdminEmailDeliveriesQueryParams = zod.object({
+  "status": zod.enum(['queued', 'sending', 'sent', 'failed', 'suppressed']).optional(),
+  "eventType": zod.coerce.string().max(listAdminEmailDeliveriesQueryEventTypeMax).optional(),
+  "q": zod.coerce.string().max(listAdminEmailDeliveriesQueryQMax).optional(),
+  "limit": zod.coerce.number().int().min(1).max(listAdminEmailDeliveriesQueryLimitMax).default(listAdminEmailDeliveriesQueryLimitDefault),
+  "offset": zod.coerce.number().int().min(listAdminEmailDeliveriesQueryOffsetMin).default(listAdminEmailDeliveriesQueryOffsetDefault)
+})
+
 export const ListAdminEmailDeliveriesResponse = zod.object({
   "deliveries": zod.array(zod.object({
   "id": zod.string().uuid(),
@@ -372,7 +601,34 @@ export const ListAdminEmailDeliveriesResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date(),
   "sentAt": zod.coerce.date().nullable()
-}))
+})),
+  "total": zod.number().int(),
+  "limit": zod.number().int(),
+  "offset": zod.number().int()
+})
+
+
+/**
+ * @summary Get delivery support detail without email payload content
+ */
+export const GetAdminEmailDeliveryParams = zod.object({
+  "emailDeliveryId": zod.coerce.string().uuid()
+})
+
+export const GetAdminEmailDeliveryResponse = zod.object({
+  "delivery": zod.object({
+  "id": zod.string().uuid(),
+  "dedupeKey": zod.string(),
+  "eventType": zod.string(),
+  "recipientEmail": zod.string().email(),
+  "status": zod.enum(['queued', 'sending', 'sent', 'failed', 'suppressed']),
+  "attempts": zod.number().int(),
+  "providerId": zod.string().nullable(),
+  "lastError": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "sentAt": zod.coerce.date().nullable()
+})
 })
 
 
@@ -427,19 +683,23 @@ export const RefundBillingRecordParams = zod.object({
   "billingRecordId": zod.coerce.string().uuid()
 })
 
-export const refundBillingRecordBodyReasonMax = 1000;
+export const refundBillingRecordBodyOneReasonMax = 1000;
 
 
 
 export const RefundBillingRecordBody = zod.object({
-  "reason": zod.string().min(1).max(refundBillingRecordBodyReasonMax)
-})
+  "reason": zod.string().min(1).max(refundBillingRecordBodyOneReasonMax)
+}).and(zod.object({
+  "requestId": zod.string().uuid().describe('Stable client action ID retained for uncertain retry reconciliation.')
+}))
 
 export const RefundBillingRecordResponse = zod.object({
   "billingRecordId": zod.string().uuid(),
   "vaultId": zod.string().uuid(),
   "status": zod.enum(['refunded', 'comped']),
-  "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault'])
+  "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "requestId": zod.string().uuid().optional(),
+  "refundAttemptStatus": zod.string().optional()
 })
 
 
@@ -450,18 +710,22 @@ export const RefundGiftParams = zod.object({
   "giftId": zod.coerce.string().uuid()
 })
 
-export const refundGiftBodyReasonMax = 1000;
+export const refundGiftBodyOneReasonMax = 1000;
 
 
 
 export const RefundGiftBody = zod.object({
-  "reason": zod.string().min(1).max(refundGiftBodyReasonMax)
-})
+  "reason": zod.string().min(1).max(refundGiftBodyOneReasonMax)
+}).and(zod.object({
+  "requestId": zod.string().uuid().describe('Stable client action ID retained for uncertain retry reconciliation.')
+}))
 
 export const RefundGiftResponse = zod.object({
   "giftId": zod.string().uuid(),
   "status": zod.enum(['refunded']),
-  "stripeRefundId": zod.string()
+  "stripeRefundId": zod.string(),
+  "requestId": zod.string().uuid(),
+  "refundAttemptStatus": zod.string()
 })
 
 
@@ -486,8 +750,628 @@ export const GrantVaultCompResponse = zod.object({
   "billingRecordId": zod.string().uuid(),
   "vaultId": zod.string().uuid(),
   "status": zod.enum(['refunded', 'comped']),
-  "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault'])
+  "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "requestId": zod.string().uuid().optional(),
+  "refundAttemptStatus": zod.string().optional()
 })
+
+
+/**
+ * @summary List safe vault health metadata for administrators
+ */
+export const listAdminVaultsQueryQMax = 100;
+
+
+
+export const ListAdminVaultsQueryParams = zod.object({
+  "q": zod.coerce.string().max(listAdminVaultsQueryQMax).optional()
+})
+
+export const ListAdminVaultsResponse = zod.object({
+  "vaults": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "planTier": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sealedAt": zod.coerce.date().nullable(),
+  "operatorName": zod.string(),
+  "vaultTypeName": zod.string()
+}))
+})
+
+
+/**
+ * @summary List searchable content-management metadata
+ */
+export const listAdminContentQueryQMax = 100;
+
+
+
+export const ListAdminContentQueryParams = zod.object({
+  "q": zod.coerce.string().max(listAdminContentQueryQMax).optional()
+})
+
+export const ListAdminContentResponse = zod.object({
+  "vaultTypes": zod.array(zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.')),
+  "subcategories": zod.array(zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.')),
+  "questions": zod.array(zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.')),
+  "options": zod.array(zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.'))
+})
+
+
+/**
+ * @summary Non-mutating strict question-bank import preview
+ */
+
+
+
+
+
+
+
+
+export const previewAdminContentImportBodyBankSubcategoriesItemQuestionsItemNumberCloseBandMin = 0;
+
+
+
+
+
+export const PreviewAdminContentImportBody = zod.object({
+  "bank": zod.object({
+  "vaultType": zod.object({
+  "slug": zod.string().min(1),
+  "name": zod.string().min(1),
+  "requiredSubjectTokens": zod.array(zod.string().min(1)),
+  "displayOrder": zod.number().int()
+}),
+  "subcategories": zod.array(zod.object({
+  "sourceKey": zod.string().min(1),
+  "name": zod.string().min(1),
+  "iconKey": zod.string().optional(),
+  "displayOrder": zod.number().int(),
+  "questions": zod.array(zod.object({
+  "sourceKey": zod.string().min(1),
+  "prompt": zod.string().min(1),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.enum(['scoreable', 'keepsake']).optional(),
+  "number": zod.object({
+  "unit": zod.string().min(1),
+  "minimum": zod.number(),
+  "maximum": zod.number(),
+  "closeBand": zod.number().min(previewAdminContentImportBodyBankSubcategoriesItemQuestionsItemNumberCloseBandMin)
+}).optional(),
+  "fitTag": zod.enum(['short', 'long']).optional(),
+  "displayOrder": zod.number().int(),
+  "options": zod.array(zod.string().min(1))
+}))
+})).min(1)
+})
+})
+
+export const previewAdminContentImportResponseUnresolvedCountMin = 0;
+
+
+
+export const PreviewAdminContentImportResponse = zod.object({
+  "unresolvedCount": zod.number().int().min(previewAdminContentImportResponseUnresolvedCountMin),
+  "canApply": zod.boolean(),
+  "issues": zod.array(zod.object({
+  "path": zod.string(),
+  "message": zod.string()
+}))
+})
+
+
+/**
+ * @summary Strict non-mutating question-bank validation
+ */
+
+
+
+
+
+
+
+
+export const validateAdminContentImportBodyBankSubcategoriesItemQuestionsItemNumberCloseBandMin = 0;
+
+
+
+
+
+export const ValidateAdminContentImportBody = zod.object({
+  "bank": zod.object({
+  "vaultType": zod.object({
+  "slug": zod.string().min(1),
+  "name": zod.string().min(1),
+  "requiredSubjectTokens": zod.array(zod.string().min(1)),
+  "displayOrder": zod.number().int()
+}),
+  "subcategories": zod.array(zod.object({
+  "sourceKey": zod.string().min(1),
+  "name": zod.string().min(1),
+  "iconKey": zod.string().optional(),
+  "displayOrder": zod.number().int(),
+  "questions": zod.array(zod.object({
+  "sourceKey": zod.string().min(1),
+  "prompt": zod.string().min(1),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.enum(['scoreable', 'keepsake']).optional(),
+  "number": zod.object({
+  "unit": zod.string().min(1),
+  "minimum": zod.number(),
+  "maximum": zod.number(),
+  "closeBand": zod.number().min(validateAdminContentImportBodyBankSubcategoriesItemQuestionsItemNumberCloseBandMin)
+}).optional(),
+  "fitTag": zod.enum(['short', 'long']).optional(),
+  "displayOrder": zod.number().int(),
+  "options": zod.array(zod.string().min(1))
+}))
+})).min(1)
+})
+})
+
+export const validateAdminContentImportResponseUnresolvedCountMin = 0;
+
+
+
+export const ValidateAdminContentImportResponse = zod.object({
+  "unresolvedCount": zod.number().int().min(validateAdminContentImportResponseUnresolvedCountMin),
+  "canApply": zod.boolean(),
+  "issues": zod.array(zod.object({
+  "path": zod.string(),
+  "message": zod.string()
+}))
+})
+
+
+/**
+ * @summary Fresh-MFA audited all-or-nothing valid question-bank import
+ */
+
+
+
+
+
+
+
+
+export const applyAdminContentImportBodyOneBankSubcategoriesItemQuestionsItemNumberCloseBandMin = 0;
+
+
+
+export const applyAdminContentImportBodyTwoReasonMax = 1000;
+
+
+
+export const ApplyAdminContentImportBody = zod.object({
+  "bank": zod.object({
+  "vaultType": zod.object({
+  "slug": zod.string().min(1),
+  "name": zod.string().min(1),
+  "requiredSubjectTokens": zod.array(zod.string().min(1)),
+  "displayOrder": zod.number().int()
+}),
+  "subcategories": zod.array(zod.object({
+  "sourceKey": zod.string().min(1),
+  "name": zod.string().min(1),
+  "iconKey": zod.string().optional(),
+  "displayOrder": zod.number().int(),
+  "questions": zod.array(zod.object({
+  "sourceKey": zod.string().min(1),
+  "prompt": zod.string().min(1),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.enum(['scoreable', 'keepsake']).optional(),
+  "number": zod.object({
+  "unit": zod.string().min(1),
+  "minimum": zod.number(),
+  "maximum": zod.number(),
+  "closeBand": zod.number().min(applyAdminContentImportBodyOneBankSubcategoriesItemQuestionsItemNumberCloseBandMin)
+}).optional(),
+  "fitTag": zod.enum(['short', 'long']).optional(),
+  "displayOrder": zod.number().int(),
+  "options": zod.array(zod.string().min(1))
+}))
+})).min(1)
+})
+}).and(zod.object({
+  "reason": zod.string().min(1).max(applyAdminContentImportBodyTwoReasonMax)
+}))
+
+export const ApplyAdminContentImportResponse = zod.object({
+  "vaultTypeId": zod.string().uuid(),
+  "subcategoryCount": zod.number().int(),
+  "questionCount": zod.number().int(),
+  "optionCount": zod.number().int()
+})
+
+
+/**
+ * @summary Fresh-MFA audited creation of a content item
+ */
+export const CreateAdminContentItemParams = zod.object({
+  "kind": zod.enum(['vault-types', 'subcategories', 'questions', 'options'])
+})
+
+export const createAdminContentItemBodyOneReasonMax = 1000;
+
+
+
+export const CreateAdminContentItemBody = zod.object({
+  "reason": zod.string().min(1).max(createAdminContentItemBodyOneReasonMax)
+}).and(zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.'))
+
+export const CreateAdminContentItemResponse = zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.')
+
+
+/**
+ * @summary Fresh-MFA audited content update; permanent IDs remain unchanged
+ */
+export const UpdateAdminContentItemParams = zod.object({
+  "kind": zod.enum(['vault-types', 'subcategories', 'questions', 'options']),
+  "contentId": zod.coerce.string().uuid()
+})
+
+export const updateAdminContentItemBodyOneReasonMax = 1000;
+
+
+
+export const UpdateAdminContentItemBody = zod.object({
+  "reason": zod.string().min(1).max(updateAdminContentItemBodyOneReasonMax)
+}).and(zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.'))
+
+export const UpdateAdminContentItemResponse = zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.')
+
+
+/**
+ * @summary Fresh-MFA audited retirement or reactivation; never deletes content
+ */
+export const SetAdminContentRetirementParams = zod.object({
+  "kind": zod.enum(['vault-types', 'subcategories', 'questions', 'options']),
+  "contentId": zod.coerce.string().uuid(),
+  "state": zod.enum(['retire', 'reactivate'])
+})
+
+export const setAdminContentRetirementBodyReasonMax = 1000;
+
+
+
+export const SetAdminContentRetirementBody = zod.object({
+  "reason": zod.string().min(1).max(setAdminContentRetirementBodyReasonMax)
+})
+
+export const SetAdminContentRetirementResponse = zod.record(zod.string(), zod.unknown()).describe('A vault type, subcategory, question, or option with its permanent ID.')
+
+
+/**
+ * @summary Fresh-MFA audited complete sibling reorder
+ */
+export const ReorderAdminContentParams = zod.object({
+  "kind": zod.enum(['vault-types', 'subcategories', 'questions', 'options'])
+})
+
+export const reorderAdminContentBodyOneReasonMax = 1000;
+
+
+
+
+export const ReorderAdminContentBody = zod.object({
+  "reason": zod.string().min(1).max(reorderAdminContentBodyOneReasonMax)
+}).and(zod.object({
+  "ids": zod.array(zod.string().uuid()).min(1)
+}))
+
+export const ReorderAdminContentResponse = zod.object({
+  "ids": zod.array(zod.string().uuid())
+})
+
+
+/**
+ * @summary Get safe vault health metadata and reveal scope previews
+ */
+export const GetAdminVaultParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetAdminVaultResponse = zod.object({
+  "vault": zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "planTier": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sealedAt": zod.coerce.date().nullable(),
+  "operatorName": zod.string(),
+  "vaultTypeName": zod.string()
+}),
+  "totals": zod.object({
+  "guestCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "answerCount": zod.number().int()
+}),
+  "unlockedAnswerCount": zod.number().int().describe('Count of answers currently readable through the canonical unlocked-answer policy.'),
+  "revealSlots": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['scheduled', 'milestone']),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date()
+})),
+  "scopePreviews": zod.array(zod.object({
+  "scope": zod.enum(['reveal_slot', 'milestone', 'entire_vault']),
+  "revealSlotId": zod.string().uuid().nullable(),
+  "label": zod.string(),
+  "answerCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "guestCount": zod.number().int(),
+  "overrideAnswerCount": zod.number().int(),
+  "resealAvailable": zod.boolean()
+})).describe('Exact mutation scopes and counts; reseal availability is derived from answer override metadata.')
+})
+
+
+/**
+ * @summary Get vault entitlement, local billing, overage, and email support status
+ */
+export const GetAdminVaultSupportDetailParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetAdminVaultSupportDetailResponse = zod.object({
+  "vault": zod.object({
+  "vault": zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "planTier": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sealedAt": zod.coerce.date().nullable(),
+  "operatorName": zod.string(),
+  "vaultTypeName": zod.string()
+}),
+  "totals": zod.object({
+  "guestCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "answerCount": zod.number().int()
+}),
+  "unlockedAnswerCount": zod.number().int().describe('Count of answers currently readable through the canonical unlocked-answer policy.'),
+  "revealSlots": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "kind": zod.enum(['scheduled', 'milestone']),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date()
+})),
+  "scopePreviews": zod.array(zod.object({
+  "scope": zod.enum(['reveal_slot', 'milestone', 'entire_vault']),
+  "revealSlotId": zod.string().uuid().nullable(),
+  "label": zod.string(),
+  "answerCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "guestCount": zod.number().int(),
+  "overrideAnswerCount": zod.number().int(),
+  "resealAvailable": zod.boolean()
+})).describe('Exact mutation scopes and counts; reseal availability is derived from answer override metadata.')
+}),
+  "billingRecords": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "vaultId": zod.string().uuid().nullable(),
+  "operatorId": zod.string().uuid().nullable(),
+  "targetTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "amountCents": zod.number().int(),
+  "currency": zod.enum(['usd']),
+  "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'refunded', 'disputed', 'comped']),
+  "source": zod.enum(['stripe', 'gift', 'comp']),
+  "stripeRefundId": zod.string().nullish(),
+  "refundRequestId": zod.string().uuid().nullish(),
+  "refundAttemptStatus": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+})),
+  "overageEvents": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "vaultId": zod.string().uuid(),
+  "guestCap": zod.number().int(),
+  "submissionCount": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "resolvedAt": zod.coerce.date().nullable(),
+  "outcome": zod.union([zod.literal('upgraded'),zod.literal('declined'),zod.literal(null)]).nullable()
+})),
+  "emailDeliveries": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "dedupeKey": zod.string(),
+  "eventType": zod.string(),
+  "recipientEmail": zod.string().email(),
+  "status": zod.enum(['queued', 'sending', 'sent', 'failed', 'suppressed']),
+  "attempts": zod.number().int(),
+  "providerId": zod.string().nullable(),
+  "lastError": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "sentAt": zod.coerce.date().nullable()
+}))
+})
+
+
+/**
+ * @summary Fresh-MFA manual unlock for one vault scope
+ */
+export const ManualUnlockVaultParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const manualUnlockVaultBodyOneReasonMax = 1000;
+
+
+export const manualUnlockVaultBodyTwoSendEmailsDefault = false;
+
+export const ManualUnlockVaultBody = zod.object({
+  "reason": zod.string().min(1).max(manualUnlockVaultBodyOneReasonMax)
+}).and(zod.object({
+  "scope": zod.enum(['reveal_slot', 'milestone', 'entire_vault']),
+  "revealSlotId": zod.string().uuid().optional(),
+  "confirmation": zod.string().min(1),
+  "sendEmails": zod.boolean().default(manualUnlockVaultBodyTwoSendEmailsDefault)
+}))
+
+export const ManualUnlockVaultResponse = zod.object({
+  "scope": zod.enum(['reveal_slot', 'milestone', 'entire_vault']),
+  "revealSlotId": zod.string().uuid().nullable(),
+  "answerCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "guestCount": zod.number().int(),
+  "emailsQueued": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Fresh-MFA exact reseal for one vault scope
+ */
+export const ResealAdminVaultParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const resealAdminVaultBodyOneReasonMax = 1000;
+
+
+export const resealAdminVaultBodyTwoSendEmailsDefault = false;
+
+export const ResealAdminVaultBody = zod.object({
+  "reason": zod.string().min(1).max(resealAdminVaultBodyOneReasonMax)
+}).and(zod.object({
+  "scope": zod.enum(['reveal_slot', 'milestone', 'entire_vault']),
+  "revealSlotId": zod.string().uuid().optional(),
+  "confirmation": zod.string().min(1),
+  "sendEmails": zod.boolean().default(resealAdminVaultBodyTwoSendEmailsDefault)
+}))
+
+export const ResealAdminVaultResponse = zod.object({
+  "scope": zod.enum(['reveal_slot', 'milestone', 'entire_vault']),
+  "revealSlotId": zod.string().uuid().nullable(),
+  "answerCount": zod.number().int(),
+  "predictionCount": zod.number().int(),
+  "guestCount": zod.number().int(),
+  "emailsQueued": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Browse append-only administrative audit events
+ */
+export const ListAdminAuditEventsQueryParams = zod.object({
+  "action": zod.coerce.string().optional(),
+  "admin": zod.coerce.string().optional(),
+  "target": zod.coerce.string().optional()
+})
+
+export const ListAdminAuditEventsResponse = zod.object({
+  "events": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "action": zod.string(),
+  "targetType": zod.string(),
+  "targetId": zod.string().uuid(),
+  "reason": zod.string(),
+  "details": zod.object({
+
+}).passthrough(),
+  "occurredAt": zod.coerce.date(),
+  "adminName": zod.string()
+}))
+})
+
+
+/**
+ * @summary Fresh-MFA audited CSV export including sealed answers
+ */
+export const downloadAdminFullExportBodyOneReasonMax = 1000;
+
+
+
+export const DownloadAdminFullExportBody = zod.object({
+  "reason": zod.string().min(1).max(downloadAdminFullExportBodyOneReasonMax)
+}).and(zod.object({
+  "confirmation": zod.enum(['EXPORT SEALED DATA'])
+}))
+
+export const DownloadAdminFullExportResponse = zod.unknown()
+
+
+/**
+ * @summary Download paid-vault unlocked content only
+ */
+export const DownloadAdminVaultUnlockedExportParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const DownloadAdminVaultUnlockedExportResponse = zod.unknown()
+
+
+/**
+ * @summary Get metadata-only deletion impact preview
+ */
+export const GetAdminVaultDeletionPreviewParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetAdminVaultDeletionPreviewResponse = zod.object({
+
+}).passthrough()
+
+
+/**
+ * @summary Fresh-MFA audited vault deletion
+ */
+export const DeleteAdminVaultParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const deleteAdminVaultBodyOneReasonMax = 1000;
+
+
+
+
+export const DeleteAdminVaultBody = zod.object({
+  "reason": zod.string().min(1).max(deleteAdminVaultBodyOneReasonMax)
+}).and(zod.object({
+  "confirmation": zod.string().min(1)
+}))
+
+export const DeleteAdminVaultResponse = zod.object({
+
+}).passthrough()
+
+
+/**
+ * @summary Get account deletion impact and required typed phrase
+ */
+export const GetAdminAccountDeletionPreviewParams = zod.object({
+  "accountId": zod.coerce.string().uuid()
+})
+
+export const GetAdminAccountDeletionPreviewResponse = zod.object({
+
+}).passthrough()
+
+
+/**
+ * @summary Fresh-MFA audited operator account anonymization and vault deletion
+ */
+export const DeleteAdminAccountParams = zod.object({
+  "accountId": zod.coerce.string().uuid()
+})
+
+export const deleteAdminAccountBodyOneReasonMax = 1000;
+
+
+
+
+export const DeleteAdminAccountBody = zod.object({
+  "reason": zod.string().min(1).max(deleteAdminAccountBodyOneReasonMax)
+}).and(zod.object({
+  "confirmation": zod.string().min(1)
+}))
+
+export const DeleteAdminAccountResponse = zod.object({
+
+}).passthrough()
 
 
 /**

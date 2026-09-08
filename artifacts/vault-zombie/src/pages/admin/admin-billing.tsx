@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { getTierLabel } from "@/lib/utils";
+import { useSensitiveAdminAction } from "@/hooks/use-sensitive-admin-action";
 
 export function AdminBillingTab() {
   const { data, isLoading } = useListAdminBilling();
-  const [refundTarget, setRefundTarget] = useState<string | null>(null);
+  const [refundTarget, setRefundTarget] = useState<{ id: string; requestId: string | null } | null>(null);
 
   if (isLoading) return <div className="p-12 text-center text-text-2">Loading billing records...</div>;
 
@@ -47,12 +48,13 @@ export function AdminBillingTab() {
                       'bg-bronze-wash text-bronze'
                     }`}>
                       {record.status}
+                      {record.refundAttemptStatus && <span className="ml-2 normal-case">refund: {record.refundAttemptStatus}</span>}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {record.status === 'paid' && record.source === 'stripe' && record.amountCents > 0 && (
-                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setRefundTarget(record.id)}>
-                        Refund
+                    {record.status === 'paid' && record.source === 'stripe' && record.amountCents > 0 && (!record.refundRequestId || ["reserved", "stripe_pending", "unknown"].includes(record.refundAttemptStatus ?? "")) && (
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setRefundTarget({ id: record.id, requestId: record.refundRequestId ?? null })}>
+                        {record.refundRequestId ? "Resume refund" : "Refund"}
                       </Button>
                     )}
                   </td>
@@ -66,34 +68,36 @@ export function AdminBillingTab() {
         </div>
       </div>
 
-      <RefundDialog recordId={refundTarget} onClose={() => setRefundTarget(null)} />
+      <RefundDialog recordId={refundTarget?.id ?? null} effectiveRequestId={refundTarget?.requestId ?? null} onClose={() => setRefundTarget(null)} />
     </div>
   );
 }
 
-function RefundDialog({ recordId, onClose }: { recordId: string | null, onClose: () => void }) {
+function RefundDialog({ recordId, effectiveRequestId, onClose }: { recordId: string | null, effectiveRequestId: string | null, onClose: () => void }) {
   const [reason, setReason] = useState("");
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const refund = useRefundBillingRecord();
+  const runSensitive = useSensitiveAdminAction();
 
-  const handleRefund = (e: React.FormEvent) => {
+  const handleRefund = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recordId || !reason.trim()) return;
 
-    refund.mutate(
-      { billingRecordId: recordId, data: { reason: reason.trim() } },
-      {
-        onSuccess: (res) => {
+    try {
+      const res = await runSensitive(() => refund.mutateAsync(
+        { billingRecordId: recordId, data: { reason: reason.trim(), requestId: effectiveRequestId ?? requestId } },
+      ));
           toast({
             title: "Refund Processed",
             description: `Vault downgraded to ${getTierLabel(res.currentTier)}.`,
           });
           queryClient.invalidateQueries({ queryKey: getListAdminBillingQueryKey() });
           setReason("");
+          setRequestId(crypto.randomUUID());
           onClose();
-        },
-        onError: (err: any) => {
+    } catch (err: any) {
           const msg = err?.response?.data?.message || "Refund failed.";
           toast({
             title: "Refund Error",
@@ -107,9 +111,7 @@ function RefundDialog({ recordId, onClose }: { recordId: string | null, onClose:
               variant: "destructive"
              });
           }
-        }
-      }
-    );
+    }
   };
 
   return (

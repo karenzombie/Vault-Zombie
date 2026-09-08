@@ -8,6 +8,10 @@ import billingRouter from "./billing";
 import giftRouter from "./gifts";
 import adminBillingRouter from "./admin-billing";
 import emailRouter from "./email";
+import adminVaultsRouter from "./admin-vaults";
+import adminLifecycleRouter from "./admin-lifecycle";
+import adminExportRouter from "./admin-export";
+import adminContentRouter from "./admin-content";
 
 const router: IRouter = Router();
 
@@ -20,5 +24,9 @@ router.use(billingRouter);
 router.use(giftRouter);
 router.use(adminBillingRouter);
 router.use(emailRouter);
+router.use(adminVaultsRouter);
+router.use(adminLifecycleRouter);
+router.use(adminExportRouter);
+router.use(adminContentRouter);
 
 export default router;

@@ -34,6 +34,10 @@ export type AdminGiftListGiftsItem = {
   stripeRefundId: string | null;
   /** @nullable */
   stripePaymentIntentId: string | null;
+  /** @nullable */
+  refundRequestId: string | null;
+  /** @nullable */
+  refundAttemptStatus: string | null;
   refundableNow: boolean;
   /** @nullable */
   latestDeliveryStatus: AdminGiftListGiftsItemLatestDeliveryStatus;

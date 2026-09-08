@@ -211,6 +211,55 @@ paths:
         "200": { description: Billing records, content: { application/json: { schema: { $ref: "#/components/schemas/AdminBillingList" } } } }
         "401": { description: Authentication required }
         "403": { description: Administrator access required }
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      tags: [admin]
+      summary: Get owner dashboard counts and sealed-content-safe health metadata
+      responses:
+        "200": { description: "Aggregate counts and health metadata only, never answer values", content: { application/json: { schema: { $ref: "#/components/schemas/AdminDashboard" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/reports/revenue:
+    get:
+      operationId: getAdminRevenueReport
+      tags: [admin]
+      summary: Report locally recorded billing and gift activity for a bounded UTC date period
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: source, in: query, schema: { type: string, enum: [stripe, gift, comp] } }
+        - { name: tier, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+      responses:
+        "200": { description: "Local-record revenue metrics; Stripe fees, payouts, and net reconciliation are explicitly unavailable", content: { application/json: { schema: { $ref: "#/components/schemas/AdminRevenueReport" } } } }
+        "400": { description: Invalid or unbounded period }
+  /admin/operators:
+    get:
+      operationId: listAdminOperators
+      tags: [admin]
+      summary: Search operator accounts with safe identity metadata
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        "200": { description: Paginated safe account metadata, content: { application/json: { schema: { $ref: "#/components/schemas/AdminOperatorList" } } } }
+  /admin/operators/{accountId}:
+    get:
+      operationId: getAdminOperator
+      tags: [admin]
+      summary: Get operator-owned vaults and local billing history
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+      responses:
+        "200": { description: "Safe identity, vault metadata, and billing history only", content: { application/json: { schema: { $ref: "#/components/schemas/AdminOperatorDetail" } } } }
+        "404": { description: Operator not found }
   /admin/gifts:
     get:
       operationId: listAdminGifts
@@ -220,6 +269,15 @@ paths:
         "200": { description: Gift records, content: { application/json: { schema: { $ref: "#/components/schemas/AdminGiftList" } } } }
         "401": { description: Authentication required }
         "403": { description: Administrator access required }
+  /admin/gifts/{giftId}:
+    get:
+      operationId: getAdminGift
+      tags: [admin]
+      summary: Get gift status, redemption, refund, and delivery support detail
+      parameters: [{ $ref: "#/components/parameters/GiftId" }]
+      responses:
+        "200": { description: Gift state and delivery metadata, content: { application/json: { schema: { $ref: "#/components/schemas/AdminGiftDetail" } } } }
+        "404": { description: Gift not found }
   /admin/overages:
     get:
       operationId: listAdminOverages
@@ -234,10 +292,29 @@ paths:
       operationId: listAdminEmailDeliveries
       tags: [billing]
       summary: List transactional email delivery status and failures
+      parameters:
+        - { name: status, in: query, schema: { type: string, enum: [queued, sending, sent, failed, suppressed] } }
+        - { name: eventType, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 250, default: 100 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, default: 0 } }
       responses:
         "200": { description: Email deliveries, content: { application/json: { schema: { $ref: "#/components/schemas/AdminEmailDeliveryList" } } } }
         "401": { description: Authentication required }
         "403": { description: Administrator access required }
+  /admin/email-deliveries/{emailDeliveryId}:
+    get:
+      operationId: getAdminEmailDelivery
+      tags: [admin]
+      summary: Get delivery support detail without email payload content
+      parameters:
+        - name: emailDeliveryId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Delivery metadata and error state, content: { application/json: { schema: { $ref: "#/components/schemas/AdminEmailDeliveryDetail" } } } }
+        "404": { description: Delivery not found }
   /admin/email-deliveries/{emailDeliveryId}/retry:
     post:
       operationId: retryAdminEmailDelivery
@@ -274,7 +351,7 @@ paths:
       parameters: [{ $ref: "#/components/parameters/BillingRecordId" }]
       requestBody:
         required: true
-        content: { application/json: { schema: { $ref: "#/components/schemas/SensitiveReasonInput" } } }
+        content: { application/json: { schema: { $ref: "#/components/schemas/RefundRequestInput" } } }
       responses:
         "200": { description: Refund confirmed, content: { application/json: { schema: { $ref: "#/components/schemas/AdminBillingActionResult" } } } }
         "400": { description: Billing record cannot be refunded }
@@ -288,7 +365,7 @@ paths:
       parameters: [{ $ref: "#/components/parameters/GiftId" }]
       requestBody:
         required: true
-        content: { application/json: { schema: { $ref: "#/components/schemas/SensitiveReasonInput" } } }
+        content: { application/json: { schema: { $ref: "#/components/schemas/RefundRequestInput" } } }
       responses:
         "200": { description: Gift refund confirmed, content: { application/json: { schema: { $ref: "#/components/schemas/GiftRefundResult" } } } }
         "400": { description: Gift is ineligible for refund }
@@ -306,6 +383,200 @@ paths:
       responses:
         "200": { description: Comp granted, content: { application/json: { schema: { $ref: "#/components/schemas/AdminBillingActionResult" } } } }
         "400": { description: Target is not monotonic }
+  /admin/vaults:
+    get:
+      operationId: listAdminVaults
+      tags: [admin]
+      summary: List safe vault health metadata for administrators
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 100 }
+      responses:
+        "200": { description: "Vault metadata only, never prediction content", content: { application/json: { schema: { $ref: "#/components/schemas/AdminVaultList" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/content:
+    get:
+      operationId: listAdminContent
+      tags: [admin]
+      summary: List searchable content-management metadata
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 100 }
+      responses:
+        "200": { description: Content hierarchy metadata, content: { application/json: { schema: { $ref: "#/components/schemas/AdminContentList" } } } }
+  /admin/content/import/preview:
+    post:
+      operationId: previewAdminContentImport
+      tags: [admin]
+      summary: Non-mutating strict question-bank import preview
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ContentImportRequest" } } } }
+      responses:
+        "200": { description: Validation findings, content: { application/json: { schema: { $ref: "#/components/schemas/ContentImportPreview" } } } }
+  /admin/content/import/validate:
+    post:
+      operationId: validateAdminContentImport
+      tags: [admin]
+      summary: Strict non-mutating question-bank validation
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ContentImportRequest" } } } }
+      responses:
+        "200": { description: Validation findings, content: { application/json: { schema: { $ref: "#/components/schemas/ContentImportPreview" } } } }
+  /admin/content/import/apply:
+    post:
+      operationId: applyAdminContentImport
+      tags: [admin]
+      summary: Fresh-MFA audited all-or-nothing valid question-bank import
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ContentImportApplyRequest" } } } }
+      responses:
+        "201": { description: Entire bank imported, content: { application/json: { schema: { $ref: "#/components/schemas/ContentImportResult" } } } }
+        "400": { description: Import has unresolved validation issues }
+  /admin/content/{kind}:
+    post:
+      operationId: createAdminContentItem
+      tags: [admin]
+      summary: Fresh-MFA audited creation of a content item
+      parameters: [{ $ref: "#/components/parameters/ContentKind" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ContentMutationInput" } } } }
+      responses: { "201": { description: Created content item, content: { application/json: { schema: { $ref: "#/components/schemas/ContentItem" } } } } }
+  /admin/content/{kind}/{contentId}:
+    patch:
+      operationId: updateAdminContentItem
+      tags: [admin]
+      summary: Fresh-MFA audited content update; permanent IDs remain unchanged
+      parameters: [{ $ref: "#/components/parameters/ContentKind" }, { $ref: "#/components/parameters/ContentId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ContentMutationInput" } } } }
+      responses: { "200": { description: Updated content item, content: { application/json: { schema: { $ref: "#/components/schemas/ContentItem" } } } } }
+  /admin/content/{kind}/{contentId}/{state}:
+    post:
+      operationId: setAdminContentRetirement
+      tags: [admin]
+      summary: Fresh-MFA audited retirement or reactivation; never deletes content
+      parameters: [{ $ref: "#/components/parameters/ContentKind" }, { $ref: "#/components/parameters/ContentId" }, { $ref: "#/components/parameters/ContentRetirementState" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/SensitiveReasonInput" } } } }
+      responses: { "200": { description: Content retirement state updated, content: { application/json: { schema: { $ref: "#/components/schemas/ContentItem" } } } } }
+  /admin/content/{kind}/reorder:
+    post:
+      operationId: reorderAdminContent
+      tags: [admin]
+      summary: Fresh-MFA audited complete sibling reorder
+      parameters: [{ $ref: "#/components/parameters/ContentKind" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ContentReorderInput" } } } }
+      responses: { "200": { description: Reordered content IDs, content: { application/json: { schema: { $ref: "#/components/schemas/ContentReorderResult" } } } } }
+  /admin/vaults/{vaultId}:
+    get:
+      operationId: getAdminVault
+      tags: [admin]
+      summary: Get safe vault health metadata and reveal scope previews
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: "Metadata and counts only", content: { application/json: { schema: { $ref: "#/components/schemas/AdminVaultDetail" } } } }
+        "404": { description: Vault not found }
+  /admin/vaults/{vaultId}/support:
+    get:
+      operationId: getAdminVaultSupportDetail
+      tags: [admin]
+      summary: Get vault entitlement, local billing, overage, and email support status
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Vault support metadata only; never sealed answer values, content: { application/json: { schema: { $ref: "#/components/schemas/AdminVaultSupportDetail" } } } }
+        "404": { description: Vault not found }
+  /admin/vaults/{vaultId}/unlock:
+    post:
+      operationId: manualUnlockVault
+      tags: [admin]
+      summary: Fresh-MFA manual unlock for one vault scope
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ManualVaultActionInput" } } } }
+      responses:
+        "200": { description: "Override applied without changing unlock_at", content: { application/json: { schema: { $ref: "#/components/schemas/ManualVaultActionResult" } } } }
+        "403": { description: Fresh MFA required }
+  /admin/vaults/{vaultId}/reseal:
+    post:
+      operationId: resealAdminVault
+      tags: [admin]
+      summary: Fresh-MFA exact reseal for one vault scope
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/ManualVaultActionInput" } } } }
+      responses:
+        "200": { description: "Overrides cleared", content: { application/json: { schema: { $ref: "#/components/schemas/ManualVaultActionResult" } } } }
+        "403": { description: Fresh MFA required }
+  /admin/audit:
+    get:
+      operationId: listAdminAuditEvents
+      tags: [admin]
+      summary: Browse append-only administrative audit events
+      parameters:
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: admin
+          in: query
+          schema: { type: string }
+        - name: target
+          in: query
+          schema: { type: string }
+      responses:
+        "200": { description: "Immutable audit events", content: { application/json: { schema: { $ref: "#/components/schemas/AdminAuditList" } } } }
+  /admin/full-export:
+    post:
+      operationId: downloadAdminFullExport
+      tags: [admin]
+      summary: Fresh-MFA audited CSV export including sealed answers
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminFullExportInput" } } }
+      responses:
+        "200": { description: "CSV attachment", content: { text/csv: { schema: { type: string, format: binary } } } }
+        "403": { description: Fresh MFA required }
+  /admin/vaults/{vaultId}/unlocked-export:
+    get:
+      operationId: downloadAdminVaultUnlockedExport
+      tags: [admin]
+      summary: Download paid-vault unlocked content only
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: "CSV attachment", content: { text/csv: { schema: { type: string, format: binary } } } }
+        "403": { description: Paid vault required }
+  /admin/vaults/{vaultId}/deletion-preview:
+    get:
+      operationId: getAdminVaultDeletionPreview
+      tags: [admin]
+      summary: Get metadata-only deletion impact preview
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses: { "200": { description: "Deletion preview", content: { application/json: { schema: { type: object } } } } }
+  /admin/vaults/{vaultId}/delete:
+    post:
+      operationId: deleteAdminVault
+      tags: [admin]
+      summary: Fresh-MFA audited vault deletion
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/AdminDeletionInput" } } } }
+      responses: { "200": { description: "Vault deleted", content: { application/json: { schema: { type: object } } } } }
+  /admin/accounts/{accountId}/deletion-preview:
+    get:
+      operationId: getAdminAccountDeletionPreview
+      tags: [admin]
+      summary: Get account deletion impact and required typed phrase
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses: { "200": { description: "Deletion preview", content: { application/json: { schema: { type: object } } } }, "404": { description: Account not found } }
+  /admin/accounts/{accountId}/delete:
+    post:
+      operationId: deleteAdminAccount
+      tags: [admin]
+      summary: Fresh-MFA audited operator account anonymization and vault deletion
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/AdminDeletionInput" } } } }
+      responses: { "200": { description: "Account deleted", content: { application/json: { schema: { type: object } } } } }
   /operator/vaults/{vaultId}/reveals/unlocked:
     get:
       operationId: listUnlockedRevealWork
@@ -528,6 +799,21 @@ components:
       in: path
       required: true
       schema: { type: string, minLength: 8, maxLength: 255, pattern: "^cs_" }
+    ContentKind:
+      name: kind
+      in: path
+      required: true
+      schema: { type: string, enum: [vault-types, subcategories, questions, options] }
+    ContentId:
+      name: contentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ContentRetirementState:
+      name: state
+      in: path
+      required: true
+      schema: { type: string, enum: [retire, reactivate] }
   schemas:
     HealthStatus:
       type: object
@@ -605,6 +891,332 @@ components:
       type: object
       required: [reason]
       properties: { reason: { type: string, minLength: 1, maxLength: 1000 } }
+    RefundRequestInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [requestId]
+          properties:
+            requestId: { type: string, format: uuid, description: Stable client action ID retained for uncertain retry reconciliation. }
+    ContentItem:
+      type: object
+      additionalProperties: true
+      description: A vault type, subcategory, question, or option with its permanent ID.
+    ContentMutationInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - $ref: "#/components/schemas/ContentItem"
+    ContentReorderInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [ids]
+          properties:
+            ids:
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items: { type: string, format: uuid }
+    ContentReorderResult:
+      type: object
+      required: [ids]
+      properties:
+        ids: { type: array, items: { type: string, format: uuid } }
+    AdminContentList:
+      type: object
+      required: [vaultTypes, subcategories, questions, options]
+      properties:
+        vaultTypes: { type: array, items: { $ref: "#/components/schemas/ContentItem" } }
+        subcategories: { type: array, items: { $ref: "#/components/schemas/ContentItem" } }
+        questions: { type: array, items: { $ref: "#/components/schemas/ContentItem" } }
+        options: { type: array, items: { $ref: "#/components/schemas/ContentItem" } }
+    ContentImportRequest:
+      type: object
+      required: [bank]
+      properties:
+        bank: { $ref: "#/components/schemas/QuestionBankImport" }
+    ContentImportApplyRequest:
+      allOf:
+        - $ref: "#/components/schemas/ContentImportRequest"
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+    ContentImportPreview:
+      type: object
+      required: [unresolvedCount, issues, canApply]
+      properties:
+        unresolvedCount: { type: integer, minimum: 0 }
+        canApply: { type: boolean }
+        issues:
+          type: array
+          items:
+            type: object
+            required: [path, message]
+            properties:
+              path: { type: string }
+              message: { type: string }
+    ContentImportResult:
+      type: object
+      required: [vaultTypeId, subcategoryCount, questionCount, optionCount]
+      properties:
+        vaultTypeId: { type: string, format: uuid }
+        subcategoryCount: { type: integer }
+        questionCount: { type: integer }
+        optionCount: { type: integer }
+    QuestionBankImport:
+      type: object
+      required: [vaultType, subcategories]
+      properties:
+        vaultType:
+          type: object
+          required: [slug, name, requiredSubjectTokens, displayOrder]
+          properties:
+            slug: { type: string, minLength: 1 }
+            name: { type: string, minLength: 1 }
+            requiredSubjectTokens: { type: array, items: { type: string, minLength: 1 } }
+            displayOrder: { type: integer }
+        subcategories:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [sourceKey, name, displayOrder, questions]
+            properties:
+              sourceKey: { type: string, minLength: 1 }
+              name: { type: string, minLength: 1 }
+              iconKey: { type: string }
+              displayOrder: { type: integer }
+              questions:
+                type: array
+                items:
+                  type: object
+                  required: [sourceKey, prompt, answerType, displayOrder, options]
+                  properties:
+                    sourceKey: { type: string, minLength: 1 }
+                    prompt: { type: string, minLength: 1 }
+                    answerType: { type: string, enum: [free_text, number, multiple_choice, name_pick] }
+                    freeTextMode: { type: string, enum: [scoreable, keepsake] }
+                    number:
+                      type: object
+                      required: [unit, minimum, maximum, closeBand]
+                      properties:
+                        unit: { type: string, minLength: 1 }
+                        minimum: { type: number }
+                        maximum: { type: number }
+                        closeBand: { type: number, minimum: 0 }
+                    fitTag: { type: string, enum: [short, long] }
+                    displayOrder: { type: integer }
+                    options: { type: array, items: { type: string, minLength: 1 } }
+    AdminDashboard:
+      type: object
+      required: [operatorCount, vaultCount, guestCount, submissionCount, vaultsByState, vaultsByType, vaultsByTier, revealProgress, guestMetrics, unresolvedOverageCount, failedEmailCount]
+      properties:
+        operatorCount: { type: integer }
+        vaultCount: { type: integer }
+        guestCount: { type: integer }
+        submissionCount: { type: integer }
+        vaultsByState: { type: array, items: { $ref: "#/components/schemas/AdminCountBucket" } }
+        vaultsByType: { type: array, items: { $ref: "#/components/schemas/AdminCountBucket" } }
+        vaultsByTier: { type: array, items: { $ref: "#/components/schemas/AdminCountBucket" } }
+        revealProgress:
+          type: object
+          required: [slotsTotal, slotsLanded, answersTotal, answersUnlocked]
+          properties:
+            slotsTotal: { type: integer }
+            slotsLanded: { type: integer }
+            answersTotal: { type: integer }
+            answersUnlocked: { type: integer }
+        guestMetrics:
+          type: object
+          required: [averageGuestsPerVault, capExceededEventCount]
+          properties:
+            averageGuestsPerVault: { type: number }
+            capExceededEventCount: { type: integer }
+        unresolvedOverageCount: { type: integer }
+        failedEmailCount: { type: integer }
+    AdminCountBucket:
+      type: object
+      required: [key, count]
+      properties:
+        key: { type: string }
+        count: { type: integer }
+    AdminRevenueReport:
+      type: object
+      required: [from, to, filters, grossConfirmedAmountCents, refundedAmountCents, disputedAmountCents, compAmountCents, giftIssuedAmountCents, giftRedeemedAmountCents, recordCount, reconciliation]
+      properties:
+        from: { type: string, format: date-time }
+        to: { type: string, format: date-time }
+        filters: { type: object, additionalProperties: true }
+        grossConfirmedAmountCents: { type: integer }
+        refundedAmountCents: { type: integer }
+        disputedAmountCents: { type: integer }
+        compAmountCents: { type: integer }
+        giftIssuedAmountCents: { type: integer }
+        giftRedeemedAmountCents: { type: integer }
+        recordCount: { type: integer }
+        reconciliation:
+          type: object
+          required: [feesAvailable, netAvailable, payoutsAvailable, message]
+          properties:
+            feesAvailable: { type: boolean }
+            netAvailable: { type: boolean }
+            payoutsAvailable: { type: boolean }
+            message: { type: string }
+    AdminOperatorList:
+      type: object
+      required: [operators, total, limit, offset]
+      properties:
+        operators:
+          type: array
+          items:
+            type: object
+            required: [id, displayName, email, status, createdAt, vaultCount]
+            properties:
+              id: { type: string, format: uuid }
+              displayName: { type: string }
+              email: { type: string, format: email }
+              status: { type: string }
+              createdAt: { type: string, format: date-time }
+              vaultCount: { type: integer }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+    AdminOperatorDetail:
+      type: object
+      required: [operator, vaults, billingRecords, totalBillingRecords, limit, offset]
+      properties:
+        operator: { $ref: "#/components/schemas/AdminOperatorList/properties/operators/items" }
+        vaults: { type: array, items: { $ref: "#/components/schemas/AdminVaultList/properties/vaults/items" } }
+        billingRecords: { type: array, items: { $ref: "#/components/schemas/AdminBillingList/properties/records/items" } }
+        totalBillingRecords: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+    AdminGiftDetail:
+      type: object
+      required: [gift, deliveries]
+      properties:
+        gift: { $ref: "#/components/schemas/AdminGiftList/properties/gifts/items" }
+        deliveries: { type: array, items: { $ref: "#/components/schemas/AdminEmailDeliveryList/properties/deliveries/items" } }
+    AdminEmailDeliveryDetail:
+      type: object
+      required: [delivery]
+      properties:
+        delivery: { $ref: "#/components/schemas/AdminEmailDeliveryList/properties/deliveries/items" }
+    AdminVaultSupportDetail:
+      type: object
+      required: [vault, billingRecords, overageEvents, emailDeliveries]
+      properties:
+        vault: { $ref: "#/components/schemas/AdminVaultDetail" }
+        billingRecords: { type: array, items: { $ref: "#/components/schemas/AdminBillingList/properties/records/items" } }
+        overageEvents: { type: array, items: { $ref: "#/components/schemas/AdminOverageList/properties/events/items" } }
+        emailDeliveries: { type: array, items: { $ref: "#/components/schemas/AdminEmailDeliveryList/properties/deliveries/items" } }
+    AdminVaultList:
+      type: object
+      required: [vaults]
+      properties:
+        vaults:
+          type: array
+          items:
+            type: object
+            required: [id, name, status, planTier, createdAt, sealedAt, operatorName, vaultTypeName]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              status: { type: string }
+              planTier: { type: string }
+              createdAt: { type: string, format: date-time }
+              sealedAt: { type: [string, "null"], format: date-time }
+              operatorName: { type: string }
+              vaultTypeName: { type: string }
+    AdminVaultDetail:
+      type: object
+      required: [vault, totals, unlockedAnswerCount, revealSlots, scopePreviews]
+      properties:
+        vault: { $ref: "#/components/schemas/AdminVaultList/properties/vaults/items" }
+        totals:
+          type: object
+          required: [guestCount, predictionCount, answerCount]
+          properties:
+            guestCount: { type: integer }
+            predictionCount: { type: integer }
+            answerCount: { type: integer }
+        unlockedAnswerCount:
+          type: integer
+          description: Count of answers currently readable through the canonical unlocked-answer policy.
+        revealSlots:
+          type: array
+          items:
+            type: object
+            required: [id, kind, label, revealDate]
+            properties:
+              id: { type: string, format: uuid }
+              kind: { type: string, enum: [scheduled, milestone] }
+              label: { type: string }
+              revealDate: { type: string, format: date }
+        scopePreviews:
+          type: array
+          description: Exact mutation scopes and counts; reseal availability is derived from answer override metadata.
+          items:
+            type: object
+            required: [scope, revealSlotId, label, answerCount, predictionCount, guestCount, overrideAnswerCount, resealAvailable]
+            properties:
+              scope: { type: string, enum: [reveal_slot, milestone, entire_vault] }
+              revealSlotId: { type: [string, "null"], format: uuid }
+              label: { type: string }
+              answerCount: { type: integer }
+              predictionCount: { type: integer }
+              guestCount: { type: integer }
+              overrideAnswerCount: { type: integer }
+              resealAvailable: { type: boolean }
+    ManualVaultActionInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [scope, confirmation]
+          properties:
+            scope: { type: string, enum: [reveal_slot, milestone, entire_vault] }
+            revealSlotId: { type: string, format: uuid }
+            confirmation: { type: string, minLength: 1 }
+            sendEmails: { type: boolean, default: false }
+    AdminFullExportInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [confirmation]
+          properties:
+            confirmation: { type: string, enum: ["EXPORT SEALED DATA"] }
+    AdminDeletionInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [confirmation]
+          properties: { confirmation: { type: string, minLength: 1 } }
+    ManualVaultActionResult:
+      type: object
+      required: [scope, revealSlotId, answerCount, predictionCount, guestCount]
+      properties:
+        scope: { type: string, enum: [reveal_slot, milestone, entire_vault] }
+        revealSlotId: { type: [string, "null"], format: uuid }
+        answerCount: { type: integer }
+        predictionCount: { type: integer }
+        guestCount: { type: integer }
+        emailsQueued: { type: boolean }
+    AdminAuditList:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            required: [id, action, targetType, targetId, reason, details, occurredAt, adminName]
+            properties:
+              id: { type: string, format: uuid }
+              action: { type: string }
+              targetType: { type: string }
+              targetId: { type: string, format: uuid }
+              reason: { type: string }
+              details: { type: object }
+              occurredAt: { type: string, format: date-time }
+              adminName: { type: string }
     GiftResendInput:
       allOf:
         - $ref: "#/components/schemas/SensitiveReasonInput"
@@ -625,6 +1237,8 @@ components:
         vaultId: { type: string, format: uuid }
         status: { type: string, enum: [refunded, comped] }
         currentTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        requestId: { type: string, format: uuid }
+        refundAttemptStatus: { type: string }
     AdminBillingList:
       type: object
       required: [records]
@@ -644,6 +1258,8 @@ components:
               status: { type: string, enum: [pending, paid, failed, expired, refunded, disputed, comped] }
               source: { type: string, enum: [stripe, gift, comp] }
               stripeRefundId: { type: ["string", "null"] }
+              refundRequestId: { type: ["string", "null"], format: uuid }
+              refundAttemptStatus: { type: ["string", "null"] }
               createdAt: { type: string, format: date-time }
     AdminGiftList:
       type: object
@@ -653,7 +1269,7 @@ components:
           type: array
           items:
             type: object
-            required: [id, code, targetTier, status, amountCents, currency, createdAt, redeemedAt, refundedAt, redeemedVaultId, stripeRefundId, stripePaymentIntentId, refundableNow, latestDeliveryStatus, latestDeliveryError]
+            required: [id, code, targetTier, status, amountCents, currency, createdAt, redeemedAt, refundedAt, redeemedVaultId, stripeRefundId, stripePaymentIntentId, refundableNow, latestDeliveryStatus, latestDeliveryError, refundRequestId, refundAttemptStatus]
             properties:
               id: { type: string, format: uuid }
               code: { type: string }
@@ -670,6 +1286,8 @@ components:
               redeemedVaultId: { type: ["string", "null"], format: uuid }
               stripeRefundId: { type: ["string", "null"] }
               stripePaymentIntentId: { type: ["string", "null"] }
+              refundRequestId: { type: ["string", "null"], format: uuid }
+              refundAttemptStatus: { type: ["string", "null"] }
               refundableNow: { type: boolean }
               latestDeliveryStatus: { type: ["string", "null"], enum: [queued, sending, sent, failed, suppressed, null] }
               latestDeliveryError: { type: ["string", "null"] }
@@ -707,8 +1325,12 @@ components:
         sentAt: { type: ["string", "null"], format: date-time }
     AdminEmailDeliveryList:
       type: object
-      required: [deliveries]
-      properties: { deliveries: { type: array, items: { $ref: "#/components/schemas/AdminEmailDelivery" } } }
+      required: [deliveries, total, limit, offset]
+      properties:
+        deliveries: { type: array, items: { $ref: "#/components/schemas/AdminEmailDelivery" } }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
     EmailRetryResult:
       type: object
       required: [id, status]
@@ -719,11 +1341,13 @@ components:
       properties: { id: { type: string, format: uuid }, status: { type: string, enum: [queued] } }
     GiftRefundResult:
       type: object
-      required: [giftId, status, stripeRefundId]
+      required: [giftId, status, stripeRefundId, requestId, refundAttemptStatus]
       properties:
         giftId: { type: string, format: uuid }
         status: { type: string, enum: [refunded] }
         stripeRefundId: { type: string }
+        requestId: { type: string, format: uuid }
+        refundAttemptStatus: { type: string }
     BillingAttempt:
       type: object
       required: [id, fromTier, targetTier, amountCents, currency, status, createdAt]

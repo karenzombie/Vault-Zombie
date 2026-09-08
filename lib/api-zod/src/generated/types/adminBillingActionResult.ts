@@ -13,4 +13,6 @@ export interface AdminBillingActionResult {
   vaultId: string;
   status: AdminBillingActionResultStatus;
   currentTier: AdminBillingActionResultCurrentTier;
+  requestId?: string;
+  refundAttemptStatus?: string;
 }

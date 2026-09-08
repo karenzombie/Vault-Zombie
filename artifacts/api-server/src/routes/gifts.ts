@@ -5,7 +5,7 @@ import {
   CreateGiftCheckoutBody, CreateGiftCheckoutResponse, GetGiftCardParams,
   GetGiftCardResponse, GetGiftCardByCheckoutSessionParams, RedeemGiftBody, RedeemGiftResponse,
 } from "@workspace/api-zod";
-import { billingRecordsTable, db, giftsTable, vaultsTable } from "@workspace/db";
+import { billingRecordsTable, db, findUnresolvedRefundReservation, giftsTable, vaultsTable } from "@workspace/db";
 import { findStripePrice, getStripeClient, TIER_ORDER, type PaidTier } from "../lib/stripe";
 import { requireOperator } from "../middlewares/auth";
 import { getTrustedAppUrl } from "../lib/app-url";
@@ -109,20 +109,26 @@ giftRouter.post("/operator/gifts/redeem", requireOperator, async (req, res, next
       const [gift] = await tx.select().from(giftsTable).where(eq(giftsTable.code, giftCode)).limit(1).for("update");
       if (!gift) return { kind: "missing" as const };
       if (gift.status !== "purchased" && gift.status !== "disputed") return { kind: "unavailable" as const };
+      const refundReservation = await findUnresolvedRefundReservation(tx, { giftId: gift.id });
+      if (refundReservation) {
+        return { kind: "refund-reserved" as const };
+      }
       const [vault] = await tx.select().from(vaultsTable).where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, req.account!.id))).limit(1).for("update");
       if (!vault) return { kind: "vault-missing" as const };
+      const vaultRefundReservation = await findUnresolvedRefundReservation(tx, { vaultId: vault.id });
+      if (vaultRefundReservation) return { kind: "refund-reserved" as const };
       if (vault.status !== "draft" || TIER_ORDER[gift.targetTier] <= TIER_ORDER[vault.entitledPlanTier]) return { kind: "invalid-vault" as const };
       const [billing] = await tx.insert(billingRecordsTable).values({
         vaultId: vault.id, operatorId: req.account!.id, fromTier: vault.entitledPlanTier,
         targetTier: gift.targetTier, amountCents: gift.amountCents, currency: gift.currency,
-        status: "paid", source: "gift", giftCode: gift.code,
+        status: "paid", source: "gift", giftCode: gift.code, appliedAt: new Date(),
       }).returning();
       await tx.update(vaultsTable).set({ entitledPlanTier: gift.targetTier }).where(eq(vaultsTable.id, vault.id));
       await tx.update(giftsTable).set({ status: "redeemed", redeemedAt: new Date(), redeemedVaultId: vault.id, redeemedBillingRecordId: billing.id }).where(eq(giftsTable.id, gift.id));
       return { kind: "ok" as const, billing };
     });
     if (result.kind === "missing" || result.kind === "vault-missing") return res.status(404).json({ error: "Gift or vault not found." });
-    if (result.kind === "unavailable") return res.status(409).json({ error: "This gift is no longer redeemable." });
+    if (result.kind === "unavailable" || result.kind === "refund-reserved") return res.status(409).json({ error: result.kind === "refund-reserved" ? "This gift has a refund in progress." : "This gift is no longer redeemable." });
     if (result.kind === "invalid-vault") return res.status(400).json({ error: "Choose an owned draft vault below the gift tier." });
     return res.json(RedeemGiftResponse.parse({ vaultId: input.vaultId, billingRecordId: result.billing.id, tier: result.billing.targetTier }));
   } catch (error) { return next(error); }
