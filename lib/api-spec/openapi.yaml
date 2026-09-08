@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: guest
+    description: Account-free, write-only guest prediction flow
 paths:
   /healthz:
     get:
@@ -24,7 +26,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /guest/{token}:
+    get:
+      operationId: getGuestVault
+      tags: [guest]
+      summary: Load the sealed prompt form
+      parameters:
+        - $ref: "#/components/parameters/GuestToken"
+      responses:
+        "200":
+          description: Public form metadata only; never prediction content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestVault"
+        "404":
+          description: Link not found
+  /guest/{token}/submissions:
+    post:
+      operationId: submitGuestPrediction
+      tags: [guest]
+      summary: Atomically seal one guest submission
+      parameters:
+        - $ref: "#/components/parameters/GuestToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuestSubmissionInput"
+      responses:
+        "201":
+          description: Submission sealed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestSubmissionConfirmation"
+        "400":
+          description: Invalid submission
+        "404":
+          description: Link not found
+        "429":
+          description: Rate limit reached
 components:
+  parameters:
+    GuestToken:
+      name: token
+      in: path
+      required: true
+      schema: { type: string, minLength: 32, maxLength: 256 }
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +83,82 @@ components:
           type: string
       required:
         - status
+    GuestOption:
+      type: object
+      required: [id, label]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+    GuestQuestion:
+      type: object
+      required: [id, prompt, answerType, displayOrder, options]
+      properties:
+        id: { type: string, format: uuid }
+        prompt: { type: string }
+        answerType:
+          type: string
+          enum: [free_text, number, multiple_choice, name_pick]
+        numberUnit: { type: ["string", "null"] }
+        numberMinimum: { type: ["number", "null"] }
+        numberMaximum: { type: ["number", "null"] }
+        displayOrder: { type: integer }
+        options:
+          type: array
+          items: { $ref: "#/components/schemas/GuestOption" }
+    GuestTiming:
+      type: object
+      required: [id, label, revealDate]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        revealDate: { type: string, format: date }
+    GuestVault:
+      type: object
+      required: [name, subjectValues, layout, questions, timings, referrerCode]
+      properties:
+        name: { type: string }
+        subjectValues:
+          type: object
+          additionalProperties: { type: string }
+        layout:
+          type: string
+          enum: [one_at_a_time, all_prompts]
+        questions:
+          type: array
+          items: { $ref: "#/components/schemas/GuestQuestion" }
+        timings:
+          type: array
+          items: { $ref: "#/components/schemas/GuestTiming" }
+        referrerCode: { type: string }
+    GuestAnswerInput:
+      type: object
+      required: [vaultQuestionId, revealSlotId, answerType]
+      properties:
+        vaultQuestionId: { type: string, format: uuid }
+        revealSlotId: { type: string, format: uuid }
+        answerType:
+          type: string
+          enum: [free_text, number, multiple_choice, name_pick]
+        textValue: { type: ["string", "null"], maxLength: 140 }
+        numberValue: { type: ["number", "null"] }
+        optionId: { type: ["string", "null"], format: uuid }
+    GuestSubmissionInput:
+      type: object
+      required: [displayName, emailOptedOut, answers]
+      properties:
+        displayName: { type: string, minLength: 1, maxLength: 80 }
+        email: { type: ["string", "null"], format: email }
+        emailOptedOut: { type: boolean }
+        website: { type: string, maxLength: 200 }
+        answers:
+          type: array
+          minItems: 1
+          maxItems: 300
+          items: { $ref: "#/components/schemas/GuestAnswerInput" }
+    GuestSubmissionConfirmation:
+      type: object
+      required: [accepted, createVaultUrl]
+      properties:
+        accepted: { type: boolean }
+        createVaultUrl: { type: string }
 

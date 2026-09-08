@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Vault Zombie"
+description = "The production Vault Zombie web application for operators and account-free guests to create and submit sealed life-event predictions."
+version = "1.0.0"
+id = "artifacts/vault-zombie"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21651
+
+[services.development]
+run = "pnpm --filter @workspace/vault-zombie run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vault-zombie", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/vault-zombie/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21651"
+BASE_PATH = "/"
