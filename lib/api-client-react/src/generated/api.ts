@@ -26,6 +26,7 @@ import type {
   AdminOverageList,
   AnswersArchive,
   AreaReport,
+  BillingPrice,
   ClusterVerdictInput,
   ClusterVerdictResult,
   CompGrantInput,
@@ -377,6 +378,83 @@ export function useGetOperatorVaultBillingStatus<TData = Awaited<ReturnType<type
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetOperatorVaultBillingStatusQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetBillingPricesUrl = () => {
+
+
+
+
+  return `/api/billing/prices`
+}
+
+/**
+ * @summary Get authoritative Stripe prices for valid vault tier purchases and upgrades
+ */
+export const getBillingPrices = async ( options?: Parameters<typeof customFetch>[1]): Promise<BillingPrice[]> => {
+
+  return customFetch<BillingPrice[]>(getGetBillingPricesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBillingPricesQueryKey = () => {
+    return [
+    `/api/billing/prices`
+    ] as const;
+    }
+
+
+export const getGetBillingPricesQueryOptions = <TData = Awaited<ReturnType<typeof getBillingPrices>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBillingPrices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBillingPricesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBillingPrices>>> = ({ signal }) => getBillingPrices({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBillingPrices>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBillingPricesQueryResult = NonNullable<Awaited<ReturnType<typeof getBillingPrices>>>
+export type GetBillingPricesQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get authoritative Stripe prices for valid vault tier purchases and upgrades
+ */
+
+export function useGetBillingPrices<TData = Awaited<ReturnType<typeof getBillingPrices>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBillingPrices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBillingPricesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

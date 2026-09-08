@@ -87,6 +87,20 @@ paths:
         "401": { description: Authentication required }
         "403": { description: Vault is not owned by this operator }
         "404": { description: Vault not found }
+  /billing/prices:
+    get:
+      operationId: getBillingPrices
+      tags: [billing]
+      summary: Get authoritative Stripe prices for valid vault tier purchases and upgrades
+      responses:
+        "200":
+          description: Fixed active USD Stripe prices
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/BillingPrice" }
+        "503": { description: Stripe billing configuration is unavailable }
   /operator/vaults/{vaultId}/checkout:
     post:
       operationId: createVaultCheckout
@@ -484,6 +498,14 @@ components:
         fromLine: { type: string, maxLength: 80 }
         toLine: { type: string, maxLength: 80 }
         gifterEmail: { type: string, format: email }
+    BillingPrice:
+      type: object
+      required: [fromTier, targetTier, amountCents, currency]
+      properties:
+        fromTier: { type: string, enum: [lockbox, safe, vault] }
+        targetTier: { type: string, enum: [safe, vault, deep_vault] }
+        amountCents: { type: integer, minimum: 1 }
+        currency: { type: string, enum: [usd] }
     GiftCheckoutSession:
       type: object
       required: [giftId, checkoutUrl, status]

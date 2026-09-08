@@ -13,6 +13,19 @@ export const TIER_ORDER = {
 } as const;
 
 export type PaidTier = "safe" | "vault" | "deep_vault";
+export type PurchasableFromTier = "lockbox" | "safe" | "vault";
+
+export const VALID_PRICE_TRANSITIONS: ReadonlyArray<{
+  fromTier: PurchasableFromTier;
+  targetTier: PaidTier;
+}> = [
+  { fromTier: "lockbox", targetTier: "safe" },
+  { fromTier: "lockbox", targetTier: "vault" },
+  { fromTier: "lockbox", targetTier: "deep_vault" },
+  { fromTier: "safe", targetTier: "vault" },
+  { fromTier: "safe", targetTier: "deep_vault" },
+  { fromTier: "vault", targetTier: "deep_vault" },
+];
 
 export function getStripeClient(): Stripe {
   const secretKey = process.env.STRIPE_SECRET_KEY;

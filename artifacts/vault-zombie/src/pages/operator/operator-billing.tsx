@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useGetOperatorVaultBillingStatus, useCreateVaultCheckout, useDeclineOperatorOverage, useGetOperatorOverageStatus, VaultCheckoutInputTargetTier } from "@workspace/api-client-react";
+import { useGetOperatorVaultBillingStatus, useCreateVaultCheckout, useDeclineOperatorOverage, useGetOperatorOverageStatus, useGetBillingPrices, VaultCheckoutInputTargetTier } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetOperatorVaultBillingStatusQueryKey, getGetOperatorOverageStatusQueryKey } from "@workspace/api-client-react";
 import { getTierLabel } from "@/lib/utils";
@@ -70,6 +70,7 @@ export function OperatorOverageWarning({ vaultId }: { vaultId: string }) {
 
 export function OperatorBillingPanel({ vaultId }: { vaultId: string }) {
   const { data: billing, isLoading } = useGetOperatorVaultBillingStatus(vaultId);
+  const { data: billingPrices, isLoading: pricesLoading, isError: pricesError } = useGetBillingPrices();
   const createCheckout = useCreateVaultCheckout();
   const { toast } = useToast();
   const [selectedTier, setSelectedTier] = useState<VaultCheckoutInputTargetTier | null>(null);
@@ -78,6 +79,7 @@ export function OperatorBillingPanel({ vaultId }: { vaultId: string }) {
   if (!billing) return null;
 
   const currentTier = billing.currentTier;
+  const availableUpgrades = billingPrices?.filter((price) => price.fromTier === currentTier);
 
   const handleUpgrade = (tier: VaultCheckoutInputTargetTier) => {
     createCheckout.mutate(
@@ -118,15 +120,20 @@ export function OperatorBillingPanel({ vaultId }: { vaultId: string }) {
           <h4 className="font-bold text-ink">Upgrade Paths</h4>
           
           <div className="grid grid-cols-1 gap-3">
-            {currentTier === 'lockbox' && (
-              <UpgradeCard tier={VaultCheckoutInputTargetTier.safe} name={getTierLabel(VaultCheckoutInputTargetTier.safe)} price="$19" onSelect={handleUpgrade} isPending={createCheckout.isPending && selectedTier === VaultCheckoutInputTargetTier.safe} setSelect={setSelectedTier} />
-            )}
-            {(currentTier === 'lockbox' || currentTier === 'safe') && (
-              <UpgradeCard tier={VaultCheckoutInputTargetTier.vault} name={getTierLabel(VaultCheckoutInputTargetTier.vault)} price="$39" onSelect={handleUpgrade} isPending={createCheckout.isPending && selectedTier === VaultCheckoutInputTargetTier.vault} setSelect={setSelectedTier} />
-            )}
-            {(currentTier === 'lockbox' || currentTier === 'safe' || currentTier === 'vault') && (
-              <UpgradeCard tier={VaultCheckoutInputTargetTier.deep_vault} name={getTierLabel(VaultCheckoutInputTargetTier.deep_vault)} price="$59" onSelect={handleUpgrade} isPending={createCheckout.isPending && selectedTier === VaultCheckoutInputTargetTier.deep_vault} setSelect={setSelectedTier} />
-            )}
+            {pricesLoading && <p className="text-sm text-text-2">Loading current prices...</p>}
+            {pricesError && <p className="text-sm text-destructive">Current upgrade prices are unavailable.</p>}
+            {availableUpgrades?.map((price) => (
+              <UpgradeCard
+                key={`${price.fromTier}-${price.targetTier}`}
+                tier={price.targetTier as VaultCheckoutInputTargetTier}
+                name={getTierLabel(price.targetTier)}
+                amountCents={price.amountCents}
+                currency={price.currency}
+                onSelect={handleUpgrade}
+                isPending={createCheckout.isPending && selectedTier === price.targetTier}
+                setSelect={setSelectedTier}
+              />
+            ))}
             {currentTier === 'deep_vault' && (
               <div className="p-4 text-center text-text-2 text-sm italic">You are on the highest tier.</div>
             )}
@@ -170,12 +177,16 @@ export function OperatorBillingPanel({ vaultId }: { vaultId: string }) {
   );
 }
 
-function UpgradeCard({ tier, name, price, onSelect, isPending, setSelect }: { tier: VaultCheckoutInputTargetTier, name: string, price: string, onSelect: (t: VaultCheckoutInputTargetTier) => void, isPending: boolean, setSelect: (t: VaultCheckoutInputTargetTier) => void }) {
+function UpgradeCard({ tier, name, amountCents, currency, onSelect, isPending, setSelect }: { tier: VaultCheckoutInputTargetTier, name: string, amountCents: number, currency: string, onSelect: (t: VaultCheckoutInputTargetTier) => void, isPending: boolean, setSelect: (t: VaultCheckoutInputTargetTier) => void }) {
+  const displayPrice = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(amountCents / 100);
   return (
     <div className="flex items-center justify-between p-4 border border-border rounded-lg hover:border-vault-accent transition-colors bg-white">
       <div>
         <div className="font-bold text-ink text-lg">{name}</div>
-        <div className="text-text-2 text-sm">{price} one-time</div>
+        <div className="text-text-2 text-sm">{displayPrice} one-time</div>
       </div>
       <Button 
         size="sm" 

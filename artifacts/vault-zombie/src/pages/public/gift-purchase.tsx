@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { useCreateGiftCheckout, GiftCheckoutInputTargetTier } from "@workspace/api-client-react";
+import { useCreateGiftCheckout, useGetBillingPrices, GiftCheckoutInputTargetTier } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,18 @@ export default function GiftPurchasePage() {
 
   const { toast } = useToast();
   const createCheckout = useCreateGiftCheckout();
+  const { data: billingPrices, isLoading: pricesLoading, isError: pricesError } = useGetBillingPrices();
+  const giftTiers = billingPrices
+    ?.filter((price) => price.fromTier === "lockbox")
+    .map((price) => ({
+      id: price.targetTier as GiftCheckoutInputTargetTier,
+      name: getTierLabel(price.targetTier),
+      price: new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: price.currency,
+        maximumFractionDigits: 0,
+      }).format(price.amountCents / 100),
+    }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +75,9 @@ export default function GiftPurchasePage() {
           <div className="space-y-4">
             <Label className="text-lg font-bold text-ink">Select Tier</Label>
             <div className="grid grid-cols-1 gap-3">
-              {[
-                { id: GiftCheckoutInputTargetTier.safe, name: getTierLabel(GiftCheckoutInputTargetTier.safe), price: "$19" },
-                { id: GiftCheckoutInputTargetTier.vault, name: getTierLabel(GiftCheckoutInputTargetTier.vault), price: "$39" },
-                { id: GiftCheckoutInputTargetTier.deep_vault, name: getTierLabel(GiftCheckoutInputTargetTier.deep_vault), price: "$59" }
-              ].map((t) => (
+              {pricesLoading && <p className="text-sm text-text-2">Loading current prices...</p>}
+              {pricesError && <p className="text-sm text-destructive">Current prices are unavailable. Checkout cannot be started.</p>}
+              {giftTiers?.map((t) => (
                 <label key={t.id} className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${tier === t.id ? 'border-vault-accent bg-bronze-wash/30' : 'border-border hover:bg-muted/50'}`}>
                   <div className="flex items-center gap-3">
                     <input 
@@ -106,7 +116,7 @@ export default function GiftPurchasePage() {
             <p className="text-xs text-text-2">We will not email the recipient. You will receive a printable card after purchase.</p>
           </div>
 
-          <Button type="submit" disabled={createCheckout.isPending} className="w-full py-6 text-lg font-bold bg-ink text-[hsl(var(--brass-lt))] hover:bg-ink-2">
+          <Button type="submit" disabled={createCheckout.isPending || pricesLoading || pricesError || !giftTiers?.length} className="w-full py-6 text-lg font-bold bg-ink text-[hsl(var(--brass-lt))] hover:bg-ink-2">
             {createCheckout.isPending ? "Preparing Checkout..." : "Continue to Payment"}
           </Button>
         </form>

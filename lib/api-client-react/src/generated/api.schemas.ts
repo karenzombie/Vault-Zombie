@@ -40,6 +40,39 @@ export interface GiftCheckoutInput {
   gifterEmail?: string;
 }
 
+export type BillingPriceFromTier = typeof BillingPriceFromTier[keyof typeof BillingPriceFromTier];
+
+
+export const BillingPriceFromTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+} as const;
+
+export type BillingPriceTargetTier = typeof BillingPriceTargetTier[keyof typeof BillingPriceTargetTier];
+
+
+export const BillingPriceTargetTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type BillingPriceCurrency = typeof BillingPriceCurrency[keyof typeof BillingPriceCurrency];
+
+
+export const BillingPriceCurrency = {
+  usd: 'usd',
+} as const;
+
+export interface BillingPrice {
+  fromTier: BillingPriceFromTier;
+  targetTier: BillingPriceTargetTier;
+  /** @minimum 1 */
+  amountCents: number;
+  currency: BillingPriceCurrency;
+}
+
 export type GiftCheckoutSessionStatus = typeof GiftCheckoutSessionStatus[keyof typeof GiftCheckoutSessionStatus];
 
 

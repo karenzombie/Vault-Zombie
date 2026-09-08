@@ -124,6 +124,21 @@ export const GetOperatorVaultBillingStatusResponse = zod.object({
 
 
 /**
+ * @summary Get authoritative Stripe prices for valid vault tier purchases and upgrades
+ */
+
+
+
+export const GetBillingPricesResponseItem = zod.object({
+  "fromTier": zod.enum(['lockbox', 'safe', 'vault']),
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "amountCents": zod.number().int().min(1),
+  "currency": zod.enum(['usd'])
+})
+export const GetBillingPricesResponse = zod.array(GetBillingPricesResponseItem)
+
+
+/**
  * @summary Create one-time Stripe Checkout for an upward vault upgrade
  */
 export const CreateVaultCheckoutParams = zod.object({
