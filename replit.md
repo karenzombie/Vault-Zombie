@@ -4,6 +4,8 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Run & Operate
 
+- Canonical GitHub backup repository: `https://github.com/karenzombie/vault_zombie_codebase`
+- Keep the complete project codebase backed up to that repository.
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
