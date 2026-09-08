@@ -14,6 +14,8 @@ tags:
     description: Account-free, write-only guest prediction flow
   - name: operator
     description: Authenticated operator reveal and scoring operations
+  - name: billing
+    description: Authenticated operator billing operations
 paths:
   /healthz:
     get:
@@ -70,6 +72,44 @@ paths:
           description: Link not found
         "429":
           description: Rate limit reached
+  /operator/vaults/{vaultId}/billing:
+    get:
+      operationId: getOperatorVaultBillingStatus
+      tags: [billing]
+      summary: Get billing status for an owned vault
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200":
+          description: Current entitlement and Checkout attempts
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VaultBillingStatus" }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault not found }
+  /operator/vaults/{vaultId}/checkout:
+    post:
+      operationId: createVaultCheckout
+      tags: [billing]
+      summary: Create one-time Stripe Checkout for an upward vault upgrade
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/VaultCheckoutInput" }
+      responses:
+        "201":
+          description: Checkout created; entitlement remains unchanged until webhook verification
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VaultCheckoutSession" }
+        "400": { description: Target tier is not an upward paid tier }
+        "409": { description: A Checkout attempt is already pending for this vault }
+        "401": { description: Authentication required }
+        "403": { description: Vault is not owned by this operator }
+        "404": { description: Vault not found }
+        "503": { description: Stripe billing configuration is unavailable }
   /operator/vaults/{vaultId}/reveals/unlocked:
     get:
       operationId: listUnlockedRevealWork
@@ -280,6 +320,38 @@ components:
           type: string
       required:
         - status
+    VaultCheckoutInput:
+      type: object
+      required: [targetTier]
+      properties:
+        targetTier: { type: string, enum: [safe, vault, deep_vault] }
+    BillingAttempt:
+      type: object
+      required: [id, fromTier, targetTier, amountCents, currency, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        fromTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        targetTier: { type: string, enum: [safe, vault, deep_vault] }
+        amountCents: { type: integer, minimum: 1 }
+        currency: { type: string, enum: [usd] }
+        status: { type: string, enum: [pending, paid, expired, failed, disputed] }
+        createdAt: { type: string, format: date-time }
+    VaultBillingStatus:
+      type: object
+      required: [vaultId, currentTier, attempts]
+      properties:
+        vaultId: { type: string, format: uuid }
+        currentTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        attempts:
+          type: array
+          items: { $ref: "#/components/schemas/BillingAttempt" }
+    VaultCheckoutSession:
+      type: object
+      required: [billingRecordId, checkoutUrl, status]
+      properties:
+        billingRecordId: { type: string, format: uuid }
+        checkoutUrl: { type: string, format: uri }
+        status: { type: string, enum: [pending] }
     GuestOption:
       type: object
       required: [id, label]

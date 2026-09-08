@@ -219,7 +219,7 @@ export async function overrideRevealTextClusterVerdict(
 
 export async function getOperatorScoreboard(vaultId: string, operatorId: string) {
   const vault = await requireOwnedVault(vaultId, operatorId);
-  if (vault.planTier === "lockbox") {
+  if (vault.entitledPlanTier === "lockbox") {
     throw new RevealScoringError("The scoreboard requires a paid vault plan.", 403);
   }
   const answers = await readUnlockedAnswers({ vaultId });

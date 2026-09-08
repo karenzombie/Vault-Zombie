@@ -114,7 +114,7 @@ export async function getVaultHealthReport(vaultId: string, operatorId: string) 
   const slots = await db.select({ id: revealSlotsTable.id, label: revealSlotsTable.label, revealDate: revealSlotsTable.revealDate })
     .from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vaultId)).orderBy(revealSlotsTable.displayOrder);
   const today = new Date().toISOString().slice(0, 10);
-  return { vaultId, planTier: vault.planTier, status: vault.status, predictionCount: Number(predictions.value),
+  return { vaultId, planTier: vault.entitledPlanTier, status: vault.status, predictionCount: Number(predictions.value),
     guestCount: Number(guests.value), revealSlots: slots, completedRevealCount: slots.filter((s) => s.revealDate <= today).length,
     nextRevealDate: slots.find((s) => s.revealDate > today)?.revealDate ?? null };
 }
@@ -135,15 +135,15 @@ export async function getRevealReport(vaultId: string, operatorId: string, slotI
       .map((q) => questionDto(q, data.answers.filter((a) => a.revealSlotId === slotId), data.options, data.outcomes, data.verdictByAnswer)) };
 }
 export async function getAreaReport(vaultId: string, operatorId: string) {
-  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.planTier);
+  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.entitledPlanTier);
   return areasFromData(data);
 }
 export async function getTimelineReport(vaultId: string, operatorId: string) {
-  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.planTier);
+  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.entitledPlanTier);
   return timelineFromData(data);
 }
 export async function getAnswersArchive(vaultId: string, operatorId: string) {
-  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.planTier);
+  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.entitledPlanTier);
   return { questions: data.contexts.map((q) => questionDto(q, data.answers, data.options, data.outcomes, data.verdictByAnswer)) };
 }
 export async function getGuestPersonalReport(vaultId: string, operatorId: string, guestId: string) {
@@ -190,19 +190,19 @@ export async function getVaultResultsSummary(vaultId: string, operatorId: string
     const outcome = outcomeByPair.get(`${answer.vaultQuestionId}:${answer.revealSlotId}`);
     return question && outcome ? { vaultQuestionId: question.id, prompt: question.prompt, outcomeTier: tier, operatorNote: outcome.operatorNote } : null;
   };
-  const base = { vaultId, planTier: data.vault.planTier, vault: { name: data.vault.name, subjectValues: data.vault.subjectValues,
+  const base = { vaultId, planTier: data.vault.entitledPlanTier, vault: { name: data.vault.name, subjectValues: data.vault.subjectValues,
     status: data.vault.status, sealedAt: data.vault.sealedAt?.toISOString() ?? null }, outcomes, questions,
     standouts: [standout("full"), standout("zero")].filter((item): item is NonNullable<typeof item> => Boolean(item)) };
   // Deliberately exact Lockbox payload: masthead metadata, outcome callouts,
   // outcome-tagged standouts/notes, and drill-in question metadata only.
-  if (data.vault.planTier === "lockbox") return { ...base, depth: "trimmed" as const };
+  if (data.vault.entitledPlanTier === "lockbox") return { ...base, depth: "trimmed" as const };
   const [areas, timeline] = await Promise.all([getAreaReport(vaultId, operatorId), getTimelineReport(vaultId, operatorId)]);
   const { getOperatorScoreboard } = await import("./reveal-scoring");
   return { ...base, depth: "full" as const, areas: areas.areas, timeline: timeline.reveals,
     scoreboard: (await getOperatorScoreboard(vaultId, operatorId)).entries };
 }
 export async function getFinaleReport(vaultId: string, operatorId: string) {
-  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.planTier);
+  const data = await reportData(vaultId, operatorId); assertPaid(data.vault.entitledPlanTier);
   // The archive is constructed from this single unlocked data set; no raw answer
   // table reads are permitted for report content.
   const archive = { questions: data.contexts.map((question) => questionDto(question, data.answers, data.options, data.outcomes, data.verdictByAnswer)) };
@@ -224,8 +224,8 @@ export async function getFinaleReport(vaultId: string, operatorId: string) {
   const totalAnswerCount = Number(allAnswers.value);
   const allAnswersUnlocked = totalAnswerCount > 0 && totalAnswerCount === data.answers.length;
   const allResolved = scoreableAnswers.every((answer) => outcomeByPair.has(`${answer.vaultQuestionId}:${answer.revealSlotId}`));
-  return { vaultId, planTier: data.vault.planTier, outcomeCounts: counts(scoreableAnswers.map((answer) => data.verdictByAnswer.get(answer.id)?.tier)),
-    certificate: data.vault.planTier === "deep_vault", scoreboard, winner: scoreboard[0] ?? null,
+  return { vaultId, planTier: data.vault.entitledPlanTier, outcomeCounts: counts(scoreableAnswers.map((answer) => data.verdictByAnswer.get(answer.id)?.tier)),
+    certificate: data.vault.entitledPlanTier === "deep_vault", scoreboard, winner: scoreboard[0] ?? null,
     areas: areasFromData(data), timeline: timelineFromData(data),
     standouts: [standout("full"), standout("zero")].filter((item): item is NonNullable<typeof item> => Boolean(item)),
     guestCount: new Set(data.answers.map((answer) => answer.guestId)).size, predictionCount: data.answers.length,

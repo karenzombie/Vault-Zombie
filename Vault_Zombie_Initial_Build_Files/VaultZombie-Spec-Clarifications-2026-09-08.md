@@ -5,6 +5,47 @@ reveal dates, applied duration, prompt set, and milestone never change. New
 schedules and longer duration apply only to draft vaults and newly created
 vaults.
 
+## Payments: purchases and upgrades
+
+- Checkout happens only after a vault exists. One payment attaches to exactly
+  one vault by vault ID; payment events never create vaults.
+- Draft vaults may remain unpaid indefinitely. Lockbox is free and never enters
+  Stripe.
+- Upgrades charge the difference between the current tier price and the target
+  tier price. Lockbox-to-paid upgrades charge the target tier's full price.
+- Repeated upward upgrades are allowed. Downgrades are not supported.
+- If a draft plan change invalidates the selected schedule, duration, or
+  milestone, clear each invalid selection and require the operator to choose
+  again. Never retain or silently replace an invalid selection.
+- A sealed-vault upgrade changes only the guest cap. Schedule, reveal dates,
+  duration, prompt set, and milestone remain fixed.
+
+## Payments: Stripe lifecycle
+
+- Entitlement activates only from a verified Stripe webhook, never from a
+  checkout return or success redirect.
+- Handle `checkout.session.completed`, `checkout.session.expired`,
+  `checkout.session.async_payment_failed`, `payment_intent.payment_failed`, and
+  `charge.dispute.created`, plus only the events required for refunds.
+- Webhook processing is idempotent by Stripe event ID. Duplicate deliveries are
+  recorded and ignored without applying their effect twice.
+- Delayed payments leave the vault as an unpaid draft with a visible pending
+  state until the verified activation event arrives.
+- Currency is USD only. Stripe Tax and tax-field collection are out of scope.
+- Prices are fixed Stripe Price records based on Master Build Brief sections 4
+  and 5. Application code never computes checkout prices and never accepts a
+  price from the client.
+- Disputes are recorded and flagged for administrators. They never
+  automatically revoke access to a sealed vault.
+- Application administrators do not edit prices. Price changes require an
+  updated governing brief and deliberately updated Stripe Price records.
+- Use only `STRIPE_SECRET_KEY` on the server and
+  `VITE_STRIPE_PUBLISHABLE_KEY` on the client. No Replit Stripe connector or
+  Stripe sync package is used.
+- `STRIPE_WEBHOOK_SECRET` is intentionally absent until the owner creates the
+  dashboard webhook. The endpoint must fail clearly while it is missing; do not
+  stub, bypass, or weaken signature verification.
+
 # VaultZombie Specification Clarifications
 
 **Status:** Authoritative addendum to the initial build specification. Where this

@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "setup:stripe-products": "tsx ./src/stripe-product-setup.ts",
     "validate:question-banks": "tsx ./src/question-bank-import.ts --validate",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "tsx": "catalog:"
+  },
+  "dependencies": {
+    "stripe": "^22.6.1"
   }
 }

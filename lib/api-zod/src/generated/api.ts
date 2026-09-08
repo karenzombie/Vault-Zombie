@@ -99,6 +99,49 @@ export const SubmitGuestPredictionResponse = zod.object({
 
 
 /**
+ * @summary Get billing status for an owned vault
+ */
+export const GetOperatorVaultBillingStatusParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+
+
+
+export const GetOperatorVaultBillingStatusResponse = zod.object({
+  "vaultId": zod.string().uuid(),
+  "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "attempts": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "fromTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "amountCents": zod.number().int().min(1),
+  "currency": zod.enum(['usd']),
+  "status": zod.enum(['pending', 'paid', 'expired', 'failed', 'disputed']),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Create one-time Stripe Checkout for an upward vault upgrade
+ */
+export const CreateVaultCheckoutParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const CreateVaultCheckoutBody = zod.object({
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault'])
+})
+
+export const CreateVaultCheckoutResponse = zod.object({
+  "billingRecordId": zod.string().uuid(),
+  "checkoutUrl": zod.string().url(),
+  "status": zod.enum(['pending'])
+})
+
+
+/**
  * @summary List unlocked reveal work for an owned vault
  */
 export const ListUnlockedRevealWorkParams = zod.object({

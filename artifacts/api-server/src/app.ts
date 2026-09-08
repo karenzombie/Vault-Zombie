@@ -10,6 +10,7 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
+import { stripeWebhookBoundary } from "./routes/stripe-webhook";
 
 const app: Express = express();
 
@@ -34,6 +35,7 @@ app.use(
 );
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({ credentials: true, origin: true }));
+app.post("/stripe/webhook", express.raw({ type: "application/json" }), stripeWebhookBoundary);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

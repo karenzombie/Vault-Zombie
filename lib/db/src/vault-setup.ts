@@ -1,6 +1,6 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "./index";
-import { buildRevealSlots, PLAN_POLICY, type PlanTier, type RevealSchedule } from "./schedule";
+import { buildRevealSlots, isPlanTierWithinEntitlement, PLAN_POLICY, type PlanTier, type RevealSchedule } from "./schedule";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
 
 export async function updateDraftVaultSetup(input: {
@@ -66,6 +66,9 @@ export async function sealVault(input: {
       .limit(1)
       .for("update");
     if (!vault || vault.status !== "draft") throw new Error("Vault is missing or already sealed.");
+    if (!isPlanTierWithinEntitlement(vault.planTier, vault.entitledPlanTier)) {
+      throw new Error("Complete payment before sealing a vault configured above its current entitlement.");
+    }
 
     const enabledPrompts = await transaction
       .select({ id: vaultQuestionsTable.id })
