@@ -19,6 +19,7 @@
 
 export * from "./accounts";
 export * from "./audit";
+export * from "./backup-runs";
 export * from "./billing";
 export * from "./content";
 export * from "./email";

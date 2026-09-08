@@ -530,6 +530,18 @@ paths:
       responses:
         "200": { description: "CSV attachment", content: { text/csv: { schema: { type: string, format: binary } } } }
         "403": { description: Fresh MFA required }
+  /admin/backup:
+    post:
+      operationId: pushAdminBackup
+      tags: [admin]
+      summary: Fresh-MFA manual push of a full plaintext backup to the configured private repository
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminBackupInput" } } }
+      responses:
+        "200": { description: Backup completed or an idempotent completed result, content: { application/json: { schema: { $ref: "#/components/schemas/AdminBackupResult" } } } }
+        "400": { description: Configuration or input validation failed before backup creation }
+        "403": { description: Fresh MFA required }
   /admin/vaults/{vaultId}/unlocked-export:
     get:
       operationId: downloadAdminVaultUnlockedExport
@@ -1183,6 +1195,30 @@ components:
           required: [confirmation]
           properties:
             confirmation: { type: string, enum: ["EXPORT SEALED DATA"] }
+    AdminBackupInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [confirmation, requestId, plaintextHistoryAcknowledged]
+          properties:
+            confirmation: { type: string, enum: ["PUSH BACKUP"] }
+            requestId: { type: string, format: uuid }
+            plaintextHistoryAcknowledged: { type: boolean, const: true }
+    AdminBackupResult:
+      type: object
+      required: [backupRunId, requestId, snapshotId, generatedAt, repository, status]
+      properties:
+        backupRunId: { type: string, format: uuid }
+        requestId: { type: string, format: uuid }
+        snapshotId: { type: string }
+        generatedAt: { type: string, format: date-time }
+        repository: { type: string, pattern: "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" }
+        branch: { type: [string, "null"] }
+        commitSha: { type: [string, "null"] }
+        tableCount: { type: [integer, "null"] }
+        rowCount: { type: [integer, "null"] }
+        artifactCount: { type: [integer, "null"] }
+        status: { type: string, enum: [pending, identity_persisted, awaiting_reconciliation, github_pushed, completed, failed_definite] }
     AdminDeletionInput:
       allOf:
         - $ref: "#/components/schemas/SensitiveReasonInput"

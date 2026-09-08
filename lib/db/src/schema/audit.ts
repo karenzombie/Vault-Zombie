@@ -43,6 +43,9 @@ export const auditEventsTable = pgTable(
     uniqueIndex("audit_events_one_completed_refund_target_unique")
       .on(table.targetType, table.targetId)
       .where(sql`${table.action} = 'refund'`),
+    uniqueIndex("audit_events_one_backup_push_target_unique")
+      .on(table.targetType, table.targetId)
+      .where(sql`${table.action} = 'backup_push'`),
   ],
 );
 

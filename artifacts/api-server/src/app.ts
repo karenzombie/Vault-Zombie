@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
+import { BackupConfigurationError } from "./lib/admin-backup";
 import { logger } from "./lib/logger";
 import {
   CLERK_PROXY_PATH,
@@ -60,6 +61,9 @@ app.use(
 app.use("/api", router);
 
 const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
+  if (error instanceof BackupConfigurationError) {
+    return res.status(503).json({ error: error.message, code: "BACKUP_CONFIGURATION_MISSING", missingVariables: error.missingVariables });
+  }
   if (isValidationError(error)) {
     return res.status(400).json({
       error: "Invalid request.",

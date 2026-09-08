@@ -798,6 +798,51 @@ export type AdminFullExportInput = SensitiveReasonInput & {
   confirmation: AdminFullExportInputConfirmation;
 };
 
+export type AdminBackupInputConfirmation = typeof AdminBackupInputConfirmation[keyof typeof AdminBackupInputConfirmation];
+
+
+export const AdminBackupInputConfirmation = {
+  PUSH_BACKUP: 'PUSH BACKUP',
+} as const;
+
+export type AdminBackupInput = SensitiveReasonInput & {
+  confirmation: AdminBackupInputConfirmation;
+  requestId: string;
+  plaintextHistoryAcknowledged: true;
+};
+
+export type AdminBackupResultStatus = typeof AdminBackupResultStatus[keyof typeof AdminBackupResultStatus];
+
+
+export const AdminBackupResultStatus = {
+  pending: 'pending',
+  identity_persisted: 'identity_persisted',
+  awaiting_reconciliation: 'awaiting_reconciliation',
+  github_pushed: 'github_pushed',
+  completed: 'completed',
+  failed_definite: 'failed_definite',
+} as const;
+
+export interface AdminBackupResult {
+  backupRunId: string;
+  requestId: string;
+  snapshotId: string;
+  generatedAt: string;
+  /** @pattern ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ */
+  repository: string;
+  /** @nullable */
+  branch?: string | null;
+  /** @nullable */
+  commitSha?: string | null;
+  /** @nullable */
+  tableCount?: number | null;
+  /** @nullable */
+  rowCount?: number | null;
+  /** @nullable */
+  artifactCount?: number | null;
+  status: AdminBackupResultStatus;
+}
+
 export type AdminDeletionInput = SensitiveReasonInput & {
   /** @minLength 1 */
   confirmation: string;
