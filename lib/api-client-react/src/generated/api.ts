@@ -37,6 +37,9 @@ import type {
   Scoreboard,
   TimelineReport,
   UnlockedRevealWork,
+  VaultBillingStatus,
+  VaultCheckoutInput,
+  VaultCheckoutSession,
   VaultHealthReport,
   VaultResultsSummary
 } from './api.schemas';
@@ -293,6 +296,155 @@ export const useSubmitGuestPrediction = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getSubmitGuestPredictionMutationOptions(options));
+    }
+
+export const getGetOperatorVaultBillingStatusUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/billing`
+}
+
+/**
+ * @summary Get billing status for an owned vault
+ */
+export const getOperatorVaultBillingStatus = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<VaultBillingStatus> => {
+
+  return customFetch<VaultBillingStatus>(getGetOperatorVaultBillingStatusUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperatorVaultBillingStatusQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/billing`
+    ] as const;
+    }
+
+
+export const getGetOperatorVaultBillingStatusQueryOptions = <TData = Awaited<ReturnType<typeof getOperatorVaultBillingStatus>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperatorVaultBillingStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperatorVaultBillingStatusQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperatorVaultBillingStatus>>> = ({ signal }) => getOperatorVaultBillingStatus(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperatorVaultBillingStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperatorVaultBillingStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getOperatorVaultBillingStatus>>>
+export type GetOperatorVaultBillingStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get billing status for an owned vault
+ */
+
+export function useGetOperatorVaultBillingStatus<TData = Awaited<ReturnType<typeof getOperatorVaultBillingStatus>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperatorVaultBillingStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperatorVaultBillingStatusQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateVaultCheckoutUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/checkout`
+}
+
+/**
+ * @summary Create one-time Stripe Checkout for an upward vault upgrade
+ */
+export const createVaultCheckout = async (vaultId: string,
+    vaultCheckoutInput: VaultCheckoutInput, options?: Parameters<typeof customFetch>[1]): Promise<VaultCheckoutSession> => {
+
+  return customFetch<VaultCheckoutSession>(getCreateVaultCheckoutUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(vaultCheckoutInput)
+  }
+);}
+
+
+
+
+
+export const getCreateVaultCheckoutMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createVaultCheckout>>, TError,{vaultId: string;data: BodyType<VaultCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createVaultCheckout>>, TError,{vaultId: string;data: BodyType<VaultCheckoutInput>}, TContext> => {
+
+const mutationKey = ['createVaultCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createVaultCheckout>>, {vaultId: string;data: BodyType<VaultCheckoutInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  createVaultCheckout(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateVaultCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof createVaultCheckout>>>
+    export type CreateVaultCheckoutMutationBody = BodyType<VaultCheckoutInput>
+    export type CreateVaultCheckoutMutationError = ErrorType<void>
+
+    /**
+ * @summary Create one-time Stripe Checkout for an upward vault upgrade
+ */
+export const useCreateVaultCheckout = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createVaultCheckout>>, TError,{vaultId: string;data: BodyType<VaultCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createVaultCheckout>>,
+        TError,
+        {vaultId: string;data: BodyType<VaultCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getCreateVaultCheckoutMutationOptions(options));
     }
 
 export const getListUnlockedRevealWorkUrl = (vaultId: string,) => {

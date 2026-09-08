@@ -9,6 +9,96 @@ export interface HealthStatus {
   status: string;
 }
 
+export type VaultCheckoutInputTargetTier = typeof VaultCheckoutInputTargetTier[keyof typeof VaultCheckoutInputTargetTier];
+
+
+export const VaultCheckoutInputTargetTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface VaultCheckoutInput {
+  targetTier: VaultCheckoutInputTargetTier;
+}
+
+export type BillingAttemptFromTier = typeof BillingAttemptFromTier[keyof typeof BillingAttemptFromTier];
+
+
+export const BillingAttemptFromTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type BillingAttemptTargetTier = typeof BillingAttemptTargetTier[keyof typeof BillingAttemptTargetTier];
+
+
+export const BillingAttemptTargetTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type BillingAttemptCurrency = typeof BillingAttemptCurrency[keyof typeof BillingAttemptCurrency];
+
+
+export const BillingAttemptCurrency = {
+  usd: 'usd',
+} as const;
+
+export type BillingAttemptStatus = typeof BillingAttemptStatus[keyof typeof BillingAttemptStatus];
+
+
+export const BillingAttemptStatus = {
+  pending: 'pending',
+  paid: 'paid',
+  expired: 'expired',
+  failed: 'failed',
+  disputed: 'disputed',
+} as const;
+
+export interface BillingAttempt {
+  id: string;
+  fromTier: BillingAttemptFromTier;
+  targetTier: BillingAttemptTargetTier;
+  /** @minimum 1 */
+  amountCents: number;
+  currency: BillingAttemptCurrency;
+  status: BillingAttemptStatus;
+  createdAt: string;
+}
+
+export type VaultBillingStatusCurrentTier = typeof VaultBillingStatusCurrentTier[keyof typeof VaultBillingStatusCurrentTier];
+
+
+export const VaultBillingStatusCurrentTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface VaultBillingStatus {
+  vaultId: string;
+  currentTier: VaultBillingStatusCurrentTier;
+  attempts: BillingAttempt[];
+}
+
+export type VaultCheckoutSessionStatus = typeof VaultCheckoutSessionStatus[keyof typeof VaultCheckoutSessionStatus];
+
+
+export const VaultCheckoutSessionStatus = {
+  pending: 'pending',
+} as const;
+
+export interface VaultCheckoutSession {
+  billingRecordId: string;
+  checkoutUrl: string;
+  status: VaultCheckoutSessionStatus;
+}
+
 export interface GuestOption {
   id: string;
   label: string;

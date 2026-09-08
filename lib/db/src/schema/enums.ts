@@ -22,6 +22,13 @@ export const planTierEnum = pgEnum("plan_tier", [
   "vault",
   "deep_vault",
 ]);
+export const billingStatusEnum = pgEnum("billing_status", [
+  "pending",
+  "paid",
+  "expired",
+  "failed",
+  "disputed",
+]);
 export const revealScheduleEnum = pgEnum("reveal_schedule", [
   "weekly_sprint",
   "monthly_x3",

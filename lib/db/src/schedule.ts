@@ -39,6 +39,21 @@ export const PLAN_POLICY: Record<
   ] },
 };
 
+const PLAN_TIER_ORDER: Record<PlanTier, number> = {
+  lockbox: 0,
+  safe: 1,
+  vault: 2,
+  deep_vault: 3,
+};
+
+/** True when a selected configuration needs no more entitlement than provided. */
+export function isPlanTierWithinEntitlement(
+  selectedTier: PlanTier,
+  entitledTier: PlanTier,
+) {
+  return PLAN_TIER_ORDER[selectedTier] <= PLAN_TIER_ORDER[entitledTier];
+}
+
 function parseDate(value: string): Date {
   const date = new Date(`${value}T12:00:00.000Z`);
   if (Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== value) {

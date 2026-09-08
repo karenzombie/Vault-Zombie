@@ -92,7 +92,7 @@ export async function submitGuestAnswers(token: string, input: {
         eq(submissionsTable.vaultId, vault.id),
         isNull(submissionsTable.culledAt),
       ));
-    const cap = PLAN_POLICY[vault.planTier].guestCap;
+    const cap = PLAN_POLICY[vault.entitledPlanTier].guestCap;
     if (existingCount >= cap * 4) throw new Error("This vault reached its safety submission ceiling.");
 
     const questionRows = await tx.select({
@@ -174,7 +174,7 @@ export async function cullGuestOverage(vaultId: string) {
   return db.transaction(async (tx) => {
     const [vault] = await tx.select().from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1).for("update");
     if (!vault) throw new Error("Vault not found.");
-    const cap = PLAN_POLICY[vault.planTier].guestCap;
+    const cap = PLAN_POLICY[vault.entitledPlanTier].guestCap;
     const excess = await tx.select({ id: submissionsTable.id }).from(submissionsTable)
       .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.culledAt)))
       .orderBy(asc(submissionsTable.submittedAt));
