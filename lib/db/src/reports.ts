@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import { db } from "./index";
 import { readUnlockedAnswers } from "./sealed-content";
 import { answerVerdictsTable, answersTable, guestsTable, questionOutcomesTable, submissionsTable } from "./schema/predictions";
@@ -109,8 +109,8 @@ function timelineFromData(data: Awaited<ReturnType<typeof reportData>>) {
 export async function getVaultHealthReport(vaultId: string, operatorId: string) {
   const vault = await owned(vaultId, operatorId);
   const [predictions] = await db.select({ value: count() }).from(answersTable)
-    .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id)).where(eq(submissionsTable.vaultId, vaultId));
-  const [guests] = await db.select({ value: count() }).from(guestsTable).where(eq(guestsTable.vaultId, vaultId));
+    .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id)).where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
+  const [guests] = await db.select({ value: count() }).from(guestsTable).innerJoin(submissionsTable, eq(submissionsTable.guestId, guestsTable.id)).where(and(eq(guestsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
   const slots = await db.select({ id: revealSlotsTable.id, label: revealSlotsTable.label, revealDate: revealSlotsTable.revealDate })
     .from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vaultId)).orderBy(revealSlotsTable.displayOrder);
   const today = new Date().toISOString().slice(0, 10);
@@ -218,7 +218,7 @@ export async function getFinaleReport(vaultId: string, operatorId: string) {
   const scoreboard = scoreboardFromData(data);
   const [allAnswers] = await db.select({ value: count() }).from(answersTable)
     .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
-    .where(eq(submissionsTable.vaultId, vaultId));
+    .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
   // Compare answer metadata counts with the canonical unlocked-content read so
   // manual unlock overrides and scheduled unlocks use exactly the same boundary.
   const totalAnswerCount = Number(allAnswers.value);

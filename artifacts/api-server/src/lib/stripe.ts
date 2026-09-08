@@ -37,6 +37,7 @@ export async function findStripePrice(
   targetTier: PaidTier,
 ) {
   const priceKey = stripePriceKey(fromTier, targetTier);
+  const matches: Stripe.Price[] = [];
   for await (const price of stripe.prices.list({
     active: true,
     type: "one_time",
@@ -48,8 +49,13 @@ export async function findStripePrice(
       price.metadata.catalog_version === STRIPE_PRICE_METADATA.catalogVersion &&
       price.metadata.price_key === priceKey
     ) {
-      return price;
+      matches.push(price);
     }
   }
-  throw new Error(`Stripe Price ${priceKey} is not configured. Run the Stripe product setup script first.`);
+  if (matches.length !== 1) {
+    throw new Error(matches.length
+      ? `Stripe Price ${priceKey} is ambiguous; exactly one fixed active USD Price is required.`
+      : `Stripe Price ${priceKey} is not configured. Run the Stripe product setup script first.`);
+  }
+  return matches[0];
 }

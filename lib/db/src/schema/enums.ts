@@ -28,7 +28,11 @@ export const billingStatusEnum = pgEnum("billing_status", [
   "expired",
   "failed",
   "disputed",
+  "refunded",
+  "comped",
 ]);
+export const giftStatusEnum = pgEnum("gift_status", ["pending", "purchased", "redeemed", "refunded", "failed", "expired", "disputed"]);
+export const overageOutcomeEnum = pgEnum("overage_outcome", ["upgraded", "declined"]);
 export const revealScheduleEnum = pgEnum("reveal_schedule", [
   "weekly_sprint",
   "monthly_x3",

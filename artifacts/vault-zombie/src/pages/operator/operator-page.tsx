@@ -5,10 +5,11 @@ import { Link } from "wouter";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Inbox, FileText, Activity, BarChart, Clock, Database, Award, Printer } from "lucide-react";
+import { Inbox, FileText, Activity, BarChart, Clock, Database, Award, Printer, CreditCard } from "lucide-react";
 
 import { QuestionResolver } from "./question-resolver";
 import { OperatorScoreboard } from "./operator-scoreboard";
+import { OperatorBillingPanel, OperatorOverageWarning } from "./operator-billing";
 
 export default function OperatorPage() {
   const search = useSearch();
@@ -37,15 +38,15 @@ function VaultIdPrompt() {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <img src="/vault_zombie_png.png" alt="Vault Zombie" className="h-20 w-auto mx-auto mb-6" />
+          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-20 w-auto mx-auto mb-6" />
           <h1 className="font-display text-4xl text-ink">Operator Login</h1>
           <p className="text-muted-foreground mt-3 text-lg leading-relaxed">Enter the Vault ID to access the live reveal surface.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input 
-            placeholder="Vault ID..." 
-            value={val} 
-            onChange={(e) => setVal(e.target.value)} 
+          <Input
+            placeholder="Vault ID..."
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
             className="text-center text-xl py-7 font-mono bg-white border-hairline focus-visible:ring-pop focus-visible:border-pop"
             autoFocus
           />
@@ -63,41 +64,44 @@ function OperatorReveal({ vaultId }: { vaultId: string }) {
   const { data: healthData } = useGetVaultHealthReport(vaultId);
 
   const hasPaidAccess = !!(healthData && healthData.planTier !== 'lockbox');
-  
+
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       <header className="flex items-center justify-between px-5 py-4 bg-ink text-parchment sticky top-0 z-20">
         <Link href="/">
-          <img src="/vault_zombie_png.png" alt="Vault Zombie" className="h-7 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-7 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
         </Link>
         <div className="text-[11px] font-bold tracking-widest text-brass uppercase bg-white/10 px-3 py-1.5 rounded-full">
           Live Operator
         </div>
       </header>
-      
+
       <main className="flex-1 w-full max-w-lg mx-auto p-4 flex flex-col pt-6">
+        <OperatorOverageWarning vaultId={vaultId} />
+
         <Tabs defaultValue="reveal" className="w-full">
-          <TabsList className={`w-full grid mb-8 bg-muted p-1 border border-border/50 ${!hasPaidAccess ? 'grid-cols-2' : 'grid-cols-3'}`}>
-            <TabsTrigger value="reveal" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Live Reveal</TabsTrigger>
+          <TabsList className={`w-full grid mb-8 bg-muted p-1 border border-border/50 ${!hasPaidAccess ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            <TabsTrigger value="reveal" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Live</TabsTrigger>
             {hasPaidAccess && (
-              <TabsTrigger value="scoreboard" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Scoreboard</TabsTrigger>
+              <TabsTrigger value="scoreboard" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Score</TabsTrigger>
             )}
             <TabsTrigger value="reports" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Reports</TabsTrigger>
+            <TabsTrigger value="billing" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Billing</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="reveal" className="space-y-6 pb-24 focus-visible:outline-none">
             {isRevealLoading && (
               <div className="p-12 text-center text-muted-foreground animate-pulse font-medium">
                 Loading reveal work...
               </div>
             )}
-            
+
             {revealError && (
               <div className="p-6 text-center text-white bg-[#A24B3A] rounded-xl font-medium">
                 Failed to load reveal data. Check the Vault ID.
               </div>
             )}
-            
+
             {revealData?.questions?.length === 0 && (
               <div className="p-10 text-center bg-card border border-border rounded-xl">
                 <Inbox className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
@@ -105,7 +109,7 @@ function OperatorReveal({ vaultId }: { vaultId: string }) {
                 <div className="text-muted-foreground text-sm mt-1">Wait for the next drop to resolve predictions.</div>
               </div>
             )}
-            
+
             <div className="space-y-5">
               {revealData?.questions?.map((q) => (
                 <div key={q.vaultQuestionId} className="relative">
@@ -122,7 +126,7 @@ function OperatorReveal({ vaultId }: { vaultId: string }) {
               ))}
             </div>
           </TabsContent>
-          
+
           {hasPaidAccess && (
             <TabsContent value="scoreboard" className="pb-24 focus-visible:outline-none">
               <OperatorScoreboard vaultId={vaultId} />
@@ -150,6 +154,10 @@ function OperatorReveal({ vaultId }: { vaultId: string }) {
                 )}
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="billing" className="pb-24 focus-visible:outline-none">
+            <OperatorBillingPanel vaultId={vaultId} />
           </TabsContent>
         </Tabs>
       </main>

@@ -27,6 +27,9 @@ export async function readUnlockedAnswers(scope: UnlockedAnswerScope) {
   const database = scope.database ?? db;
   const conditions = [
     eq(submissionsTable.vaultId, scope.vaultId),
+    isNull(submissionsTable.heldAt),
+    isNull(submissionsTable.archivedAt),
+    isNull(submissionsTable.culledAt),
     or(
       lte(answersTable.unlockOverrideAt, now),
       and(

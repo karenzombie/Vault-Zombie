@@ -20,21 +20,35 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminBillingActionResult,
+  AdminBillingList,
+  AdminGiftList,
+  AdminOverageList,
   AnswersArchive,
   AreaReport,
   ClusterVerdictInput,
   ClusterVerdictResult,
+  CompGrantInput,
   FinaleReport,
+  GiftCard,
+  GiftCheckoutInput,
+  GiftCheckoutSession,
+  GiftRefundResult,
   GuestPersonalReport,
   GuestSubmissionConfirmation,
   GuestSubmissionInput,
   GuestVault,
   HealthStatus,
   OutcomeInput,
+  OverageDeclineResult,
+  OverageStatus,
   QuestionReport,
+  RedeemGiftInput,
+  RedeemGiftResult,
   ResolvedOutcome,
   RevealReport,
   Scoreboard,
+  SensitiveReasonInput,
   TimelineReport,
   UnlockedRevealWork,
   VaultBillingStatus,
@@ -445,6 +459,897 @@ export const useCreateVaultCheckout = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getCreateVaultCheckoutMutationOptions(options));
+    }
+
+export const getCreateGiftCheckoutUrl = () => {
+
+
+
+
+  return `/api/gifts/checkout`
+}
+
+/**
+ * @summary Create account-free Checkout for a fixed paid-tier gift
+ */
+export const createGiftCheckout = async (giftCheckoutInput: GiftCheckoutInput, options?: Parameters<typeof customFetch>[1]): Promise<GiftCheckoutSession> => {
+
+  return customFetch<GiftCheckoutSession>(getCreateGiftCheckoutUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(giftCheckoutInput)
+  }
+);}
+
+
+
+
+
+export const getCreateGiftCheckoutMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGiftCheckout>>, TError,{data: BodyType<GiftCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createGiftCheckout>>, TError,{data: BodyType<GiftCheckoutInput>}, TContext> => {
+
+const mutationKey = ['createGiftCheckout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createGiftCheckout>>, {data: BodyType<GiftCheckoutInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createGiftCheckout(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateGiftCheckoutMutationResult = NonNullable<Awaited<ReturnType<typeof createGiftCheckout>>>
+    export type CreateGiftCheckoutMutationBody = BodyType<GiftCheckoutInput>
+    export type CreateGiftCheckoutMutationError = ErrorType<void>
+
+    /**
+ * @summary Create account-free Checkout for a fixed paid-tier gift
+ */
+export const useCreateGiftCheckout = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGiftCheckout>>, TError,{data: BodyType<GiftCheckoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createGiftCheckout>>,
+        TError,
+        {data: BodyType<GiftCheckoutInput>},
+        TContext
+      > => {
+      return useMutation(getCreateGiftCheckoutMutationOptions(options));
+    }
+
+export const getGetGiftCardUrl = (code: string,) => {
+
+
+
+
+  return `/api/gifts/${code}/card`
+}
+
+/**
+ * @summary Get copyable printable data for a purchased gift
+ */
+export const getGiftCard = async (code: string, options?: Parameters<typeof customFetch>[1]): Promise<GiftCard> => {
+
+  return customFetch<GiftCard>(getGetGiftCardUrl(code),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGiftCardQueryKey = (code: string,) => {
+    return [
+    `/api/gifts/${code}/card`
+    ] as const;
+    }
+
+
+export const getGetGiftCardQueryOptions = <TData = Awaited<ReturnType<typeof getGiftCard>>, TError = ErrorType<void>>(code: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGiftCard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGiftCardQueryKey(code);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGiftCard>>> = ({ signal }) => getGiftCard(code, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: code !== null && code !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGiftCard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGiftCardQueryResult = NonNullable<Awaited<ReturnType<typeof getGiftCard>>>
+export type GetGiftCardQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get copyable printable data for a purchased gift
+ */
+
+export function useGetGiftCard<TData = Awaited<ReturnType<typeof getGiftCard>>, TError = ErrorType<void>>(
+ code: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGiftCard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGiftCardQueryOptions(code,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetGiftCardByCheckoutSessionUrl = (checkoutSessionId: string,) => {
+
+
+
+
+  return `/api/gifts/checkout/sessions/${checkoutSessionId}/card`
+}
+
+/**
+ * @summary Get purchased gift card data after a Checkout success return
+ */
+export const getGiftCardByCheckoutSession = async (checkoutSessionId: string, options?: Parameters<typeof customFetch>[1]): Promise<GiftCard> => {
+
+  return customFetch<GiftCard>(getGetGiftCardByCheckoutSessionUrl(checkoutSessionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGiftCardByCheckoutSessionQueryKey = (checkoutSessionId: string,) => {
+    return [
+    `/api/gifts/checkout/sessions/${checkoutSessionId}/card`
+    ] as const;
+    }
+
+
+export const getGetGiftCardByCheckoutSessionQueryOptions = <TData = Awaited<ReturnType<typeof getGiftCardByCheckoutSession>>, TError = ErrorType<void>>(checkoutSessionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGiftCardByCheckoutSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGiftCardByCheckoutSessionQueryKey(checkoutSessionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGiftCardByCheckoutSession>>> = ({ signal }) => getGiftCardByCheckoutSession(checkoutSessionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: checkoutSessionId !== null && checkoutSessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGiftCardByCheckoutSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGiftCardByCheckoutSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getGiftCardByCheckoutSession>>>
+export type GetGiftCardByCheckoutSessionQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get purchased gift card data after a Checkout success return
+ */
+
+export function useGetGiftCardByCheckoutSession<TData = Awaited<ReturnType<typeof getGiftCardByCheckoutSession>>, TError = ErrorType<void>>(
+ checkoutSessionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGiftCardByCheckoutSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGiftCardByCheckoutSessionQueryOptions(checkoutSessionId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRedeemGiftUrl = () => {
+
+
+
+
+  return `/api/operator/gifts/redeem`
+}
+
+/**
+ * @summary Atomically redeem a purchased gift to an owned draft vault
+ */
+export const redeemGift = async (redeemGiftInput: RedeemGiftInput, options?: Parameters<typeof customFetch>[1]): Promise<RedeemGiftResult> => {
+
+  return customFetch<RedeemGiftResult>(getRedeemGiftUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(redeemGiftInput)
+  }
+);}
+
+
+
+
+
+export const getRedeemGiftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof redeemGift>>, TError,{data: BodyType<RedeemGiftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof redeemGift>>, TError,{data: BodyType<RedeemGiftInput>}, TContext> => {
+
+const mutationKey = ['redeemGift'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof redeemGift>>, {data: BodyType<RedeemGiftInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  redeemGift(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RedeemGiftMutationResult = NonNullable<Awaited<ReturnType<typeof redeemGift>>>
+    export type RedeemGiftMutationBody = BodyType<RedeemGiftInput>
+    export type RedeemGiftMutationError = ErrorType<void>
+
+    /**
+ * @summary Atomically redeem a purchased gift to an owned draft vault
+ */
+export const useRedeemGift = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof redeemGift>>, TError,{data: BodyType<RedeemGiftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof redeemGift>>,
+        TError,
+        {data: BodyType<RedeemGiftInput>},
+        TContext
+      > => {
+      return useMutation(getRedeemGiftMutationOptions(options));
+    }
+
+export const getGetOperatorOverageStatusUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/overage`
+}
+
+/**
+ * @summary Get prominent unresolved overage status for an owned vault
+ */
+export const getOperatorOverageStatus = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<OverageStatus> => {
+
+  return customFetch<OverageStatus>(getGetOperatorOverageStatusUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperatorOverageStatusQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/overage`
+    ] as const;
+    }
+
+
+export const getGetOperatorOverageStatusQueryOptions = <TData = Awaited<ReturnType<typeof getOperatorOverageStatus>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperatorOverageStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperatorOverageStatusQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperatorOverageStatus>>> = ({ signal }) => getOperatorOverageStatus(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperatorOverageStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperatorOverageStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getOperatorOverageStatus>>>
+export type GetOperatorOverageStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get prominent unresolved overage status for an owned vault
+ */
+
+export function useGetOperatorOverageStatus<TData = Awaited<ReturnType<typeof getOperatorOverageStatus>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperatorOverageStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperatorOverageStatusQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeclineOperatorOverageUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/overage`
+}
+
+/**
+ * @summary Archive newest whole submissions beyond the current cap
+ */
+export const declineOperatorOverage = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<OverageDeclineResult> => {
+
+  return customFetch<OverageDeclineResult>(getDeclineOperatorOverageUrl(vaultId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeclineOperatorOverageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineOperatorOverage>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof declineOperatorOverage>>, TError,{vaultId: string}, TContext> => {
+
+const mutationKey = ['declineOperatorOverage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof declineOperatorOverage>>, {vaultId: string}> = (props) => {
+          const {vaultId} = props ?? {};
+
+          return  declineOperatorOverage(vaultId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeclineOperatorOverageMutationResult = NonNullable<Awaited<ReturnType<typeof declineOperatorOverage>>>
+
+    export type DeclineOperatorOverageMutationError = ErrorType<void>
+
+    /**
+ * @summary Archive newest whole submissions beyond the current cap
+ */
+export const useDeclineOperatorOverage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declineOperatorOverage>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof declineOperatorOverage>>,
+        TError,
+        {vaultId: string},
+        TContext
+      > => {
+      return useMutation(getDeclineOperatorOverageMutationOptions(options));
+    }
+
+export const getListAdminBillingUrl = () => {
+
+
+
+
+  return `/api/admin/billing`
+}
+
+/**
+ * @summary List billing records and disputes for administrators
+ */
+export const listAdminBilling = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingList> => {
+
+  return customFetch<AdminBillingList>(getListAdminBillingUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminBillingQueryKey = () => {
+    return [
+    `/api/admin/billing`
+    ] as const;
+    }
+
+
+export const getListAdminBillingQueryOptions = <TData = Awaited<ReturnType<typeof listAdminBilling>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminBilling>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminBillingQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminBilling>>> = ({ signal }) => listAdminBilling({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminBilling>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminBillingQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminBilling>>>
+export type ListAdminBillingQueryError = ErrorType<void>
+
+
+/**
+ * @summary List billing records and disputes for administrators
+ */
+
+export function useListAdminBilling<TData = Awaited<ReturnType<typeof listAdminBilling>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminBilling>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminBillingQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminGiftsUrl = () => {
+
+
+
+
+  return `/api/admin/gifts`
+}
+
+/**
+ * @summary List gift records for administrators
+ */
+export const listAdminGifts = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminGiftList> => {
+
+  return customFetch<AdminGiftList>(getListAdminGiftsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminGiftsQueryKey = () => {
+    return [
+    `/api/admin/gifts`
+    ] as const;
+    }
+
+
+export const getListAdminGiftsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminGifts>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminGifts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminGiftsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminGifts>>> = ({ signal }) => listAdminGifts({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminGifts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminGiftsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminGifts>>>
+export type ListAdminGiftsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List gift records for administrators
+ */
+
+export function useListAdminGifts<TData = Awaited<ReturnType<typeof listAdminGifts>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminGifts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminGiftsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminOveragesUrl = () => {
+
+
+
+
+  return `/api/admin/overages`
+}
+
+/**
+ * @summary List administrative overage event history
+ */
+export const listAdminOverages = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminOverageList> => {
+
+  return customFetch<AdminOverageList>(getListAdminOveragesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminOveragesQueryKey = () => {
+    return [
+    `/api/admin/overages`
+    ] as const;
+    }
+
+
+export const getListAdminOveragesQueryOptions = <TData = Awaited<ReturnType<typeof listAdminOverages>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOverages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminOveragesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminOverages>>> = ({ signal }) => listAdminOverages({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminOverages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminOveragesQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminOverages>>>
+export type ListAdminOveragesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List administrative overage event history
+ */
+
+export function useListAdminOverages<TData = Awaited<ReturnType<typeof listAdminOverages>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminOverages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminOveragesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRefundBillingRecordUrl = (billingRecordId: string,) => {
+
+
+
+
+  return `/api/admin/billing/${billingRecordId}/refund`
+}
+
+/**
+ * @summary Fresh-MFA admin full refund with a typed reason
+ */
+export const refundBillingRecord = async (billingRecordId: string,
+    sensitiveReasonInput: SensitiveReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingActionResult> => {
+
+  return customFetch<AdminBillingActionResult>(getRefundBillingRecordUrl(billingRecordId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sensitiveReasonInput)
+  }
+);}
+
+
+
+
+
+export const getRefundBillingRecordMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<SensitiveReasonInput>}, TContext> => {
+
+const mutationKey = ['refundBillingRecord'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundBillingRecord>>, {billingRecordId: string;data: BodyType<SensitiveReasonInput>}> = (props) => {
+          const {billingRecordId,data} = props ?? {};
+
+          return  refundBillingRecord(billingRecordId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefundBillingRecordMutationResult = NonNullable<Awaited<ReturnType<typeof refundBillingRecord>>>
+    export type RefundBillingRecordMutationBody = BodyType<SensitiveReasonInput>
+    export type RefundBillingRecordMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA admin full refund with a typed reason
+ */
+export const useRefundBillingRecord = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundBillingRecord>>, TError,{billingRecordId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof refundBillingRecord>>,
+        TError,
+        {billingRecordId: string;data: BodyType<SensitiveReasonInput>},
+        TContext
+      > => {
+      return useMutation(getRefundBillingRecordMutationOptions(options));
+    }
+
+export const getRefundGiftUrl = (giftId: string,) => {
+
+
+
+
+  return `/api/admin/gifts/${giftId}/refund`
+}
+
+/**
+ * @summary Fresh-MFA admin refund of an unredeemed gift within ninety days
+ */
+export const refundGift = async (giftId: string,
+    sensitiveReasonInput: SensitiveReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<GiftRefundResult> => {
+
+  return customFetch<GiftRefundResult>(getRefundGiftUrl(giftId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sensitiveReasonInput)
+  }
+);}
+
+
+
+
+
+export const getRefundGiftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<SensitiveReasonInput>}, TContext> => {
+
+const mutationKey = ['refundGift'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refundGift>>, {giftId: string;data: BodyType<SensitiveReasonInput>}> = (props) => {
+          const {giftId,data} = props ?? {};
+
+          return  refundGift(giftId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefundGiftMutationResult = NonNullable<Awaited<ReturnType<typeof refundGift>>>
+    export type RefundGiftMutationBody = BodyType<SensitiveReasonInput>
+    export type RefundGiftMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA admin refund of an unredeemed gift within ninety days
+ */
+export const useRefundGift = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refundGift>>, TError,{giftId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof refundGift>>,
+        TError,
+        {giftId: string;data: BodyType<SensitiveReasonInput>},
+        TContext
+      > => {
+      return useMutation(getRefundGiftMutationOptions(options));
+    }
+
+export const getGrantVaultCompUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/comp-grant`
+}
+
+/**
+ * @summary Fresh-MFA admin paid-tier comp grant
+ */
+export const grantVaultComp = async (vaultId: string,
+    compGrantInput: CompGrantInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminBillingActionResult> => {
+
+  return customFetch<AdminBillingActionResult>(getGrantVaultCompUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(compGrantInput)
+  }
+);}
+
+
+
+
+
+export const getGrantVaultCompMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantVaultComp>>, TError,{vaultId: string;data: BodyType<CompGrantInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof grantVaultComp>>, TError,{vaultId: string;data: BodyType<CompGrantInput>}, TContext> => {
+
+const mutationKey = ['grantVaultComp'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof grantVaultComp>>, {vaultId: string;data: BodyType<CompGrantInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  grantVaultComp(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GrantVaultCompMutationResult = NonNullable<Awaited<ReturnType<typeof grantVaultComp>>>
+    export type GrantVaultCompMutationBody = BodyType<CompGrantInput>
+    export type GrantVaultCompMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA admin paid-tier comp grant
+ */
+export const useGrantVaultComp = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantVaultComp>>, TError,{vaultId: string;data: BodyType<CompGrantInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof grantVaultComp>>,
+        TError,
+        {vaultId: string;data: BodyType<CompGrantInput>},
+        TContext
+      > => {
+      return useMutation(getGrantVaultCompMutationOptions(options));
     }
 
 export const getListUnlockedRevealWorkUrl = (vaultId: string,) => {

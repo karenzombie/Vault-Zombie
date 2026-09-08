@@ -22,6 +22,291 @@ export interface VaultCheckoutInput {
   targetTier: VaultCheckoutInputTargetTier;
 }
 
+export type GiftCheckoutInputTargetTier = typeof GiftCheckoutInputTargetTier[keyof typeof GiftCheckoutInputTargetTier];
+
+
+export const GiftCheckoutInputTargetTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface GiftCheckoutInput {
+  targetTier: GiftCheckoutInputTargetTier;
+  /** @maxLength 80 */
+  fromLine?: string;
+  /** @maxLength 80 */
+  toLine?: string;
+  gifterEmail?: string;
+}
+
+export type GiftCheckoutSessionStatus = typeof GiftCheckoutSessionStatus[keyof typeof GiftCheckoutSessionStatus];
+
+
+export const GiftCheckoutSessionStatus = {
+  pending: 'pending',
+} as const;
+
+export interface GiftCheckoutSession {
+  giftId: string;
+  checkoutUrl: string;
+  status: GiftCheckoutSessionStatus;
+}
+
+export interface GiftCard {
+  logo: string;
+  line: string;
+  tierName: string;
+  code: string;
+  redemptionUrl: string;
+  /** @nullable */
+  fromLine?: string | null;
+  /** @nullable */
+  toLine?: string | null;
+  description: string;
+}
+
+export interface RedeemGiftInput {
+  /**
+     * @minLength 12
+     * @maxLength 64
+     */
+  code: string;
+  vaultId: string;
+}
+
+export type RedeemGiftResultTier = typeof RedeemGiftResultTier[keyof typeof RedeemGiftResultTier];
+
+
+export const RedeemGiftResultTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface RedeemGiftResult {
+  vaultId: string;
+  billingRecordId: string;
+  tier: RedeemGiftResultTier;
+}
+
+export interface OverageStatus {
+  vaultId: string;
+  heldSubmissionCount: number;
+  unresolved: boolean;
+  /** @nullable */
+  nearestRevealDate: string | null;
+}
+
+export interface OverageDeclineResult {
+  archivedSubmissionCount: number;
+}
+
+export interface SensitiveReasonInput {
+  /**
+     * @minLength 1
+     * @maxLength 1000
+     */
+  reason: string;
+}
+
+export type CompGrantInputTargetTier = typeof CompGrantInputTargetTier[keyof typeof CompGrantInputTargetTier];
+
+
+export const CompGrantInputTargetTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type CompGrantInput = SensitiveReasonInput & {
+  targetTier: CompGrantInputTargetTier;
+};
+
+export type AdminBillingActionResultStatus = typeof AdminBillingActionResultStatus[keyof typeof AdminBillingActionResultStatus];
+
+
+export const AdminBillingActionResultStatus = {
+  refunded: 'refunded',
+  comped: 'comped',
+} as const;
+
+export type AdminBillingActionResultCurrentTier = typeof AdminBillingActionResultCurrentTier[keyof typeof AdminBillingActionResultCurrentTier];
+
+
+export const AdminBillingActionResultCurrentTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface AdminBillingActionResult {
+  billingRecordId: string;
+  vaultId: string;
+  status: AdminBillingActionResultStatus;
+  currentTier: AdminBillingActionResultCurrentTier;
+}
+
+export type AdminBillingListRecordsItemTargetTier = typeof AdminBillingListRecordsItemTargetTier[keyof typeof AdminBillingListRecordsItemTargetTier];
+
+
+export const AdminBillingListRecordsItemTargetTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type AdminBillingListRecordsItemCurrency = typeof AdminBillingListRecordsItemCurrency[keyof typeof AdminBillingListRecordsItemCurrency];
+
+
+export const AdminBillingListRecordsItemCurrency = {
+  usd: 'usd',
+} as const;
+
+export type AdminBillingListRecordsItemStatus = typeof AdminBillingListRecordsItemStatus[keyof typeof AdminBillingListRecordsItemStatus];
+
+
+export const AdminBillingListRecordsItemStatus = {
+  pending: 'pending',
+  paid: 'paid',
+  failed: 'failed',
+  expired: 'expired',
+  refunded: 'refunded',
+  disputed: 'disputed',
+  comped: 'comped',
+} as const;
+
+export type AdminBillingListRecordsItemSource = typeof AdminBillingListRecordsItemSource[keyof typeof AdminBillingListRecordsItemSource];
+
+
+export const AdminBillingListRecordsItemSource = {
+  stripe: 'stripe',
+  gift: 'gift',
+  comp: 'comp',
+} as const;
+
+export type AdminBillingListRecordsItem = {
+  id: string;
+  /** @nullable */
+  vaultId: string | null;
+  /** @nullable */
+  operatorId: string | null;
+  targetTier: AdminBillingListRecordsItemTargetTier;
+  amountCents: number;
+  currency: AdminBillingListRecordsItemCurrency;
+  status: AdminBillingListRecordsItemStatus;
+  source: AdminBillingListRecordsItemSource;
+  /** @nullable */
+  stripeRefundId?: string | null;
+  createdAt: string;
+};
+
+export interface AdminBillingList {
+  records: AdminBillingListRecordsItem[];
+}
+
+export type AdminGiftListGiftsItemTargetTier = typeof AdminGiftListGiftsItemTargetTier[keyof typeof AdminGiftListGiftsItemTargetTier];
+
+
+export const AdminGiftListGiftsItemTargetTier = {
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type AdminGiftListGiftsItemStatus = typeof AdminGiftListGiftsItemStatus[keyof typeof AdminGiftListGiftsItemStatus];
+
+
+export const AdminGiftListGiftsItemStatus = {
+  pending: 'pending',
+  purchased: 'purchased',
+  redeemed: 'redeemed',
+  refunded: 'refunded',
+  failed: 'failed',
+  expired: 'expired',
+  disputed: 'disputed',
+} as const;
+
+export type AdminGiftListGiftsItemCurrency = typeof AdminGiftListGiftsItemCurrency[keyof typeof AdminGiftListGiftsItemCurrency];
+
+
+export const AdminGiftListGiftsItemCurrency = {
+  usd: 'usd',
+} as const;
+
+export type AdminGiftListGiftsItem = {
+  id: string;
+  code: string;
+  targetTier: AdminGiftListGiftsItemTargetTier;
+  status: AdminGiftListGiftsItemStatus;
+  amountCents: number;
+  currency: AdminGiftListGiftsItemCurrency;
+  /** @nullable */
+  fromLine?: string | null;
+  /** @nullable */
+  toLine?: string | null;
+  /** @nullable */
+  gifterEmail?: string | null;
+  createdAt: string;
+  /** @nullable */
+  redeemedAt: string | null;
+  /** @nullable */
+  refundedAt: string | null;
+  /** @nullable */
+  redeemedVaultId: string | null;
+  /** @nullable */
+  stripeRefundId: string | null;
+  /** @nullable */
+  stripePaymentIntentId: string | null;
+  refundableNow: boolean;
+};
+
+export interface AdminGiftList {
+  gifts: AdminGiftListGiftsItem[];
+}
+
+/**
+ * @nullable
+ */
+export type AdminOverageListEventsItemOutcome = typeof AdminOverageListEventsItemOutcome[keyof typeof AdminOverageListEventsItemOutcome] | null;
+
+
+export const AdminOverageListEventsItemOutcome = {
+  upgraded: 'upgraded',
+  declined: 'declined',
+} as const;
+
+export type AdminOverageListEventsItem = {
+  id: string;
+  vaultId: string;
+  guestCap: number;
+  submissionCount: number;
+  createdAt: string;
+  /** @nullable */
+  resolvedAt: string | null;
+  /** @nullable */
+  outcome: AdminOverageListEventsItemOutcome;
+};
+
+export interface AdminOverageList {
+  events: AdminOverageListEventsItem[];
+}
+
+export type GiftRefundResultStatus = typeof GiftRefundResultStatus[keyof typeof GiftRefundResultStatus];
+
+
+export const GiftRefundResultStatus = {
+  refunded: 'refunded',
+} as const;
+
+export interface GiftRefundResult {
+  giftId: string;
+  status: GiftRefundResultStatus;
+  stripeRefundId: string;
+}
+
 export type BillingAttemptFromTier = typeof BillingAttemptFromTier[keyof typeof BillingAttemptFromTier];
 
 

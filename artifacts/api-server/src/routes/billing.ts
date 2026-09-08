@@ -10,6 +10,7 @@ import {
 import { billingRecordsTable, db, vaultsTable } from "@workspace/db";
 import { findStripePrice, getStripeClient, TIER_ORDER, type PaidTier } from "../lib/stripe";
 import { requireOperator } from "../middlewares/auth";
+import { getTrustedAppUrl } from "../lib/app-url";
 
 const billingRouter: IRouter = Router();
 
@@ -93,9 +94,11 @@ billingRouter.post("/operator/vaults/:vaultId/checkout", requireOperator, async 
       throw new Error("Configured Stripe Price must have a fixed USD amount.");
     }
     const priceAmountCents = price.unit_amount;
-    const appUrl = process.env.VAULT_ZOMBIE_APP_URL;
-    if (!appUrl) {
-      res.status(503).json({ error: "VAULT_ZOMBIE_APP_URL is required to create Stripe Checkout." });
+    let appUrl: string;
+    try {
+      appUrl = getTrustedAppUrl();
+    } catch (error) {
+      billingUnavailable(error, res);
       return;
     }
     const attempt = await db.transaction(async (tx) => {
