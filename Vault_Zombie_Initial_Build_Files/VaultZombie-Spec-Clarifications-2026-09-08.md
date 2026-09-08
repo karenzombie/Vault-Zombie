@@ -10,6 +10,22 @@ vaults.
 **Status:** Authoritative addendum to the initial build specification. Where this
 document changes or clarifies an earlier document, this document wins.
 
+## Standing operating rules
+
+- Build only what the current step explicitly authorizes in its instructions or
+  governing documents. Do not add unrequested surfaces or adjacent features.
+- Stop and report any contradiction, gap, undefined case, or choice that the
+  governing documents do not settle. Do not invent a value or assumption to
+  continue.
+- Never weaken an established rule to unblock implementation. A blocking rule is
+  a reason to pause and report.
+- Report verification precisely: distinguish typechecks, builds, visual checks,
+  real-data tests, and work that was not tested.
+- Every code backup must be verified by comparing the remote tree hash with the
+  local commit tree hash. Reconcile mismatches before reporting completion, and
+  report the local commit, remote head, shared tree hash, and whether the trees
+  are byte-for-byte identical. Document failed pushes and any workaround used.
+
 ## Reports and Lockbox
 
 - Reveal timelines are paid-only (Safe and above), even when a Lockbox schedule
