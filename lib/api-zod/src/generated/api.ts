@@ -98,3 +98,127 @@ export const SubmitGuestPredictionResponse = zod.object({
 })
 
 
+/**
+ * @summary List unlocked reveal work for an owned vault
+ */
+export const ListUnlockedRevealWorkParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const listUnlockedRevealWorkResponseQuestionsItemOperatorNoteMax = 140;
+
+
+
+export const ListUnlockedRevealWorkResponse = zod.object({
+  "questions": zod.array(zod.object({
+  "vaultQuestionId": zod.string().uuid(),
+  "revealSlotId": zod.string().uuid(),
+  "prompt": zod.string(),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "numberCloseBand": zod.number().nullish(),
+  "trueTextValue": zod.string().nullish(),
+  "trueNumberValue": zod.number().nullish(),
+  "trueOptionId": zod.string().uuid().nullish(),
+  "operatorNote": zod.string().max(listUnlockedRevealWorkResponseQuestionsItemOperatorNoteMax).nullish(),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+})),
+  "clusters": zod.array(zod.object({
+  "key": zod.string(),
+  "normalizedValue": zod.string(),
+  "answerCount": zod.number().int(),
+  "suggestedTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullable(),
+  "confirmedTier": zod.union([zod.literal('full'),zod.literal('half'),zod.literal('zero'),zod.literal(null)]).nullish(),
+  "answers": zod.array(zod.object({
+  "answerId": zod.string().uuid(),
+  "guestId": zod.string().uuid(),
+  "guestDisplayName": zod.string(),
+  "textValue": zod.string().nullable(),
+  "numberValue": zod.number().nullable(),
+  "optionId": zod.string().uuid().nullable()
+}))
+}))
+}))
+})
+
+
+/**
+ * @summary Atomically save a question outcome and automatic verdicts
+ */
+export const ResolveRevealQuestionOutcomeParams = zod.object({
+  "vaultId": zod.coerce.string().uuid(),
+  "revealSlotId": zod.coerce.string().uuid(),
+  "vaultQuestionId": zod.coerce.string().uuid()
+})
+
+export const resolveRevealQuestionOutcomeBodyTrueTextValueMax = 140;
+
+export const resolveRevealQuestionOutcomeBodyOperatorNoteMax = 140;
+
+
+
+export const ResolveRevealQuestionOutcomeBody = zod.object({
+  "trueTextValue": zod.string().max(resolveRevealQuestionOutcomeBodyTrueTextValueMax).nullish(),
+  "trueNumberValue": zod.number().nullish(),
+  "trueOptionId": zod.string().uuid().nullish(),
+  "operatorNote": zod.string().max(resolveRevealQuestionOutcomeBodyOperatorNoteMax).nullish()
+})
+
+export const ResolveRevealQuestionOutcomeResponse = zod.object({
+  "outcomeId": zod.string().uuid(),
+  "vaultQuestionId": zod.string().uuid(),
+  "revealSlotId": zod.string().uuid(),
+  "verdictCount": zod.number().int()
+})
+
+
+/**
+ * @summary Confirm or override one free-text answer cluster
+ */
+export const overrideRevealTextClusterVerdictPathClusterKeyMax = 140;
+
+
+
+export const OverrideRevealTextClusterVerdictParams = zod.object({
+  "vaultId": zod.coerce.string().uuid(),
+  "revealSlotId": zod.coerce.string().uuid(),
+  "vaultQuestionId": zod.coerce.string().uuid(),
+  "clusterKey": zod.coerce.string().min(1).max(overrideRevealTextClusterVerdictPathClusterKeyMax)
+})
+
+export const OverrideRevealTextClusterVerdictBody = zod.object({
+  "tier": zod.enum(['full', 'half', 'zero'])
+})
+
+export const OverrideRevealTextClusterVerdictResponse = zod.object({
+  "clusterKey": zod.string(),
+  "tier": zod.enum(['full', 'half', 'zero']),
+  "affectedAnswers": zod.number().int()
+})
+
+
+/**
+ * @summary Get the scored unlocked-answer scoreboard for an owned vault
+ */
+export const GetOperatorScoreboardParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetOperatorScoreboardResponse = zod.object({
+  "entries": zod.array(zod.object({
+  "guestId": zod.string().uuid(),
+  "displayName": zod.string(),
+  "full": zod.number().int(),
+  "half": zod.number().int(),
+  "zero": zod.number().int(),
+  "total": zod.number()
+}))
+})
+
+

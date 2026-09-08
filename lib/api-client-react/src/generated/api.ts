@@ -20,10 +20,16 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ClusterVerdictInput,
+  ClusterVerdictResult,
   GuestSubmissionConfirmation,
   GuestSubmissionInput,
   GuestVault,
-  HealthStatus
+  HealthStatus,
+  OutcomeInput,
+  ResolvedOutcome,
+  Scoreboard,
+  UnlockedRevealWork
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -279,4 +285,312 @@ export const useSubmitGuestPrediction = <TError = ErrorType<void>,
       > => {
       return useMutation(getSubmitGuestPredictionMutationOptions(options));
     }
+
+export const getListUnlockedRevealWorkUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reveals/unlocked`
+}
+
+/**
+ * @summary List unlocked reveal work for an owned vault
+ */
+export const listUnlockedRevealWork = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<UnlockedRevealWork> => {
+
+  return customFetch<UnlockedRevealWork>(getListUnlockedRevealWorkUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListUnlockedRevealWorkQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/reveals/unlocked`
+    ] as const;
+    }
+
+
+export const getListUnlockedRevealWorkQueryOptions = <TData = Awaited<ReturnType<typeof listUnlockedRevealWork>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUnlockedRevealWork>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListUnlockedRevealWorkQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listUnlockedRevealWork>>> = ({ signal }) => listUnlockedRevealWork(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listUnlockedRevealWork>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListUnlockedRevealWorkQueryResult = NonNullable<Awaited<ReturnType<typeof listUnlockedRevealWork>>>
+export type ListUnlockedRevealWorkQueryError = ErrorType<void>
+
+
+/**
+ * @summary List unlocked reveal work for an owned vault
+ */
+
+export function useListUnlockedRevealWork<TData = Awaited<ReturnType<typeof listUnlockedRevealWork>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listUnlockedRevealWork>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListUnlockedRevealWorkQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getResolveRevealQuestionOutcomeUrl = (vaultId: string,
+    revealSlotId: string,
+    vaultQuestionId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reveals/${revealSlotId}/questions/${vaultQuestionId}/outcome`
+}
+
+/**
+ * @summary Atomically save a question outcome and automatic verdicts
+ */
+export const resolveRevealQuestionOutcome = async (vaultId: string,
+    revealSlotId: string,
+    vaultQuestionId: string,
+    outcomeInput: OutcomeInput, options?: Parameters<typeof customFetch>[1]): Promise<ResolvedOutcome> => {
+
+  return customFetch<ResolvedOutcome>(getResolveRevealQuestionOutcomeUrl(vaultId,revealSlotId,vaultQuestionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(outcomeInput)
+  }
+);}
+
+
+
+
+
+export const getResolveRevealQuestionOutcomeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveRevealQuestionOutcome>>, TError,{vaultId: string;revealSlotId: string;vaultQuestionId: string;data: BodyType<OutcomeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resolveRevealQuestionOutcome>>, TError,{vaultId: string;revealSlotId: string;vaultQuestionId: string;data: BodyType<OutcomeInput>}, TContext> => {
+
+const mutationKey = ['resolveRevealQuestionOutcome'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolveRevealQuestionOutcome>>, {vaultId: string;revealSlotId: string;vaultQuestionId: string;data: BodyType<OutcomeInput>}> = (props) => {
+          const {vaultId,revealSlotId,vaultQuestionId,data} = props ?? {};
+
+          return  resolveRevealQuestionOutcome(vaultId,revealSlotId,vaultQuestionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResolveRevealQuestionOutcomeMutationResult = NonNullable<Awaited<ReturnType<typeof resolveRevealQuestionOutcome>>>
+    export type ResolveRevealQuestionOutcomeMutationBody = BodyType<OutcomeInput>
+    export type ResolveRevealQuestionOutcomeMutationError = ErrorType<void>
+
+    /**
+ * @summary Atomically save a question outcome and automatic verdicts
+ */
+export const useResolveRevealQuestionOutcome = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolveRevealQuestionOutcome>>, TError,{vaultId: string;revealSlotId: string;vaultQuestionId: string;data: BodyType<OutcomeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resolveRevealQuestionOutcome>>,
+        TError,
+        {vaultId: string;revealSlotId: string;vaultQuestionId: string;data: BodyType<OutcomeInput>},
+        TContext
+      > => {
+      return useMutation(getResolveRevealQuestionOutcomeMutationOptions(options));
+    }
+
+export const getOverrideRevealTextClusterVerdictUrl = (vaultId: string,
+    revealSlotId: string,
+    vaultQuestionId: string,
+    clusterKey: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/reveals/${revealSlotId}/questions/${vaultQuestionId}/clusters/${clusterKey}/verdict`
+}
+
+/**
+ * @summary Confirm or override one free-text answer cluster
+ */
+export const overrideRevealTextClusterVerdict = async (vaultId: string,
+    revealSlotId: string,
+    vaultQuestionId: string,
+    clusterKey: string,
+    clusterVerdictInput: ClusterVerdictInput, options?: Parameters<typeof customFetch>[1]): Promise<ClusterVerdictResult> => {
+
+  return customFetch<ClusterVerdictResult>(getOverrideRevealTextClusterVerdictUrl(vaultId,revealSlotId,vaultQuestionId,clusterKey),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(clusterVerdictInput)
+  }
+);}
+
+
+
+
+
+export const getOverrideRevealTextClusterVerdictMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof overrideRevealTextClusterVerdict>>, TError,{vaultId: string;revealSlotId: string;vaultQuestionId: string;clusterKey: string;data: BodyType<ClusterVerdictInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof overrideRevealTextClusterVerdict>>, TError,{vaultId: string;revealSlotId: string;vaultQuestionId: string;clusterKey: string;data: BodyType<ClusterVerdictInput>}, TContext> => {
+
+const mutationKey = ['overrideRevealTextClusterVerdict'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof overrideRevealTextClusterVerdict>>, {vaultId: string;revealSlotId: string;vaultQuestionId: string;clusterKey: string;data: BodyType<ClusterVerdictInput>}> = (props) => {
+          const {vaultId,revealSlotId,vaultQuestionId,clusterKey,data} = props ?? {};
+
+          return  overrideRevealTextClusterVerdict(vaultId,revealSlotId,vaultQuestionId,clusterKey,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OverrideRevealTextClusterVerdictMutationResult = NonNullable<Awaited<ReturnType<typeof overrideRevealTextClusterVerdict>>>
+    export type OverrideRevealTextClusterVerdictMutationBody = BodyType<ClusterVerdictInput>
+    export type OverrideRevealTextClusterVerdictMutationError = ErrorType<void>
+
+    /**
+ * @summary Confirm or override one free-text answer cluster
+ */
+export const useOverrideRevealTextClusterVerdict = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof overrideRevealTextClusterVerdict>>, TError,{vaultId: string;revealSlotId: string;vaultQuestionId: string;clusterKey: string;data: BodyType<ClusterVerdictInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof overrideRevealTextClusterVerdict>>,
+        TError,
+        {vaultId: string;revealSlotId: string;vaultQuestionId: string;clusterKey: string;data: BodyType<ClusterVerdictInput>},
+        TContext
+      > => {
+      return useMutation(getOverrideRevealTextClusterVerdictMutationOptions(options));
+    }
+
+export const getGetOperatorScoreboardUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/scoreboard`
+}
+
+/**
+ * @summary Get the scored unlocked-answer scoreboard for an owned vault
+ */
+export const getOperatorScoreboard = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<Scoreboard> => {
+
+  return customFetch<Scoreboard>(getGetOperatorScoreboardUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOperatorScoreboardQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/scoreboard`
+    ] as const;
+    }
+
+
+export const getGetOperatorScoreboardQueryOptions = <TData = Awaited<ReturnType<typeof getOperatorScoreboard>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperatorScoreboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOperatorScoreboardQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOperatorScoreboard>>> = ({ signal }) => getOperatorScoreboard(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOperatorScoreboard>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetOperatorScoreboardQueryResult = NonNullable<Awaited<ReturnType<typeof getOperatorScoreboard>>>
+export type GetOperatorScoreboardQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the scored unlocked-answer scoreboard for an owned vault
+ */
+
+export function useGetOperatorScoreboard<TData = Awaited<ReturnType<typeof getOperatorScoreboard>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getOperatorScoreboard>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetOperatorScoreboardQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

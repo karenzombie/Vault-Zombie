@@ -9,7 +9,7 @@ import { ClerkProvider } from '@clerk/react';
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/public/landing';
 import GuestFlow from '@/pages/guest/guest-flow';
-import OperatorPlaceholder from '@/pages/admin/operator';
+import OperatorPage from '@/pages/operator/operator-page';
 import AdminPlaceholder from '@/pages/admin/admin';
 import SignInPage from '@/pages/auth/sign-in';
 import SignUpPage from '@/pages/auth/sign-up';
@@ -24,7 +24,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Landing} />
         <Route path="/g/:token" component={GuestFlow} />
-        <Route path="/operator" component={OperatorPlaceholder} />
+        <Route path="/operator" component={OperatorPage} />
         <Route path="/admin" component={AdminPlaceholder} />
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
@@ -58,7 +58,7 @@ function App() {
             signUpFallbackRedirectUrl="/operator"
             appearance={{
               variables: {
-                colorPrimary: '#c4573a',
+                colorPrimary: '#8A6D3B',
                 borderRadius: '0.75rem',
               },
             }}
