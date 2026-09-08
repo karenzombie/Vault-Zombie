@@ -24,9 +24,17 @@ vaults.
 
 - Entitlement activates only from a verified Stripe webhook, never from a
   checkout return or success redirect.
-- Handle `checkout.session.completed`, `checkout.session.expired`,
-  `checkout.session.async_payment_failed`, `payment_intent.payment_failed`, and
-  `charge.dispute.created`, plus only the events required for refunds.
+- Handle `checkout.session.completed`,
+  `checkout.session.async_payment_succeeded`,
+  `checkout.session.async_payment_failed`, `checkout.session.expired`,
+  `payment_intent.payment_failed`, and `charge.dispute.created`, plus only the
+  events later authorized for refunds.
+- On `checkout.session.completed`, activate only when `payment_status` is
+  `paid`. Leave `unpaid` and `no_payment_required` attempts pending.
+- `checkout.session.async_payment_succeeded` activates delayed payments.
+- `checkout.session.async_payment_failed` and `checkout.session.expired`
+  release a pending attempt as failed or expired. A later verified success may
+  still activate it, and a late failure must never overwrite paid status.
 - Webhook processing is idempotent by Stripe event ID. Duplicate deliveries are
   recorded and ignored without applying their effect twice.
 - Delayed payments leave the vault as an unpaid draft with a visible pending
@@ -42,9 +50,10 @@ vaults.
 - Use only `STRIPE_SECRET_KEY` on the server and
   `VITE_STRIPE_PUBLISHABLE_KEY` on the client. No Replit Stripe connector or
   Stripe sync package is used.
-- `STRIPE_WEBHOOK_SECRET` is intentionally absent until the owner creates the
-  dashboard webhook. The endpoint must fail clearly while it is missing; do not
-  stub, bypass, or weaken signature verification.
+- The owner created the development dashboard webhook and deliberately added
+  `STRIPE_WEBHOOK_SECRET`. Reject every request whose signature does not verify.
+- The development webhook URL must never be hardcoded. A separate live-mode
+  webhook will be created when the app is published.
 
 # VaultZombie Specification Clarifications
 
