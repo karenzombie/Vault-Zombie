@@ -1,3 +1,10 @@
+## Sealed-vault upgrades
+
+An upgrade on a sealed vault raises its guest cap only. The sealed schedule,
+reveal dates, applied duration, prompt set, and milestone never change. New
+schedules and longer duration apply only to draft vaults and newly created
+vaults.
+
 # VaultZombie Specification Clarifications
 
 **Status:** Authoritative addendum to the initial build specification. Where this
