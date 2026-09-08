@@ -44,7 +44,7 @@ export const vaultsTable = pgTable(
     guestLayout: guestLayoutEnum("guest_layout")
       .notNull()
       .default("one_at_a_time"),
-    anchorDate: date("anchor_date", { mode: "string" }).notNull(),
+    anchorDate: date("anchor_date", { mode: "string" }),
     milestoneDate: date("milestone_date", { mode: "string" }),
     milestoneLabel: text("milestone_label"),
     sealedAt: timestamp("sealed_at", { withTimezone: true }),

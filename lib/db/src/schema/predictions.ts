@@ -52,6 +52,8 @@ export const submissionsTable = pgTable(
     submittedAt: timestamp("submitted_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    overGuestCap: boolean("over_guest_cap").notNull().default(false),
+    culledAt: timestamp("culled_at", { withTimezone: true }),
   },
   (table) => [
     index("submissions_vault_idx").on(table.vaultId),

@@ -12,35 +12,31 @@ export interface RevealSlotDefinition {
   revealDate: string;
 }
 
-const PLAN_YEARS: Record<PlanTier, number> = {
-  lockbox: 0.25,
-  safe: 3,
-  vault: 5,
-  deep_vault: 10,
-};
-
-const PLAN_SCHEDULES: Record<PlanTier, RevealSchedule[]> = {
-  lockbox: ["weekly_sprint", "monthly_x3"],
-  safe: [
+export const PLAN_POLICY: Record<
+  PlanTier,
+  { durationYears: number; guestCap: number; schedules: RevealSchedule[] }
+> = {
+  lockbox: { durationYears: 0.25, guestCap: 10, schedules: ["weekly_sprint", "monthly_x3"] },
+  safe: { durationYears: 3, guestCap: 50, schedules: [
     "weekly_sprint",
     "monthly_x3",
     "monthly_year",
     "half_then_annual",
-  ],
-  vault: [
-    "weekly_sprint",
-    "monthly_x3",
-    "monthly_year",
-    "half_then_annual",
-    "annual_keepsake",
-  ],
-  deep_vault: [
+  ] },
+  vault: { durationYears: 5, guestCap: 100, schedules: [
     "weekly_sprint",
     "monthly_x3",
     "monthly_year",
     "half_then_annual",
     "annual_keepsake",
-  ],
+  ] },
+  deep_vault: { durationYears: 10, guestCap: 250, schedules: [
+    "weekly_sprint",
+    "monthly_x3",
+    "monthly_year",
+    "half_then_annual",
+    "annual_keepsake",
+  ] },
 };
 
 function parseDate(value: string): Date {
@@ -84,7 +80,7 @@ function scheduledSlots(
   plan: PlanTier,
   schedule: RevealSchedule,
 ): RevealSlotDefinition[] {
-  const maxYears = PLAN_YEARS[plan];
+  const maxYears = PLAN_POLICY[plan].durationYears;
   switch (schedule) {
     case "weekly_sprint":
       return Array.from({ length: 8 }, (_, index) => ({
@@ -140,7 +136,7 @@ export function buildRevealSlots(input: {
 }): RevealSlotDefinition[] {
   const anchor = parseDate(input.anchorDate);
   const seal = parseDate(input.sealDate);
-  if (!PLAN_SCHEDULES[input.planTier].includes(input.schedule)) {
+  if (!PLAN_POLICY[input.planTier].schedules.includes(input.schedule)) {
     throw new Error(
       `${input.schedule} is not available on the ${input.planTier} plan.`,
     );
@@ -172,5 +168,9 @@ export function buildRevealSlots(input: {
       label: input.milestoneLabel?.trim() || "Milestone",
       revealDate: date,
     },
-  ].sort((left, right) => left.revealDate.localeCompare(right.revealDate));
+  ];
+}
+
+export function isGuestOverSoftCap(plan: PlanTier, completedGuestCount: number) {
+  return completedGuestCount > PLAN_POLICY[plan].guestCap;
 }

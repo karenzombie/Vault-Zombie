@@ -5,8 +5,14 @@ import {
   type InsertAuditEvent,
 } from "./schema/audit";
 
-export async function appendAuditEvent(input: InsertAuditEvent) {
+export async function appendAuditEvent(
+  input: InsertAuditEvent,
+  executor: Pick<typeof db, "insert"> = db,
+) {
   const event = insertAuditEventSchema.parse(input);
-  const [created] = await db.insert(auditEventsTable).values(event).returning();
+  const [created] = await executor
+    .insert(auditEventsTable)
+    .values(event)
+    .returning();
   return created;
 }

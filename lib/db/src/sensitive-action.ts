@@ -1,6 +1,11 @@
 import { auditActionEnum } from "./schema/enums";
 import type { Account } from "./schema/accounts";
 import { appendAuditEvent } from "./audit";
+import { db } from "./index";
+
+export type SensitiveActionTransaction = Parameters<
+  Parameters<typeof db.transaction>[0]
+>[0];
 
 export interface SensitiveActionContext {
   actor: Account;
@@ -18,7 +23,7 @@ export interface SensitiveActionContext {
  */
 export async function runSensitiveAdminAction<T>(
   context: SensitiveActionContext,
-  action: () => Promise<T>,
+  action: (transaction: SensitiveActionTransaction) => Promise<T>,
 ): Promise<T> {
   if (context.actor.role !== "admin") {
     throw new Error("Sensitive actions require an administrator account.");
@@ -26,14 +31,16 @@ export async function runSensitiveAdminAction<T>(
   const reason = context.reason.trim();
   if (!reason) throw new Error("A reason is required for sensitive actions.");
 
-  const result = await action();
-  await appendAuditEvent({
-    actorAccountId: context.actor.id,
-    action: context.action,
-    targetType: context.targetType,
-    targetId: context.targetId,
-    reason,
-    details: context.details ?? {},
+  return db.transaction(async (transaction) => {
+    const result = await action(transaction);
+    await appendAuditEvent({
+      actorAccountId: context.actor.id,
+      action: context.action,
+      targetType: context.targetType,
+      targetId: context.targetId,
+      reason,
+      details: context.details ?? {},
+    }, transaction);
+    return result;
   });
-  return result;
 }

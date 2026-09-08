@@ -1,3 +1,4 @@
+`VaultZombie-Question-Metadata.md` is an authoritative governing content-metadata document. Preserve it at the workspace root; do not infer or default any missing import metadata.
 # Vault Zombie
 
 A sealed-prediction web app for life events, with scheduled reveals, outcomes, and a long-running "who knew you best" scoreboard.
