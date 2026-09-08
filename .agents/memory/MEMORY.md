@@ -1,0 +1,1 @@
+- [GitHub tree uploads](github-tree-upload.md) — use sequential base64 blobs and a SHA-only tree; large inline trees and parallel uploads are blocked.
