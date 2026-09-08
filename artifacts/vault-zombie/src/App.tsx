@@ -9,8 +9,12 @@ import { ClerkProvider, RedirectToSignIn, useAuth } from '@clerk/react';
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/public/landing';
 import GuestFlow from '@/pages/guest/guest-flow';
+import GiftPurchasePage from '@/pages/public/gift-purchase';
+import GiftSuccessPage from '@/pages/public/gift-success';
+import GiftCancelPage from '@/pages/public/gift-cancel';
+import GiftRedeemPage from '@/pages/operator/gift-redeem';
 import OperatorPage from '@/pages/operator/operator-page';
-import AdminPlaceholder from '@/pages/admin/admin';
+import AdminPage from '@/pages/admin/admin';
 import SignInPage from '@/pages/auth/sign-in';
 import SignUpPage from '@/pages/auth/sign-up';
 
@@ -55,6 +59,8 @@ const AuthenticatedFinaleReport = requireOperator(FinaleReportPage);
 const AuthenticatedRevealReport = requireOperator(RevealReportPage);
 const AuthenticatedQuestionReport = requireOperator(QuestionReportPage);
 const AuthenticatedGuestReport = requireOperator(GuestPersonalReportPage);
+const AuthenticatedGiftRedeem = requireOperator(GiftRedeemPage);
+const AuthenticatedAdmin = requireOperator(AdminPage);
 
 function Router() {
   return (
@@ -62,6 +68,14 @@ function Router() {
       <Switch>
         <Route path="/" component={Landing} />
         <Route path="/g/:token" component={GuestFlow} />
+
+        {/* Gift Routes */}
+        <Route path="/gifts/purchase" component={GiftPurchasePage} />
+        <Route path="/gifts/checkout/success" component={GiftSuccessPage} />
+        <Route path="/gifts/success" component={GiftSuccessPage} />
+        <Route path="/gifts/checkout/cancelled" component={GiftCancelPage} />
+        <Route path="/gifts/cancel" component={GiftCancelPage} />
+        <Route path="/gifts/redeem" component={AuthenticatedGiftRedeem} />
 
         {/* Operator Reports Routes */}
         <Route path="/operator/vaults/:vaultId/reports/health" component={AuthenticatedHealthReport} />
@@ -78,8 +92,9 @@ function Router() {
 
         {/* Main Operator Route */}
         <Route path="/operator" component={AuthenticatedOperator} />
+        <Route path="/operator/gifts/redeem" component={AuthenticatedGiftRedeem} />
 
-        <Route path="/admin" component={AdminPlaceholder} />
+        <Route path="/admin" component={AuthenticatedAdmin} />
         <Route path="/sign-in/*?" component={SignInPage} />
         <Route path="/sign-up/*?" component={SignUpPage} />
         <Route component={NotFound} />

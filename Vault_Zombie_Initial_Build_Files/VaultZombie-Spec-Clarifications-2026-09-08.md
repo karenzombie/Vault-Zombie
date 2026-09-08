@@ -55,6 +55,80 @@ vaults.
 - The development webhook URL must never be hardcoded. A separate live-mode
   webhook will be created when the app is published.
 
+## Payments: gifts
+
+- A gift purchase creates a gift record and single-use redemption code. It never
+  creates a vault. The gifter has no operator account and never receives vault
+  content access.
+- Codes use at least 12 unambiguous printable characters, excluding characters
+  such as `O`, `0`, `I`, and `1`. Entry is case-insensitive. Store the printable
+  code directly rather than hashing it, and rate-limit redemption per IP and per
+  code.
+- Gift codes never expire. Do not add an expiry field, expiry job, or expiry
+  messaging.
+- Redemption is atomic: two simultaneous attempts yield exactly one success.
+- The recipient signs in or creates a normal operator account, enters the code,
+  and applies the gifted tier to an owned existing draft or a newly created
+  vault. Record the entitlement on a billing record with the gift code attached
+  and source `gift`.
+- A recipient who wants a higher tier redeems first and then uses the standard
+  paid upgrade path for the difference.
+- An unredeemed gift is refundable to the gifter for 90 days after purchase.
+  Redeemed gifts are not refundable. Refund and redemption lock the same gift
+  atomically so both can never succeed.
+- A confirmed gift refund atomically voids its code. Revocation is part of that
+  refund action and is never exposed as a standalone admin action.
+- An admin may resend a code to its gifter. Email delivery remains deferred to
+  Step 9.
+- Unredeemed gifts survive associated account deletion, stay redeemable, and are
+  anonymized under the same retention rules as billing records.
+- Step 8 provides a copyable code and plain printable gift card only. The card
+  contains the logo, a short line naming the gift, tier, code, redemption URL,
+  optional from/to lines, and one plain sentence explaining a vault. Final card
+  visual design remains Step 12; gift email remains Step 9.
+
+## Payments: soft-cap resolution
+
+- Overage culling removes whole guest submissions, last submitted first. Never
+  remove individual answers.
+- Resolution becomes available immediately when the vault exceeds its entitled
+  guest cap and remains available indefinitely. Nothing is culled automatically.
+  Only the operator may explicitly upgrade or decline.
+- Until resolution, over-cap submissions remain sealed and are excluded from
+  reveals, scoring, scoreboards, and reports. No content is destroyed.
+- Prompt the operator prominently and repeatedly while an overage is unresolved,
+  escalating as a reveal date approaches.
+- An upgrade releases held submissions immediately. They participate in the next
+  reveal and retroactively in already-passed reveals whose unlock dates elapsed.
+- Overage may recur after an upgrade if the new cap is exceeded.
+- Declining archives whole newest submissions beyond the cap. Culled guests are
+  not notified and receive no further notifications.
+- Track every overage event and its upgraded or declined outcome for
+  administrators only. Do not expose an operator-facing overage metric.
+
+## Payments: refunds, billing states, and comp grants
+
+- Billing statuses are `pending`, `paid`, `failed`, `expired`, `refunded`,
+  `disputed`, and `comped`.
+- Refunds are full, admin-only sensitive actions. Require fresh MFA and a typed
+  reason, run through `runSensitiveAdminAction()`, and write the audit event
+  atomically with confirmed local state.
+- Issue Stripe refunds with an idempotency key based on the billing record and
+  persist the Stripe Refund ID. Reject a second attempt against a refunded
+  record. If Stripe reports an error or ambiguous result, change no local state
+  and permit a later retry.
+- A confirmed refund returns the vault to Lockbox entitlement without deleting
+  content. Earliest submissions up to the Lockbox cap remain accessible on the
+  existing sealed schedule; later submissions are archived and locked.
+- Refunded reports use the trimmed Lockbox set with no exports or printable
+  surfaces. Repurchase restores archived content immediately.
+- Refunds never truncate or recalculate the sealed schedule.
+- Admins may grant a paid tier at no charge as a fresh-MFA sensitive action with
+  a typed reason and atomic audit event. The billing record source is `comp`,
+  status is `comped`, no Stripe object is created, and revenue metrics exclude it.
+- A dispute sets and flags the billing record as disputed but never automatically
+  revokes sealed-vault access. Resolution is a manual admin decision.
+
 # VaultZombie Specification Clarifications
 
 **Status:** Authoritative addendum to the initial build specification. Where this

@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type ErrorRequestHandler, type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
@@ -13,6 +13,15 @@ import {
 import { stripeWebhookBoundary } from "./routes/stripe-webhook";
 
 const app: Express = express();
+
+function isValidationError(error: unknown): error is { issues: unknown[] } {
+  return (
+    error instanceof Error &&
+    error.name === "ZodError" &&
+    "issues" in error &&
+    Array.isArray(error.issues)
+  );
+}
 
 app.use(
   pinoHttp({
@@ -49,5 +58,23 @@ app.use(
 );
 
 app.use("/api", router);
+
+const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
+  if (isValidationError(error)) {
+    return res.status(400).json({
+      error: "Invalid request.",
+      code: "VALIDATION_ERROR",
+      issues: error.issues,
+    });
+  }
+
+  req.log.error({ err: error }, "Request failed");
+  return res.status(500).json({
+    error: "The request could not be completed.",
+    code: "INTERNAL_ERROR",
+  });
+};
+
+app.use(errorHandler);
 
 export default app;

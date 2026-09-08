@@ -5,6 +5,8 @@ import guestRouter from "./guest";
 import operatorRevealRouter from "./operator-reveals";
 import operatorReportsRouter from "./operator-reports";
 import billingRouter from "./billing";
+import giftRouter from "./gifts";
+import adminBillingRouter from "./admin-billing";
 
 const router: IRouter = Router();
 
@@ -14,5 +16,7 @@ router.use(guestRouter);
 router.use(operatorRevealRouter);
 router.use(operatorReportsRouter);
 router.use(billingRouter);
+router.use(giftRouter);
+router.use(adminBillingRouter);
 
 export default router;

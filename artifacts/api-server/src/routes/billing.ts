@@ -8,8 +8,9 @@ import {
   GetOperatorVaultBillingStatusResponse,
 } from "@workspace/api-zod";
 import { billingRecordsTable, db, vaultsTable } from "@workspace/db";
-import { findStripePrice, getStripeClient, TIER_ORDER, type PaidTier } from "../lib/stripe";
+import { findStripePrice, getStripeClient, TIER_ORDER, VALID_PRICE_TRANSITIONS, type PaidTier } from "../lib/stripe";
 import { requireOperator } from "../middlewares/auth";
+import { getTrustedAppUrl } from "../lib/app-url";
 
 const billingRouter: IRouter = Router();
 
@@ -17,6 +18,28 @@ function billingUnavailable(error: unknown, res: Response) {
   const message = error instanceof Error ? error.message : "Stripe billing is unavailable.";
   res.status(503).json({ error: message });
 }
+
+billingRouter.get("/billing/prices", async (req, res): Promise<void> => {
+  try {
+    const stripe = getStripeClient();
+    const prices = await Promise.all(VALID_PRICE_TRANSITIONS.map(async ({ fromTier, targetTier }) => {
+      const price = await findStripePrice(stripe, fromTier, targetTier);
+      if (price.unit_amount === null || price.currency !== "usd") {
+        throw new Error("Configured Stripe Price must have a fixed USD amount.");
+      }
+      return {
+        fromTier,
+        targetTier,
+        amountCents: price.unit_amount,
+        currency: price.currency,
+      };
+    }));
+    res.json(prices);
+  } catch (error) {
+    req.log.error({ err: error }, "Stripe price catalog is unavailable");
+    billingUnavailable(error, res);
+  }
+});
 
 billingRouter.get("/operator/vaults/:vaultId/billing", requireOperator, async (req, res): Promise<void> => {
   const params = GetOperatorVaultBillingStatusParams.safeParse(req.params);
@@ -93,9 +116,11 @@ billingRouter.post("/operator/vaults/:vaultId/checkout", requireOperator, async 
       throw new Error("Configured Stripe Price must have a fixed USD amount.");
     }
     const priceAmountCents = price.unit_amount;
-    const appUrl = process.env.VAULT_ZOMBIE_APP_URL;
-    if (!appUrl) {
-      res.status(503).json({ error: "VAULT_ZOMBIE_APP_URL is required to create Stripe Checkout." });
+    let appUrl: string;
+    try {
+      appUrl = getTrustedAppUrl();
+    } catch (error) {
+      billingUnavailable(error, res);
       return;
     }
     const attempt = await db.transaction(async (tx) => {

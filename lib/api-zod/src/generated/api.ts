@@ -124,6 +124,21 @@ export const GetOperatorVaultBillingStatusResponse = zod.object({
 
 
 /**
+ * @summary Get authoritative Stripe prices for valid vault tier purchases and upgrades
+ */
+
+
+
+export const GetBillingPricesResponseItem = zod.object({
+  "fromTier": zod.enum(['lockbox', 'safe', 'vault']),
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "amountCents": zod.number().int().min(1),
+  "currency": zod.enum(['usd'])
+})
+export const GetBillingPricesResponse = zod.array(GetBillingPricesResponseItem)
+
+
+/**
  * @summary Create one-time Stripe Checkout for an upward vault upgrade
  */
 export const CreateVaultCheckoutParams = zod.object({
@@ -138,6 +153,256 @@ export const CreateVaultCheckoutResponse = zod.object({
   "billingRecordId": zod.string().uuid(),
   "checkoutUrl": zod.string().url(),
   "status": zod.enum(['pending'])
+})
+
+
+/**
+ * @summary Create account-free Checkout for a fixed paid-tier gift
+ */
+export const createGiftCheckoutBodyFromLineMax = 80;
+
+export const createGiftCheckoutBodyToLineMax = 80;
+
+
+
+export const CreateGiftCheckoutBody = zod.object({
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "fromLine": zod.string().max(createGiftCheckoutBodyFromLineMax).optional(),
+  "toLine": zod.string().max(createGiftCheckoutBodyToLineMax).optional(),
+  "gifterEmail": zod.string().email().optional()
+})
+
+export const CreateGiftCheckoutResponse = zod.object({
+  "giftId": zod.string().uuid(),
+  "checkoutUrl": zod.string().url(),
+  "status": zod.enum(['pending'])
+})
+
+
+/**
+ * @summary Get copyable printable data for a purchased gift
+ */
+export const getGiftCardPathCodeMin = 12;
+export const getGiftCardPathCodeMax = 64;
+
+
+
+export const GetGiftCardParams = zod.object({
+  "code": zod.coerce.string().min(getGiftCardPathCodeMin).max(getGiftCardPathCodeMax)
+})
+
+export const GetGiftCardResponse = zod.object({
+  "logo": zod.string(),
+  "line": zod.string(),
+  "tierName": zod.string(),
+  "code": zod.string(),
+  "redemptionUrl": zod.string().url(),
+  "fromLine": zod.string().nullish(),
+  "toLine": zod.string().nullish(),
+  "description": zod.string()
+})
+
+
+/**
+ * @summary Get purchased gift card data after a Checkout success return
+ */
+export const getGiftCardByCheckoutSessionPathCheckoutSessionIdMin = 8;
+export const getGiftCardByCheckoutSessionPathCheckoutSessionIdMax = 255;
+
+
+export const getGiftCardByCheckoutSessionPathCheckoutSessionIdRegExp = new RegExp('^cs_');
+
+
+export const GetGiftCardByCheckoutSessionParams = zod.object({
+  "checkoutSessionId": zod.coerce.string().min(getGiftCardByCheckoutSessionPathCheckoutSessionIdMin).max(getGiftCardByCheckoutSessionPathCheckoutSessionIdMax).regex(getGiftCardByCheckoutSessionPathCheckoutSessionIdRegExp)
+})
+
+export const GetGiftCardByCheckoutSessionResponse = zod.object({
+  "logo": zod.string(),
+  "line": zod.string(),
+  "tierName": zod.string(),
+  "code": zod.string(),
+  "redemptionUrl": zod.string().url(),
+  "fromLine": zod.string().nullish(),
+  "toLine": zod.string().nullish(),
+  "description": zod.string()
+})
+
+
+/**
+ * @summary Atomically redeem a purchased gift to an owned draft vault
+ */
+export const redeemGiftBodyCodeMin = 12;
+export const redeemGiftBodyCodeMax = 64;
+
+
+
+export const RedeemGiftBody = zod.object({
+  "code": zod.string().min(redeemGiftBodyCodeMin).max(redeemGiftBodyCodeMax),
+  "vaultId": zod.string().uuid()
+})
+
+export const RedeemGiftResponse = zod.object({
+  "vaultId": zod.string().uuid(),
+  "billingRecordId": zod.string().uuid(),
+  "tier": zod.enum(['safe', 'vault', 'deep_vault'])
+})
+
+
+/**
+ * @summary Get prominent unresolved overage status for an owned vault
+ */
+export const GetOperatorOverageStatusParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetOperatorOverageStatusResponse = zod.object({
+  "vaultId": zod.string().uuid(),
+  "heldSubmissionCount": zod.number().int(),
+  "unresolved": zod.boolean(),
+  "nearestRevealDate": zod.coerce.date().nullable()
+})
+
+
+/**
+ * @summary Archive newest whole submissions beyond the current cap
+ */
+export const DeclineOperatorOverageParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const DeclineOperatorOverageResponse = zod.object({
+  "archivedSubmissionCount": zod.number().int()
+})
+
+
+/**
+ * @summary List billing records and disputes for administrators
+ */
+export const ListAdminBillingResponse = zod.object({
+  "records": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "vaultId": zod.string().uuid().nullable(),
+  "operatorId": zod.string().uuid().nullable(),
+  "targetTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "amountCents": zod.number().int(),
+  "currency": zod.enum(['usd']),
+  "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'refunded', 'disputed', 'comped']),
+  "source": zod.enum(['stripe', 'gift', 'comp']),
+  "stripeRefundId": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary List gift records for administrators
+ */
+export const ListAdminGiftsResponse = zod.object({
+  "gifts": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "code": zod.string(),
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
+  "status": zod.enum(['pending', 'purchased', 'redeemed', 'refunded', 'failed', 'expired', 'disputed']),
+  "amountCents": zod.number().int(),
+  "currency": zod.enum(['usd']),
+  "fromLine": zod.string().nullish(),
+  "toLine": zod.string().nullish(),
+  "gifterEmail": zod.string().email().nullish(),
+  "createdAt": zod.coerce.date(),
+  "redeemedAt": zod.coerce.date().nullable(),
+  "refundedAt": zod.coerce.date().nullable(),
+  "redeemedVaultId": zod.string().uuid().nullable(),
+  "stripeRefundId": zod.string().nullable(),
+  "stripePaymentIntentId": zod.string().nullable(),
+  "refundableNow": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary List administrative overage event history
+ */
+export const ListAdminOveragesResponse = zod.object({
+  "events": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "vaultId": zod.string().uuid(),
+  "guestCap": zod.number().int(),
+  "submissionCount": zod.number().int(),
+  "createdAt": zod.coerce.date(),
+  "resolvedAt": zod.coerce.date().nullable(),
+  "outcome": zod.union([zod.literal('upgraded'),zod.literal('declined'),zod.literal(null)]).nullable()
+}))
+})
+
+
+/**
+ * @summary Fresh-MFA admin full refund with a typed reason
+ */
+export const RefundBillingRecordParams = zod.object({
+  "billingRecordId": zod.coerce.string().uuid()
+})
+
+export const refundBillingRecordBodyReasonMax = 1000;
+
+
+
+export const RefundBillingRecordBody = zod.object({
+  "reason": zod.string().min(1).max(refundBillingRecordBodyReasonMax)
+})
+
+export const RefundBillingRecordResponse = zod.object({
+  "billingRecordId": zod.string().uuid(),
+  "vaultId": zod.string().uuid(),
+  "status": zod.enum(['refunded', 'comped']),
+  "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault'])
+})
+
+
+/**
+ * @summary Fresh-MFA admin refund of an unredeemed gift within ninety days
+ */
+export const RefundGiftParams = zod.object({
+  "giftId": zod.coerce.string().uuid()
+})
+
+export const refundGiftBodyReasonMax = 1000;
+
+
+
+export const RefundGiftBody = zod.object({
+  "reason": zod.string().min(1).max(refundGiftBodyReasonMax)
+})
+
+export const RefundGiftResponse = zod.object({
+  "giftId": zod.string().uuid(),
+  "status": zod.enum(['refunded']),
+  "stripeRefundId": zod.string()
+})
+
+
+/**
+ * @summary Fresh-MFA admin paid-tier comp grant
+ */
+export const GrantVaultCompParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const grantVaultCompBodyOneReasonMax = 1000;
+
+
+
+export const GrantVaultCompBody = zod.object({
+  "reason": zod.string().min(1).max(grantVaultCompBodyOneReasonMax)
+}).and(zod.object({
+  "targetTier": zod.enum(['safe', 'vault', 'deep_vault'])
+}))
+
+export const GrantVaultCompResponse = zod.object({
+  "billingRecordId": zod.string().uuid(),
+  "vaultId": zod.string().uuid(),
+  "status": zod.enum(['refunded', 'comped']),
+  "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault'])
 })
 
 

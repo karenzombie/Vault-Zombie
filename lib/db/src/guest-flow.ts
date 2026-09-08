@@ -3,6 +3,7 @@ import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
 import { db } from "./index";
 import { PLAN_POLICY } from "./schedule";
 import { questionOptionsTable, questionsTable } from "./schema/content";
+import { overageEventsTable } from "./schema/billing";
 import { answersTable, guestsTable, submissionsTable } from "./schema/predictions";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
 
@@ -91,9 +92,9 @@ export async function submitGuestAnswers(token: string, input: {
       .from(submissionsTable).where(and(
         eq(submissionsTable.vaultId, vault.id),
         isNull(submissionsTable.culledAt),
+        isNull(submissionsTable.archivedAt),
       ));
     const cap = PLAN_POLICY[vault.entitledPlanTier].guestCap;
-    if (existingCount >= cap * 4) throw new Error("This vault reached its safety submission ceiling.");
 
     const questionRows = await tx.select({
       id: vaultQuestionsTable.id,
@@ -122,11 +123,20 @@ export async function submitGuestAnswers(token: string, input: {
       email: input.emailOptedOut ? null : input.email,
       emailOptedOut: input.emailOptedOut,
     }).returning();
+    const held = existingCount >= cap;
     const [submission] = await tx.insert(submissionsTable).values({
       vaultId: vault.id,
       guestId: guest.id,
-      overGuestCap: existingCount >= cap,
+      overGuestCap: held,
+      heldAt: held ? new Date() : null,
     }).returning();
+    if (held) {
+      const [openEvent] = await tx.select({ id: overageEventsTable.id }).from(overageEventsTable)
+        .where(and(eq(overageEventsTable.vaultId, vault.id), isNull(overageEventsTable.resolvedAt))).limit(1);
+      if (!openEvent) await tx.insert(overageEventsTable).values({
+        vaultId: vault.id, guestCap: cap, submissionCount: Number(existingCount) + 1,
+      });
+    }
 
     for (const answer of input.answers) {
       const question = questionRows.find((row) => row.id === answer.vaultQuestionId)!;
@@ -170,19 +180,50 @@ export async function submitGuestAnswers(token: string, input: {
   });
 }
 
+/** Operator decline: preserve answers but archive newest whole submissions. */
+export async function declineGuestOverage(vaultId: string, operatorId: string) {
+  return db.transaction(async (tx) => {
+    const [vault] = await tx.select().from(vaultsTable).where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId))).limit(1).for("update");
+    if (!vault) throw new Error("Vault not found.");
+    const cap = PLAN_POLICY[vault.entitledPlanTier].guestCap;
+    const submissions = await tx.select({ id: submissionsTable.id }).from(submissionsTable)
+      .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)))
+      .orderBy(asc(submissionsTable.submittedAt));
+    const ids = submissions.slice(cap).map((row) => row.id);
+    if (ids.length) await tx.update(submissionsTable).set({ archivedAt: new Date(), heldAt: null, culledAt: new Date() }).where(inArray(submissionsTable.id, ids));
+    await tx.update(overageEventsTable).set({ outcome: "declined", resolvedAt: new Date() })
+      .where(and(eq(overageEventsTable.vaultId, vaultId), isNull(overageEventsTable.resolvedAt)));
+    return ids.length;
+  });
+}
+
+export async function releaseHeldSubmissions(vaultId: string) {
+  return db.transaction(async (tx) => {
+    const [vault] = await tx.select().from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1).for("update");
+    if (!vault) throw new Error("Vault not found.");
+    const cap = PLAN_POLICY[vault.entitledPlanTier].guestCap;
+    const active = await tx.select({ id: submissionsTable.id }).from(submissionsTable)
+      .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)))
+      .orderBy(asc(submissionsTable.submittedAt));
+    const release = active.slice(0, cap).map((row) => row.id);
+    if (release.length) await tx.update(submissionsTable).set({ heldAt: null }).where(inArray(submissionsTable.id, release));
+    await tx.update(overageEventsTable).set({ outcome: "upgraded", resolvedAt: new Date() })
+      .where(and(eq(overageEventsTable.vaultId, vaultId), isNull(overageEventsTable.resolvedAt)));
+  });
+}
+
 export async function cullGuestOverage(vaultId: string) {
   return db.transaction(async (tx) => {
     const [vault] = await tx.select().from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1).for("update");
     if (!vault) throw new Error("Vault not found.");
     const cap = PLAN_POLICY[vault.entitledPlanTier].guestCap;
     const excess = await tx.select({ id: submissionsTable.id }).from(submissionsTable)
-      .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.culledAt)))
+       .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.culledAt), isNull(submissionsTable.archivedAt)))
       .orderBy(asc(submissionsTable.submittedAt));
     const remove = excess.slice(cap);
     if (remove.length) {
       const submissionIds = remove.map((row) => row.id);
-      await tx.delete(answersTable).where(inArray(answersTable.submissionId, submissionIds));
-      await tx.update(submissionsTable).set({ culledAt: new Date() })
+      await tx.update(submissionsTable).set({ culledAt: new Date(), archivedAt: new Date(), heldAt: null })
         .where(inArray(submissionsTable.id, submissionIds));
     }
     return remove.length;

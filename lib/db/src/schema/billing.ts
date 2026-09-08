@@ -11,15 +11,15 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { accountsTable } from "./accounts";
-import { billingStatusEnum, planTierEnum } from "./enums";
+import { billingStatusEnum, giftStatusEnum, overageOutcomeEnum, planTierEnum } from "./enums";
 import { vaultsTable } from "./vaults";
 
 export const billingRecordsTable = pgTable(
   "billing_records",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    vaultId: uuid("vault_id").notNull().references(() => vaultsTable.id),
-    operatorId: uuid("operator_id").notNull().references(() => accountsTable.id),
+    vaultId: uuid("vault_id").references(() => vaultsTable.id),
+    operatorId: uuid("operator_id").references(() => accountsTable.id),
     fromTier: planTierEnum("from_tier").notNull(),
     targetTier: planTierEnum("target_tier").notNull(),
     amountCents: integer("amount_cents").notNull(),
@@ -28,14 +28,18 @@ export const billingRecordsTable = pgTable(
     stripeCheckoutSessionId: text("stripe_checkout_session_id"),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     stripeChargeId: text("stripe_charge_id"),
+    stripeRefundId: text("stripe_refund_id"),
+    source: text("source").notNull().default("stripe"),
+    giftCode: text("gift_code"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   },
   (table) => [
     uniqueIndex("billing_records_checkout_session_unique").on(table.stripeCheckoutSessionId),
+    uniqueIndex("billing_records_refund_unique").on(table.stripeRefundId),
     uniqueIndex("billing_records_one_pending_vault_unique")
       .on(table.vaultId)
-      .where(sql`${table.status} = 'pending'`),
+      .where(sql`${table.status} = 'pending' and ${table.vaultId} is not null`),
     index("billing_records_vault_idx").on(table.vaultId),
     index("billing_records_operator_idx").on(table.operatorId),
     index("billing_records_status_idx").on(table.status),
@@ -73,6 +77,43 @@ export const stripeWebhookEventRelations = relations(stripeWebhookEventsTable, (
 export const insertBillingRecordSchema = createInsertSchema(billingRecordsTable).omit({
   id: true, createdAt: true, updatedAt: true,
 });
+
+export const giftsTable = pgTable("gifts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  code: text("code").notNull(),
+  targetTier: planTierEnum("target_tier").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: giftStatusEnum("status").notNull().default("pending"),
+  fromLine: text("from_line"),
+  toLine: text("to_line"),
+  gifterEmail: text("gifter_email"),
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeChargeId: text("stripe_charge_id"),
+  stripeRefundId: text("stripe_refund_id"),
+  redeemedVaultId: uuid("redeemed_vault_id").references(() => vaultsTable.id),
+  redeemedBillingRecordId: uuid("redeemed_billing_record_id").references(() => billingRecordsTable.id),
+  redeemedAt: timestamp("redeemed_at", { withTimezone: true }),
+  refundedAt: timestamp("refunded_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+}, (table) => [
+  uniqueIndex("gifts_code_unique").on(table.code),
+  uniqueIndex("gifts_checkout_unique").on(table.stripeCheckoutSessionId),
+  uniqueIndex("gifts_refund_unique").on(table.stripeRefundId),
+  index("gifts_status_idx").on(table.status),
+]);
+
+export const overageEventsTable = pgTable("overage_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  vaultId: uuid("vault_id").notNull().references(() => vaultsTable.id, { onDelete: "cascade" }),
+  guestCap: integer("guest_cap").notNull(),
+  submissionCount: integer("submission_count").notNull(),
+  outcome: overageOutcomeEnum("outcome"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [index("overage_events_vault_idx").on(table.vaultId)]);
 export const insertStripeWebhookEventSchema = createInsertSchema(stripeWebhookEventsTable).omit({
   id: true, receivedAt: true,
 });

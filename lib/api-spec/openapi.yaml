@@ -87,6 +87,20 @@ paths:
         "401": { description: Authentication required }
         "403": { description: Vault is not owned by this operator }
         "404": { description: Vault not found }
+  /billing/prices:
+    get:
+      operationId: getBillingPrices
+      tags: [billing]
+      summary: Get authoritative Stripe prices for valid vault tier purchases and upgrades
+      responses:
+        "200":
+          description: Fixed active USD Stripe prices
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/BillingPrice" }
+        "503": { description: Stripe billing configuration is unavailable }
   /operator/vaults/{vaultId}/checkout:
     post:
       operationId: createVaultCheckout
@@ -110,6 +124,137 @@ paths:
         "403": { description: Vault is not owned by this operator }
         "404": { description: Vault not found }
         "503": { description: Stripe billing configuration is unavailable }
+  /gifts/checkout:
+    post:
+      operationId: createGiftCheckout
+      tags: [billing]
+      summary: Create account-free Checkout for a fixed paid-tier gift
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GiftCheckoutInput" } } }
+      responses:
+        "201": { description: Gift Checkout created, content: { application/json: { schema: { $ref: "#/components/schemas/GiftCheckoutSession" } } } }
+        "400": { description: Invalid gift request }
+        "503": { description: Stripe billing configuration is unavailable }
+  /gifts/{code}/card:
+    get:
+      operationId: getGiftCard
+      tags: [billing]
+      summary: Get copyable printable data for a purchased gift
+      parameters: [{ $ref: "#/components/parameters/GiftCode" }]
+      responses:
+        "200": { description: Printable card data, content: { application/json: { schema: { $ref: "#/components/schemas/GiftCard" } } } }
+        "404": { description: Gift unavailable }
+  /gifts/checkout/sessions/{checkoutSessionId}/card:
+    get:
+      operationId: getGiftCardByCheckoutSession
+      tags: [billing]
+      summary: Get purchased gift card data after a Checkout success return
+      parameters: [{ $ref: "#/components/parameters/CheckoutSessionId" }]
+      responses:
+        "200": { description: Purchased printable card data, content: { application/json: { schema: { $ref: "#/components/schemas/GiftCard" } } } }
+        "404": { description: Session is unknown or its gift is not purchased }
+  /operator/gifts/redeem:
+    post:
+      operationId: redeemGift
+      tags: [billing]
+      summary: Atomically redeem a purchased gift to an owned draft vault
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/RedeemGiftInput" } } }
+      responses:
+        "200": { description: Gift redeemed, content: { application/json: { schema: { $ref: "#/components/schemas/RedeemGiftResult" } } } }
+        "400": { description: Gift cannot be redeemed to this vault }
+        "401": { description: Authentication required }
+        "404": { description: Gift or vault not found }
+        "409": { description: Gift already redeemed or refunded }
+        "429": { description: Rate limit reached }
+  /operator/vaults/{vaultId}/overage:
+    get:
+      operationId: getOperatorOverageStatus
+      tags: [billing]
+      summary: Get prominent unresolved overage status for an owned vault
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Overage status, content: { application/json: { schema: { $ref: "#/components/schemas/OverageStatus" } } } }
+        "401": { description: Authentication required }
+        "404": { description: Vault not found }
+    post:
+      operationId: declineOperatorOverage
+      tags: [billing]
+      summary: Archive newest whole submissions beyond the current cap
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Overage declined, content: { application/json: { schema: { $ref: "#/components/schemas/OverageDeclineResult" } } } }
+        "401": { description: Authentication required }
+        "404": { description: Vault not found }
+  /admin/billing:
+    get:
+      operationId: listAdminBilling
+      tags: [billing]
+      summary: List billing records and disputes for administrators
+      responses:
+        "200": { description: Billing records, content: { application/json: { schema: { $ref: "#/components/schemas/AdminBillingList" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/gifts:
+    get:
+      operationId: listAdminGifts
+      tags: [billing]
+      summary: List gift records for administrators
+      responses:
+        "200": { description: Gift records, content: { application/json: { schema: { $ref: "#/components/schemas/AdminGiftList" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/overages:
+    get:
+      operationId: listAdminOverages
+      tags: [billing]
+      summary: List administrative overage event history
+      responses:
+        "200": { description: Overage events, content: { application/json: { schema: { $ref: "#/components/schemas/AdminOverageList" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/billing/{billingRecordId}/refund:
+    post:
+      operationId: refundBillingRecord
+      tags: [billing]
+      summary: Fresh-MFA admin full refund with a typed reason
+      parameters: [{ $ref: "#/components/parameters/BillingRecordId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SensitiveReasonInput" } } }
+      responses:
+        "200": { description: Refund confirmed, content: { application/json: { schema: { $ref: "#/components/schemas/AdminBillingActionResult" } } } }
+        "400": { description: Billing record cannot be refunded }
+        "409": { description: Already refunded }
+        "503": { description: Stripe refund was not confirmed }
+  /admin/gifts/{giftId}/refund:
+    post:
+      operationId: refundGift
+      tags: [billing]
+      summary: Fresh-MFA admin refund of an unredeemed gift within ninety days
+      parameters: [{ $ref: "#/components/parameters/GiftId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SensitiveReasonInput" } } }
+      responses:
+        "200": { description: Gift refund confirmed, content: { application/json: { schema: { $ref: "#/components/schemas/GiftRefundResult" } } } }
+        "400": { description: Gift is ineligible for refund }
+        "409": { description: Gift already redeemed or refunded }
+        "503": { description: Stripe refund was not confirmed }
+  /admin/vaults/{vaultId}/comp-grant:
+    post:
+      operationId: grantVaultComp
+      tags: [billing]
+      summary: Fresh-MFA admin paid-tier comp grant
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CompGrantInput" } } }
+      responses:
+        "200": { description: Comp granted, content: { application/json: { schema: { $ref: "#/components/schemas/AdminBillingActionResult" } } } }
+        "400": { description: Target is not monotonic }
   /operator/vaults/{vaultId}/reveals/unlocked:
     get:
       operationId: listUnlockedRevealWork
@@ -312,6 +457,26 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    GiftCode:
+      name: code
+      in: path
+      required: true
+      schema: { type: string, minLength: 12, maxLength: 64 }
+    BillingRecordId:
+      name: billingRecordId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    GiftId:
+      name: giftId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    CheckoutSessionId:
+      name: checkoutSessionId
+      in: path
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 255, pattern: "^cs_" }
   schemas:
     HealthStatus:
       type: object
@@ -325,6 +490,154 @@ components:
       required: [targetTier]
       properties:
         targetTier: { type: string, enum: [safe, vault, deep_vault] }
+    GiftCheckoutInput:
+      type: object
+      required: [targetTier]
+      properties:
+        targetTier: { type: string, enum: [safe, vault, deep_vault] }
+        fromLine: { type: string, maxLength: 80 }
+        toLine: { type: string, maxLength: 80 }
+        gifterEmail: { type: string, format: email }
+    BillingPrice:
+      type: object
+      required: [fromTier, targetTier, amountCents, currency]
+      properties:
+        fromTier: { type: string, enum: [lockbox, safe, vault] }
+        targetTier: { type: string, enum: [safe, vault, deep_vault] }
+        amountCents: { type: integer, minimum: 1 }
+        currency: { type: string, enum: [usd] }
+    GiftCheckoutSession:
+      type: object
+      required: [giftId, checkoutUrl, status]
+      properties:
+        giftId: { type: string, format: uuid }
+        checkoutUrl: { type: string, format: uri }
+        status: { type: string, enum: [pending] }
+    GiftCard:
+      type: object
+      required: [logo, line, tierName, code, redemptionUrl, description]
+      properties:
+        logo: { type: string }
+        line: { type: string }
+        tierName: { type: string }
+        code: { type: string }
+        redemptionUrl: { type: string, format: uri }
+        fromLine: { type: ["string", "null"] }
+        toLine: { type: ["string", "null"] }
+        description: { type: string }
+    RedeemGiftInput:
+      type: object
+      required: [code, vaultId]
+      properties:
+        code: { type: string, minLength: 12, maxLength: 64 }
+        vaultId: { type: string, format: uuid }
+    RedeemGiftResult:
+      type: object
+      required: [vaultId, billingRecordId, tier]
+      properties:
+        vaultId: { type: string, format: uuid }
+        billingRecordId: { type: string, format: uuid }
+        tier: { type: string, enum: [safe, vault, deep_vault] }
+    OverageStatus:
+      type: object
+      required: [vaultId, heldSubmissionCount, unresolved, nearestRevealDate]
+      properties:
+        vaultId: { type: string, format: uuid }
+        heldSubmissionCount: { type: integer }
+        unresolved: { type: boolean }
+        nearestRevealDate: { type: ["string", "null"], format: date }
+    OverageDeclineResult:
+      type: object
+      required: [archivedSubmissionCount]
+      properties: { archivedSubmissionCount: { type: integer } }
+    SensitiveReasonInput:
+      type: object
+      required: [reason]
+      properties: { reason: { type: string, minLength: 1, maxLength: 1000 } }
+    CompGrantInput:
+      allOf:
+        - $ref: "#/components/schemas/SensitiveReasonInput"
+        - type: object
+          required: [targetTier]
+          properties: { targetTier: { type: string, enum: [safe, vault, deep_vault] } }
+    AdminBillingActionResult:
+      type: object
+      required: [billingRecordId, vaultId, status, currentTier]
+      properties:
+        billingRecordId: { type: string, format: uuid }
+        vaultId: { type: string, format: uuid }
+        status: { type: string, enum: [refunded, comped] }
+        currentTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+    AdminBillingList:
+      type: object
+      required: [records]
+      properties:
+        records:
+          type: array
+          items:
+            type: object
+            required: [id, vaultId, operatorId, targetTier, amountCents, currency, status, source, createdAt]
+            properties:
+              id: { type: string, format: uuid }
+              vaultId: { type: ["string", "null"], format: uuid }
+              operatorId: { type: ["string", "null"], format: uuid }
+              targetTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+              amountCents: { type: integer }
+              currency: { type: string, enum: [usd] }
+              status: { type: string, enum: [pending, paid, failed, expired, refunded, disputed, comped] }
+              source: { type: string, enum: [stripe, gift, comp] }
+              stripeRefundId: { type: ["string", "null"] }
+              createdAt: { type: string, format: date-time }
+    AdminGiftList:
+      type: object
+      required: [gifts]
+      properties:
+        gifts:
+          type: array
+          items:
+            type: object
+            required: [id, code, targetTier, status, amountCents, currency, createdAt, redeemedAt, refundedAt, redeemedVaultId, stripeRefundId, stripePaymentIntentId, refundableNow]
+            properties:
+              id: { type: string, format: uuid }
+              code: { type: string }
+              targetTier: { type: string, enum: [safe, vault, deep_vault] }
+              status: { type: string, enum: [pending, purchased, redeemed, refunded, failed, expired, disputed] }
+              amountCents: { type: integer }
+              currency: { type: string, enum: [usd] }
+              fromLine: { type: ["string", "null"] }
+              toLine: { type: ["string", "null"] }
+              gifterEmail: { type: ["string", "null"], format: email }
+              createdAt: { type: string, format: date-time }
+              redeemedAt: { type: ["string", "null"], format: date-time }
+              refundedAt: { type: ["string", "null"], format: date-time }
+              redeemedVaultId: { type: ["string", "null"], format: uuid }
+              stripeRefundId: { type: ["string", "null"] }
+              stripePaymentIntentId: { type: ["string", "null"] }
+              refundableNow: { type: boolean }
+    AdminOverageList:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            required: [id, vaultId, guestCap, submissionCount, createdAt, resolvedAt, outcome]
+            properties:
+              id: { type: string, format: uuid }
+              vaultId: { type: string, format: uuid }
+              guestCap: { type: integer }
+              submissionCount: { type: integer }
+              createdAt: { type: string, format: date-time }
+              resolvedAt: { type: ["string", "null"], format: date-time }
+              outcome: { type: ["string", "null"], enum: [upgraded, declined, null] }
+    GiftRefundResult:
+      type: object
+      required: [giftId, status, stripeRefundId]
+      properties:
+        giftId: { type: string, format: uuid }
+        status: { type: string, enum: [refunded] }
+        stripeRefundId: { type: string }
     BillingAttempt:
       type: object
       required: [id, fromTier, targetTier, amountCents, currency, status, createdAt]

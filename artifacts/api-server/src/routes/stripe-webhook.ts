@@ -1,10 +1,13 @@
-import { eq } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import type { RequestHandler } from "express";
 import type Stripe from "stripe";
 import {
   billingRecordsTable,
   db,
+  giftsTable,
+  overageEventsTable,
   stripeWebhookEventsTable,
+  submissionsTable,
   vaultsTable,
 } from "@workspace/db";
 import { getStripeClient, TIER_ORDER } from "../lib/stripe";
@@ -38,6 +41,7 @@ function eventReferences(event: Stripe.Event) {
     const session = event.data.object;
     return {
       billingRecordId: session.metadata?.billing_record_id ?? null,
+      giftId: session.metadata?.gift_id ?? null,
       checkoutSessionId: session.id,
       paymentIntentId: idFromExpandable(session.payment_intent),
       chargeId: null,
@@ -47,6 +51,7 @@ function eventReferences(event: Stripe.Event) {
     const paymentIntent = event.data.object;
     return {
       billingRecordId: paymentIntent.metadata?.billing_record_id ?? null,
+      giftId: paymentIntent.metadata?.gift_id ?? null,
       checkoutSessionId: null,
       paymentIntentId: paymentIntent.id,
       chargeId: idFromExpandable(paymentIntent.latest_charge),
@@ -56,6 +61,7 @@ function eventReferences(event: Stripe.Event) {
     const dispute = event.data.object;
     return {
       billingRecordId: dispute.metadata?.billing_record_id ?? null,
+      giftId: dispute.metadata?.gift_id ?? null,
       checkoutSessionId: null,
       paymentIntentId: idFromExpandable(dispute.payment_intent),
       chargeId: idFromExpandable(dispute.charge),
@@ -63,6 +69,7 @@ function eventReferences(event: Stripe.Event) {
   }
   return {
     billingRecordId: null,
+    giftId: null,
     checkoutSessionId: null,
     paymentIntentId: null,
     chargeId: null,
@@ -80,6 +87,42 @@ async function processVerifiedEvent(event: Stripe.Event) {
     }).returning({ id: stripeWebhookEventsTable.id });
     if (!recordedEvent) return "duplicate" as const;
     if (!isExpectedEvent(event.type)) return "ignored" as const;
+    let gift = references.giftId
+      ? (await tx.select().from(giftsTable).where(eq(giftsTable.id, references.giftId)).limit(1).for("update"))[0]
+      : undefined;
+    if (!gift && references.checkoutSessionId) {
+      gift = (await tx.select().from(giftsTable).where(eq(giftsTable.stripeCheckoutSessionId, references.checkoutSessionId)).limit(1).for("update"))[0];
+    }
+    if (!gift && references.paymentIntentId) {
+      gift = (await tx.select().from(giftsTable).where(eq(giftsTable.stripePaymentIntentId, references.paymentIntentId)).limit(1).for("update"))[0];
+    }
+    if (gift) {
+      const paymentSucceeded = event.type === "checkout.session.async_payment_succeeded"
+        || (event.type === "checkout.session.completed" && event.data.object.payment_status === "paid");
+      if (paymentSucceeded && (gift.status === "pending" || gift.status === "failed" || gift.status === "expired")) {
+        await tx.update(giftsTable).set({
+          status: "purchased",
+          stripeCheckoutSessionId: references.checkoutSessionId ?? gift.stripeCheckoutSessionId,
+          stripePaymentIntentId: references.paymentIntentId ?? gift.stripePaymentIntentId,
+          stripeChargeId: references.chargeId ?? gift.stripeChargeId,
+        }).where(eq(giftsTable.id, gift.id));
+        return "activated" as const;
+      }
+      if ((event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed" || event.type === "payment_intent.payment_failed") && gift.status === "pending") {
+        await tx.update(giftsTable).set({
+          status: event.type === "checkout.session.expired" ? "expired" : "failed",
+          stripeCheckoutSessionId: references.checkoutSessionId ?? gift.stripeCheckoutSessionId,
+          stripePaymentIntentId: references.paymentIntentId ?? gift.stripePaymentIntentId,
+          stripeChargeId: references.chargeId ?? gift.stripeChargeId,
+        }).where(eq(giftsTable.id, gift.id));
+        return "failed" as const;
+      }
+      if (event.type === "charge.dispute.created" && gift.status === "purchased") {
+        await tx.update(giftsTable).set({ status: "disputed" }).where(eq(giftsTable.id, gift.id));
+        return "disputed" as const;
+      }
+      return "ignored" as const;
+    }
 
     let billingRecord = references.billingRecordId
       ? (await tx.select().from(billingRecordsTable)
@@ -101,7 +144,9 @@ async function processVerifiedEvent(event: Stripe.Event) {
         .where(eq(billingRecordsTable.stripeChargeId, references.chargeId))
         .limit(1).for("update"))[0];
     }
-    if (!billingRecord) return "unmatched" as const;
+    // Do not consume an otherwise valid event that arrived before its local
+    // Checkout correlation write; Stripe can retry it after correlation exists.
+    if (!billingRecord) throw new Error("Unmatched Stripe event; retry required.");
 
     await tx.update(stripeWebhookEventsTable).set({
       billingRecordId: billingRecord.id,
@@ -128,6 +173,9 @@ async function processVerifiedEvent(event: Stripe.Event) {
         ...commonBillingUpdate,
         status: billingRecord.status === "disputed" ? "disputed" : "paid",
       }).where(eq(billingRecordsTable.id, billingRecord.id));
+      if (!billingRecord.vaultId) {
+        throw new Error(`Billing record ${billingRecord.id} has no vault and is not a gift.`);
+      }
       const [vault] = await tx.select({
         entitledPlanTier: vaultsTable.entitledPlanTier,
       }).from(vaultsTable)
@@ -138,6 +186,18 @@ async function processVerifiedEvent(event: Stripe.Event) {
         await tx.update(vaultsTable).set({
           entitledPlanTier: billingRecord.targetTier,
         }).where(eq(vaultsTable.id, billingRecord.vaultId));
+        // Release only submissions now within the new entitlement; content remains
+        // held if a repeat overage still exists.
+        const cap = { lockbox: 10, safe: 50, vault: 100, deep_vault: 250 }[billingRecord.targetTier];
+        const active = await tx.select({ id: submissionsTable.id }).from(submissionsTable)
+          .where(and(eq(submissionsTable.vaultId, billingRecord.vaultId), isNull(submissionsTable.culledAt)))
+          .orderBy(asc(submissionsTable.submittedAt));
+        const ids = active.slice(0, cap).map((row) => row.id);
+        if (ids.length) await tx.update(submissionsTable).set({ heldAt: null, archivedAt: null }).where(inArray(submissionsTable.id, ids));
+        const held = active.slice(cap).map((row) => row.id);
+        if (held.length) await tx.update(submissionsTable).set({ heldAt: new Date(), archivedAt: null }).where(inArray(submissionsTable.id, held));
+        await tx.update(overageEventsTable).set({ outcome: "upgraded", resolvedAt: new Date() })
+          .where(and(eq(overageEventsTable.vaultId, billingRecord.vaultId), isNull(overageEventsTable.resolvedAt)));
       }
       return "activated" as const;
     }
@@ -185,9 +245,6 @@ export const stripeWebhookBoundary: RequestHandler = async (req, res) => {
   }
   try {
     const result = await processVerifiedEvent(event);
-    if (result === "unmatched") {
-      req.log.warn({ stripeEventId: event.id, stripeEventType: event.type }, "Stripe webhook did not match a billing record");
-    }
     res.status(200).json({ received: true, result });
   } catch (error) {
     req.log.error({ err: error, stripeEventId: event.id }, "Stripe webhook processing failed");

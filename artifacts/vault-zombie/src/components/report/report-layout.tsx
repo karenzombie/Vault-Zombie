@@ -36,7 +36,7 @@ export function ReportLayout({
         <header className="flex items-center justify-between px-5 py-4 bg-ink text-parchment sticky top-0 z-20  print:hidden">
           <div className="flex items-center gap-4">
             <Link href="/" className="shrink-0">
-              <img src="/vault_zombie_png.png" alt="Vault Zombie" className="h-7 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+              <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-7 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
             </Link>
             <div className="w-px h-5 bg-white/20"></div>
             <Link href={finalBackUrl} className="flex items-center gap-2 text-sm font-bold text-brass-lt hover:text-white transition-colors">
@@ -51,7 +51,7 @@ export function ReportLayout({
         <main className={`flex-1 w-full max-w-2xl mx-auto p-4 sm:p-6 pb-24 ${printMode ? 'print:max-w-none print:w-full print:p-0' : ''}`}>
           
           <header className="report-mast bg-ink text-parchment rounded-[18px] p-8 sm:px-7 sm:py-12 text-center mb-8">
-            <img src="/vault_zombie_png.png" alt="Vault Zombie" className="h-14 sm:h-16 w-auto mx-auto mb-6 object-contain" />
+            <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-14 sm:h-16 w-auto mx-auto mb-6 object-contain" />
             
             <WaxSeal className="mx-auto my-6 sm:my-8 block" isOpen={sealOpen} />
             

@@ -214,3 +214,25 @@
   30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-gift-card, #printable-gift-card * {
+    visibility: visible;
+  }
+  #printable-gift-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+  }
+  .print-hidden {
+    display: none !important;
+  }
+}
