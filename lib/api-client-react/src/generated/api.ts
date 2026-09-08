@@ -22,6 +22,7 @@ import type {
 import type {
   AdminBillingActionResult,
   AdminBillingList,
+  AdminEmailDeliveryList,
   AdminGiftList,
   AdminOverageList,
   AnswersArchive,
@@ -30,11 +31,14 @@ import type {
   ClusterVerdictInput,
   ClusterVerdictResult,
   CompGrantInput,
+  EmailRetryResult,
   FinaleReport,
   GiftCard,
   GiftCheckoutInput,
   GiftCheckoutSession,
   GiftRefundResult,
+  GiftResendInput,
+  GiftResendResult,
   GuestPersonalReport,
   GuestSubmissionConfirmation,
   GuestSubmissionInput,
@@ -52,6 +56,7 @@ import type {
   SensitiveReasonInput,
   TimelineReport,
   UnlockedRevealWork,
+  UnsubscribeGuestEmailParams,
   VaultBillingStatus,
   VaultCheckoutInput,
   VaultCheckoutSession,
@@ -312,6 +317,95 @@ export const useSubmitGuestPrediction = <TError = ErrorType<void>,
       > => {
       return useMutation(getSubmitGuestPredictionMutationOptions(options));
     }
+
+export const getUnsubscribeGuestEmailUrl = (guestId: string,
+    params: UnsubscribeGuestEmailParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/email/unsubscribe/${guestId}?${stringifiedParams}` : `/api/email/unsubscribe/${guestId}`
+}
+
+/**
+ * @summary Signed one-click guest email unsubscribe
+ */
+export const unsubscribeGuestEmail = async (guestId: string,
+    params: UnsubscribeGuestEmailParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getUnsubscribeGuestEmailUrl(guestId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnsubscribeGuestEmailQueryKey = (guestId: string,
+    params?: UnsubscribeGuestEmailParams,) => {
+    return [
+    `/api/email/unsubscribe/${guestId}`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getUnsubscribeGuestEmailQueryOptions = <TData = Awaited<ReturnType<typeof unsubscribeGuestEmail>>, TError = ErrorType<void>>(guestId: string,
+    params: UnsubscribeGuestEmailParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof unsubscribeGuestEmail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getUnsubscribeGuestEmailQueryKey(guestId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof unsubscribeGuestEmail>>> = ({ signal }) => unsubscribeGuestEmail(guestId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: guestId !== null && guestId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof unsubscribeGuestEmail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type UnsubscribeGuestEmailQueryResult = NonNullable<Awaited<ReturnType<typeof unsubscribeGuestEmail>>>
+export type UnsubscribeGuestEmailQueryError = ErrorType<void>
+
+
+/**
+ * @summary Signed one-click guest email unsubscribe
+ */
+
+export function useUnsubscribeGuestEmail<TData = Awaited<ReturnType<typeof unsubscribeGuestEmail>>, TError = ErrorType<void>>(
+ guestId: string,
+    params: UnsubscribeGuestEmailParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof unsubscribeGuestEmail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getUnsubscribeGuestEmailQueryOptions(guestId,params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetOperatorVaultBillingStatusUrl = (vaultId: string,) => {
 
@@ -1213,6 +1307,227 @@ export function useListAdminOverages<TData = Awaited<ReturnType<typeof listAdmin
 
 
 
+
+export const getListAdminEmailDeliveriesUrl = () => {
+
+
+
+
+  return `/api/admin/email-deliveries`
+}
+
+/**
+ * @summary List transactional email delivery status and failures
+ */
+export const listAdminEmailDeliveries = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminEmailDeliveryList> => {
+
+  return customFetch<AdminEmailDeliveryList>(getListAdminEmailDeliveriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminEmailDeliveriesQueryKey = () => {
+    return [
+    `/api/admin/email-deliveries`
+    ] as const;
+    }
+
+
+export const getListAdminEmailDeliveriesQueryOptions = <TData = Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminEmailDeliveriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminEmailDeliveries>>> = ({ signal }) => listAdminEmailDeliveries({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminEmailDeliveriesQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminEmailDeliveries>>>
+export type ListAdminEmailDeliveriesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List transactional email delivery status and failures
+ */
+
+export function useListAdminEmailDeliveries<TData = Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminEmailDeliveries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminEmailDeliveriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRetryAdminEmailDeliveryUrl = (emailDeliveryId: string,) => {
+
+
+
+
+  return `/api/admin/email-deliveries/${emailDeliveryId}/retry`
+}
+
+/**
+ * @summary Fresh-MFA retry of a failed transactional email with a typed reason
+ */
+export const retryAdminEmailDelivery = async (emailDeliveryId: string,
+    sensitiveReasonInput: SensitiveReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<EmailRetryResult> => {
+
+  return customFetch<EmailRetryResult>(getRetryAdminEmailDeliveryUrl(emailDeliveryId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sensitiveReasonInput)
+  }
+);}
+
+
+
+
+
+export const getRetryAdminEmailDeliveryMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retryAdminEmailDelivery>>, TError,{emailDeliveryId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof retryAdminEmailDelivery>>, TError,{emailDeliveryId: string;data: BodyType<SensitiveReasonInput>}, TContext> => {
+
+const mutationKey = ['retryAdminEmailDelivery'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof retryAdminEmailDelivery>>, {emailDeliveryId: string;data: BodyType<SensitiveReasonInput>}> = (props) => {
+          const {emailDeliveryId,data} = props ?? {};
+
+          return  retryAdminEmailDelivery(emailDeliveryId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RetryAdminEmailDeliveryMutationResult = NonNullable<Awaited<ReturnType<typeof retryAdminEmailDelivery>>>
+    export type RetryAdminEmailDeliveryMutationBody = BodyType<SensitiveReasonInput>
+    export type RetryAdminEmailDeliveryMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA retry of a failed transactional email with a typed reason
+ */
+export const useRetryAdminEmailDelivery = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retryAdminEmailDelivery>>, TError,{emailDeliveryId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof retryAdminEmailDelivery>>,
+        TError,
+        {emailDeliveryId: string;data: BodyType<SensitiveReasonInput>},
+        TContext
+      > => {
+      return useMutation(getRetryAdminEmailDeliveryMutationOptions(options));
+    }
+
+export const getResendAdminGiftUrl = (giftId: string,) => {
+
+
+
+
+  return `/api/admin/gifts/${giftId}/resend`
+}
+
+/**
+ * @summary Fresh-MFA resend of a purchased gift delivery with a typed reason
+ */
+export const resendAdminGift = async (giftId: string,
+    giftResendInput: GiftResendInput, options?: Parameters<typeof customFetch>[1]): Promise<GiftResendResult> => {
+
+  return customFetch<GiftResendResult>(getResendAdminGiftUrl(giftId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(giftResendInput)
+  }
+);}
+
+
+
+
+
+export const getResendAdminGiftMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendAdminGift>>, TError,{giftId: string;data: BodyType<GiftResendInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof resendAdminGift>>, TError,{giftId: string;data: BodyType<GiftResendInput>}, TContext> => {
+
+const mutationKey = ['resendAdminGift'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resendAdminGift>>, {giftId: string;data: BodyType<GiftResendInput>}> = (props) => {
+          const {giftId,data} = props ?? {};
+
+          return  resendAdminGift(giftId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResendAdminGiftMutationResult = NonNullable<Awaited<ReturnType<typeof resendAdminGift>>>
+    export type ResendAdminGiftMutationBody = BodyType<GiftResendInput>
+    export type ResendAdminGiftMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA resend of a purchased gift delivery with a typed reason
+ */
+export const useResendAdminGift = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resendAdminGift>>, TError,{giftId: string;data: BodyType<GiftResendInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof resendAdminGift>>,
+        TError,
+        {giftId: string;data: BodyType<GiftResendInput>},
+        TContext
+      > => {
+      return useMutation(getResendAdminGiftMutationOptions(options));
+    }
 
 export const getRefundBillingRecordUrl = (billingRecordId: string,) => {
 

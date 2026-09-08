@@ -7,6 +7,7 @@ import operatorReportsRouter from "./operator-reports";
 import billingRouter from "./billing";
 import giftRouter from "./gifts";
 import adminBillingRouter from "./admin-billing";
+import emailRouter from "./email";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(operatorReportsRouter);
 router.use(billingRouter);
 router.use(giftRouter);
 router.use(adminBillingRouter);
+router.use(emailRouter);
 
 export default router;

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AdminGiftListGiftsItemCurrency } from './adminGiftListGiftsItemCurrency';
+import type { AdminGiftListGiftsItemLatestDeliveryStatus } from './adminGiftListGiftsItemLatestDeliveryStatus';
 import type { AdminGiftListGiftsItemStatus } from './adminGiftListGiftsItemStatus';
 import type { AdminGiftListGiftsItemTargetTier } from './adminGiftListGiftsItemTargetTier';
 
@@ -34,4 +35,8 @@ export type AdminGiftListGiftsItem = {
   /** @nullable */
   stripePaymentIntentId: string | null;
   refundableNow: boolean;
+  /** @nullable */
+  latestDeliveryStatus: AdminGiftListGiftsItemLatestDeliveryStatus;
+  /** @nullable */
+  latestDeliveryError: string | null;
 };

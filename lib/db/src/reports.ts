@@ -170,6 +170,16 @@ export async function getGuestPersonalReport(vaultId: string, operatorId: string
     operatorNote: outcomeForPair(data.outcomes, a.vaultQuestionId, a.revealSlotId)?.operatorNote ?? null,
     freeTextMode: data.contexts.find((question) => question.id === a.vaultQuestionId)!.freeTextMode })) };
 }
+/** Email eligibility is intentionally derived from the same unlocked report DTO. */
+export async function getGuestRevealReportEligibility(vaultId: string, operatorId: string, guestId: string, revealSlotId: string) {
+  const report = await getGuestPersonalReport(vaultId, operatorId, guestId);
+  const answers = report.answers.filter((answer) => answer.revealSlotId === revealSlotId);
+  return {
+    eligible: answers.length > 0 && answers.every((answer) => answer.freeTextMode === "keepsake" || answer.outcomeTier !== null),
+    report,
+    answers,
+  };
+}
 export async function getVaultResultsSummary(vaultId: string, operatorId: string) {
   const data = await reportData(vaultId, operatorId);
   const scoreableAnswers = data.answers.filter((answer) => data.contexts.find((question) => question.id === answer.vaultQuestionId)?.freeTextMode !== "keepsake");

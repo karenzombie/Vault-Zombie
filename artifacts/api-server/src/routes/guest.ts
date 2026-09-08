@@ -1,5 +1,6 @@
 import { GetGuestVaultParams, SubmitGuestPredictionBody, SubmitGuestPredictionParams } from "@workspace/api-zod";
 import { readGuestForm, submitGuestAnswers } from "@workspace/db";
+import { enqueueEmail } from "@workspace/db";
 import { Router, type IRouter } from "express";
 
 const guestRouter: IRouter = Router();
@@ -39,6 +40,11 @@ guestRouter.post("/guest/:token/submissions", async (req, res, next) => {
       limited(`write-source:${req.ip}`, 8, 60 * 60_000)
     ) return res.status(429).json({ error: "Too many attempts. Try again later." });
     const result = await submitGuestAnswers(token, input);
+    if (result.guestEmail) {
+      try {
+        await enqueueEmail({ dedupeKey: `guest-submission:${result.submissionId}`, eventType: "guest_submission_confirmation", recipientEmail: result.guestEmail, recipientGuestId: result.guestId, vaultId: result.vaultId, payload: { vaultName: result.vaultName } });
+      } catch (error) { req.log.error({ err: error, submissionId: result.submissionId }, "Guest confirmation email enqueue failed"); }
+    }
     return res.status(201).json({
       accepted: true,
       createVaultUrl: `/?ref=${encodeURIComponent(result.referrerCode)}`,

@@ -143,6 +143,10 @@ export interface SensitiveReasonInput {
   reason: string;
 }
 
+export type GiftResendInput = SensitiveReasonInput & {
+  requestId: string;
+};
+
 export type CompGrantInputTargetTier = typeof CompGrantInputTargetTier[keyof typeof CompGrantInputTargetTier];
 
 
@@ -269,6 +273,20 @@ export const AdminGiftListGiftsItemCurrency = {
   usd: 'usd',
 } as const;
 
+/**
+ * @nullable
+ */
+export type AdminGiftListGiftsItemLatestDeliveryStatus = typeof AdminGiftListGiftsItemLatestDeliveryStatus[keyof typeof AdminGiftListGiftsItemLatestDeliveryStatus] | null;
+
+
+export const AdminGiftListGiftsItemLatestDeliveryStatus = {
+  queued: 'queued',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  suppressed: 'suppressed',
+} as const;
+
 export type AdminGiftListGiftsItem = {
   id: string;
   code: string;
@@ -294,6 +312,10 @@ export type AdminGiftListGiftsItem = {
   /** @nullable */
   stripePaymentIntentId: string | null;
   refundableNow: boolean;
+  /** @nullable */
+  latestDeliveryStatus: AdminGiftListGiftsItemLatestDeliveryStatus;
+  /** @nullable */
+  latestDeliveryError: string | null;
 };
 
 export interface AdminGiftList {
@@ -325,6 +347,62 @@ export type AdminOverageListEventsItem = {
 
 export interface AdminOverageList {
   events: AdminOverageListEventsItem[];
+}
+
+export type AdminEmailDeliveryStatus = typeof AdminEmailDeliveryStatus[keyof typeof AdminEmailDeliveryStatus];
+
+
+export const AdminEmailDeliveryStatus = {
+  queued: 'queued',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+  suppressed: 'suppressed',
+} as const;
+
+export interface AdminEmailDelivery {
+  id: string;
+  dedupeKey: string;
+  eventType: string;
+  recipientEmail: string;
+  status: AdminEmailDeliveryStatus;
+  attempts: number;
+  /** @nullable */
+  providerId: string | null;
+  /** @nullable */
+  lastError: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** @nullable */
+  sentAt: string | null;
+}
+
+export interface AdminEmailDeliveryList {
+  deliveries: AdminEmailDelivery[];
+}
+
+export type EmailRetryResultStatus = typeof EmailRetryResultStatus[keyof typeof EmailRetryResultStatus];
+
+
+export const EmailRetryResultStatus = {
+  queued: 'queued',
+} as const;
+
+export interface EmailRetryResult {
+  id: string;
+  status: EmailRetryResultStatus;
+}
+
+export type GiftResendResultStatus = typeof GiftResendResultStatus[keyof typeof GiftResendResultStatus];
+
+
+export const GiftResendResultStatus = {
+  queued: 'queued',
+} as const;
+
+export interface GiftResendResult {
+  id: string;
+  status: GiftResendResultStatus;
 }
 
 export type GiftRefundResultStatus = typeof GiftRefundResultStatus[keyof typeof GiftRefundResultStatus];
@@ -966,4 +1044,11 @@ export type FinaleReport = AnswersArchive & ({
   predictionCount: number;
   completionReady: boolean;
 });
+
+export type UnsubscribeGuestEmailParams = {
+/**
+ * @minLength 20
+ */
+token: string;
+};
 

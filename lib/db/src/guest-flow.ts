@@ -176,7 +176,7 @@ export async function submitGuestAnswers(token: string, input: {
         unlockAt: new Date(`${slot.revealDate}T00:00:00.000Z`),
       });
     }
-    return { submissionId: submission.id, referrerCode: vault.referrerCode };
+    return { submissionId: submission.id, referrerCode: vault.referrerCode, vaultId: vault.id, vaultName: vault.name, guestId: guest.id, guestEmail: guest.email };
   });
 }
 

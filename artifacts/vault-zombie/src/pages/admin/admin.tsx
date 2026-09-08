@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Activity, CreditCard, Gift, AlertCircle, ShieldAlert, Key } from "lucide-react";
+import { Activity, CreditCard, Gift, AlertCircle, ShieldAlert, Key, Mail } from "lucide-react";
 import { useAuth } from "@clerk/react";
 
 import { AdminBillingTab } from "./admin-billing";
 import { AdminGiftsTab } from "./admin-gifts";
 import { AdminOveragesTab } from "./admin-overages";
 import { AdminCompTab } from "./admin-comp";
+import { AdminEmailTab } from "./admin-email";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("billing");
@@ -29,6 +30,7 @@ export default function AdminPage() {
           <NavButton id="gifts" icon={<Gift className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Gifts" active={activeTab} setActive={setActiveTab} />
           <NavButton id="overages" icon={<AlertCircle className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Overages" active={activeTab} setActive={setActiveTab} />
           <NavButton id="comp" icon={<Key className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Comp Grant" active={activeTab} setActive={setActiveTab} />
+           <NavButton id="email" icon={<Mail className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Email" active={activeTab} setActive={setActiveTab} />
         </nav>
       </aside>
 
@@ -52,6 +54,7 @@ export default function AdminPage() {
         {activeTab === "gifts" && <AdminGiftsTab />}
         {activeTab === "overages" && <AdminOveragesTab />}
         {activeTab === "comp" && <AdminCompTab />}
+         {activeTab === "email" && <AdminEmailTab />}
       </main>
     </div>
   );

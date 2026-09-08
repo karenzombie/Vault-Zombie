@@ -5,6 +5,7 @@ import {
   billingRecordsTable,
   db,
   giftsTable,
+  enqueueEmail,
   overageEventsTable,
   stripeWebhookEventsTable,
   submissionsTable,
@@ -106,7 +107,7 @@ async function processVerifiedEvent(event: Stripe.Event) {
           stripePaymentIntentId: references.paymentIntentId ?? gift.stripePaymentIntentId,
           stripeChargeId: references.chargeId ?? gift.stripeChargeId,
         }).where(eq(giftsTable.id, gift.id));
-        return "activated" as const;
+        return { result: "activated" as const, giftId: gift.id };
       }
       if ((event.type === "checkout.session.expired" || event.type === "checkout.session.async_payment_failed" || event.type === "payment_intent.payment_failed") && gift.status === "pending") {
         await tx.update(giftsTable).set({
@@ -245,6 +246,17 @@ export const stripeWebhookBoundary: RequestHandler = async (req, res) => {
   }
   try {
     const result = await processVerifiedEvent(event);
+    // The Stripe state transition above is committed before this durable enqueue.
+    // A notification problem must never make Stripe retry an already-completed payment.
+    if (typeof result === "object" && result.result === "activated") {
+      try {
+        const [gift] = await db.select().from(giftsTable).where(eq(giftsTable.id, result.giftId)).limit(1);
+        if (gift?.gifterEmail) await enqueueEmail({
+          dedupeKey: `gift-delivery:${gift.id}`, eventType: "gift_delivery", recipientEmail: gift.gifterEmail,
+          giftId: gift.id, payload: { giftCode: gift.code },
+        });
+      } catch (error) { req.log.error({ err: error, stripeEventId: event.id }, "Gift delivery email enqueue failed"); }
+    }
     res.status(200).json({ received: true, result });
   } catch (error) {
     req.log.error({ err: error, stripeEventId: event.id }, "Stripe webhook processing failed");

@@ -21,5 +21,6 @@ export * from "./sealed-content";
 export * from "./sensitive-action";
 export * from "./vault-setup";
 export * from "./guest-flow";
+export * from "./email";
 export * from "./reveal-scoring";
 export * from "./reports";
