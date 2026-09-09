@@ -31,7 +31,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-2 px-4 md:px-2 py-3 md:py-4 shrink-0 border-b border-white/10 md:border-0">
           <Link href="/" className="flex items-center gap-2">
             <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-12 md:h-16 w-auto cursor-pointer" />
-            <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-8 md:h-10 w-auto" />
+            <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-12 md:h-16 w-auto" />
           </Link>
         </div>
         <div className="hidden md:block text-[11px] tracking-[0.1em] uppercase text-gray px-3 py-2 mt-4">System Admin</div>

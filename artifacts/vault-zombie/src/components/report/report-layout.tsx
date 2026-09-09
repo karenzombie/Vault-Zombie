@@ -37,7 +37,7 @@ export function ReportLayout({
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
              <Link href="/" className="flex shrink-0 items-center gap-2">
                <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-14 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
-               <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-9 w-auto object-contain" />
+               <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-14 w-auto object-contain" />
             </Link>
             <div className="w-px h-5 bg-white/20"></div>
             <Link href={finalBackUrl} className="flex min-w-0 items-center gap-2 text-sm font-bold text-brass-lt hover:text-white transition-colors">

@@ -34,11 +34,11 @@ const VAULT_TYPES = [
   { name: "New Baby", desc: "Birth weight, first words, and eye color.", icon: "new-baby.svg" },
   { name: "Child Growth", desc: "Milestones as they grow up.", icon: "child-growth.svg" },
   { name: "College", desc: "Major changes, dorm life, and graduation.", icon: "college.svg" },
-  { name: "Job / Occupation", desc: "Promotions, pivots, and career moves." },
-  { name: "Travel", desc: "A big trip and what it brings." },
-  { name: "Retirement", desc: "Life after the last workday." },
-  { name: "New Business", desc: "Whether the idea takes off." },
-  { name: "New Year", desc: "What the year ahead holds." }
+  { name: "Job / Occupation", desc: "Promotions, pivots, and career moves.", icon: "job.svg" },
+  { name: "Travel", desc: "A big trip and what it brings.", icon: "travel.svg" },
+  { name: "Retirement", desc: "Life after the last workday.", icon: "retirement.svg" },
+  { name: "New Business", desc: "Whether the idea takes off.", icon: "new-business.svg" },
+  { name: "New Year", desc: "What the year ahead holds.", icon: "new-year.svg" }
 ];
 
 function Header() {
@@ -47,7 +47,7 @@ function Header() {
       <div className="mx-auto flex h-24 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
         <Link href="/" aria-label="Vault Zombie home" className="flex min-w-0 items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-16 w-auto shrink-0" />
-          <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-10 w-auto shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-16 w-auto shrink-0" />
         </Link>
         <div className="flex shrink-0 items-center gap-3 md:gap-6">
           <Link href="/gifts/purchase" className="text-sm font-bold text-ink hover:text-bronze transition-colors hidden sm:block">
@@ -144,10 +144,10 @@ function VaultTypes() {
               {type.icon && (
                 <div className="h-28 bg-bronze-wash flex items-center justify-center">
                    <div
-                    className={cn("bg-[hsl(var(--bronze))]", type.name === "Couple" ? "h-20 w-24" : "h-16 w-16")}
+                    className="h-16 w-16 bg-[hsl(var(--bronze))]"
                     style={{
-                      WebkitMask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / ${type.name === "Couple" ? "90% 90%" : "contain"}`,
-                      mask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / ${type.name === "Couple" ? "90% 90%" : "contain"}`,
+                      WebkitMask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / contain`,
+                      mask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / contain`,
                     }}
                   />
                 </div>
@@ -324,7 +324,7 @@ function Footer() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
         <Link href="/" aria-label="Vault Zombie home" className="flex items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-12 w-auto shrink-0" />
-          <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-8 w-auto shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-12 w-auto shrink-0" />
         </Link>
         <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-ink">
           <Link href="/gifts/purchase" className="transition-colors hover:text-bronze">Gift a Vault</Link>
