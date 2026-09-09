@@ -73,6 +73,11 @@ import type {
   GuestSubmissionInput,
   GuestVault,
   HealthStatus,
+  LegalConfiguration,
+  LegalConsentInput,
+  LegalSignupIntent,
+  LegalSignupIntentInput,
+  LegalStatus,
   ListAdminAuditEventsParams,
   ListAdminContentParams,
   ListAdminEmailDeliveriesParams,
@@ -205,6 +210,302 @@ export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, 
 
 
 
+
+export const getGetLegalConfigurationUrl = () => {
+
+
+
+
+  return `/api/legal`
+}
+
+/**
+ * @summary Get the current public legal document versions and stable URLs
+ */
+export const getLegalConfiguration = async ( options?: Parameters<typeof customFetch>[1]): Promise<LegalConfiguration> => {
+
+  return customFetch<LegalConfiguration>(getGetLegalConfigurationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLegalConfigurationQueryKey = () => {
+    return [
+    `/api/legal`
+    ] as const;
+    }
+
+
+export const getGetLegalConfigurationQueryOptions = <TData = Awaited<ReturnType<typeof getLegalConfiguration>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegalConfiguration>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLegalConfigurationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLegalConfiguration>>> = ({ signal }) => getLegalConfiguration({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLegalConfiguration>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLegalConfigurationQueryResult = NonNullable<Awaited<ReturnType<typeof getLegalConfiguration>>>
+export type GetLegalConfigurationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the current public legal document versions and stable URLs
+ */
+
+export function useGetLegalConfiguration<TData = Awaited<ReturnType<typeof getLegalConfiguration>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegalConfiguration>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLegalConfigurationQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetLegalStatusUrl = () => {
+
+
+
+
+  return `/api/legal/status`
+}
+
+/**
+ * @summary Get the signed-in account's current legal acceptance status
+ */
+export const getLegalStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<LegalStatus> => {
+
+  return customFetch<LegalStatus>(getGetLegalStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLegalStatusQueryKey = () => {
+    return [
+    `/api/legal/status`
+    ] as const;
+    }
+
+
+export const getGetLegalStatusQueryOptions = <TData = Awaited<ReturnType<typeof getLegalStatus>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegalStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLegalStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLegalStatus>>> = ({ signal }) => getLegalStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLegalStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLegalStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getLegalStatus>>>
+export type GetLegalStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get the signed-in account's current legal acceptance status
+ */
+
+export function useGetLegalStatus<TData = Awaited<ReturnType<typeof getLegalStatus>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLegalStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLegalStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateLegalSignupIntentUrl = () => {
+
+
+
+
+  return `/api/legal/signup-intent`
+}
+
+/**
+ * @summary Issue a short-lived one-time server-signed signup acceptance intent
+ */
+export const createLegalSignupIntent = async (legalSignupIntentInput: LegalSignupIntentInput, options?: Parameters<typeof customFetch>[1]): Promise<LegalSignupIntent> => {
+
+  return customFetch<LegalSignupIntent>(getCreateLegalSignupIntentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(legalSignupIntentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateLegalSignupIntentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLegalSignupIntent>>, TError,{data: BodyType<LegalSignupIntentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createLegalSignupIntent>>, TError,{data: BodyType<LegalSignupIntentInput>}, TContext> => {
+
+const mutationKey = ['createLegalSignupIntent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createLegalSignupIntent>>, {data: BodyType<LegalSignupIntentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createLegalSignupIntent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateLegalSignupIntentMutationResult = NonNullable<Awaited<ReturnType<typeof createLegalSignupIntent>>>
+    export type CreateLegalSignupIntentMutationBody = BodyType<LegalSignupIntentInput>
+    export type CreateLegalSignupIntentMutationError = ErrorType<void>
+
+    /**
+ * @summary Issue a short-lived one-time server-signed signup acceptance intent
+ */
+export const useCreateLegalSignupIntent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLegalSignupIntent>>, TError,{data: BodyType<LegalSignupIntentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createLegalSignupIntent>>,
+        TError,
+        {data: BodyType<LegalSignupIntentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateLegalSignupIntentMutationOptions(options));
+    }
+
+export const getAcceptLegalConsentUrl = () => {
+
+
+
+
+  return `/api/legal/consent`
+}
+
+/**
+ * @summary Explicitly accept exactly the current Terms and Privacy Policy versions
+ */
+export const acceptLegalConsent = async (legalConsentInput: LegalConsentInput, options?: Parameters<typeof customFetch>[1]): Promise<LegalStatus> => {
+
+  return customFetch<LegalStatus>(getAcceptLegalConsentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(legalConsentInput)
+  }
+);}
+
+
+
+
+
+export const getAcceptLegalConsentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptLegalConsent>>, TError,{data: BodyType<LegalConsentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptLegalConsent>>, TError,{data: BodyType<LegalConsentInput>}, TContext> => {
+
+const mutationKey = ['acceptLegalConsent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptLegalConsent>>, {data: BodyType<LegalConsentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptLegalConsent(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptLegalConsentMutationResult = NonNullable<Awaited<ReturnType<typeof acceptLegalConsent>>>
+    export type AcceptLegalConsentMutationBody = BodyType<LegalConsentInput>
+    export type AcceptLegalConsentMutationError = ErrorType<void>
+
+    /**
+ * @summary Explicitly accept exactly the current Terms and Privacy Policy versions
+ */
+export const useAcceptLegalConsent = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptLegalConsent>>, TError,{data: BodyType<LegalConsentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptLegalConsent>>,
+        TError,
+        {data: BodyType<LegalConsentInput>},
+        TContext
+      > => {
+      return useMutation(getAcceptLegalConsentMutationOptions(options));
+    }
 
 export const getGetGuestVaultUrl = (token: string,) => {
 

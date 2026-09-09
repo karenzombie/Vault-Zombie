@@ -5,6 +5,40 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface LegalConfiguration {
+  termsVersion: string;
+  privacyVersion: string;
+  termsUrl: '/terms';
+  privacyUrl: '/privacy';
+}
+
+export type LegalStatus = LegalConfiguration & ({
+  accepted: boolean;
+  /** @nullable */
+  acceptedAt: string | null;
+});
+
+export interface LegalConsentInput {
+  accepted: true;
+  /** @minLength 1 */
+  termsVersion: string;
+  /** @minLength 1 */
+  privacyVersion: string;
+}
+
+export interface LegalSignupIntentInput {
+  accepted: true;
+  /** @minLength 1 */
+  termsVersion: string;
+  /** @minLength 1 */
+  privacyVersion: string;
+}
+
+export type LegalSignupIntent = LegalConfiguration & {
+  token: string;
+  expiresAt: string;
+};
+
 export interface HealthStatus {
   status: string;
 }

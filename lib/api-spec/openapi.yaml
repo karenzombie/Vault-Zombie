@@ -16,6 +16,8 @@ tags:
     description: Authenticated operator reveal and scoring operations
   - name: billing
     description: Authenticated operator billing operations
+  - name: legal
+    description: Legal document configuration and acceptance operations
 paths:
   /healthz:
     get:
@@ -30,6 +32,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /legal:
+    get:
+      operationId: getLegalConfiguration
+      tags: [legal]
+      summary: Get the current public legal document versions and stable URLs
+      responses:
+        "200":
+          description: Current legal configuration
+          content: { application/json: { schema: { $ref: "#/components/schemas/LegalConfiguration" } } }
+  /legal/status:
+    get:
+      operationId: getLegalStatus
+      tags: [legal]
+      summary: Get the signed-in account's current legal acceptance status
+      responses:
+        "200":
+          description: Current legal acceptance status
+          content: { application/json: { schema: { $ref: "#/components/schemas/LegalStatus" } } }
+        "401": { description: Authentication required }
+        "403": { description: Consent is required before local provisioning }
+  /legal/signup-intent:
+    post:
+      operationId: createLegalSignupIntent
+      tags: [legal]
+      summary: Issue a short-lived one-time server-signed signup acceptance intent
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/LegalSignupIntentInput" } } }
+      responses:
+        "200":
+          description: Signed signup acceptance intent
+          content: { application/json: { schema: { $ref: "#/components/schemas/LegalSignupIntent" } } }
+        "400": { description: Explicit acceptance is required }
+        "409": { description: Displayed legal versions are stale }
+  /legal/consent:
+    post:
+      operationId: acceptLegalConsent
+      tags: [legal]
+      summary: Explicitly accept exactly the current Terms and Privacy Policy versions
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/LegalConsentInput" } } }
+      responses:
+        "200":
+          description: Current legal acceptance status
+          content: { application/json: { schema: { $ref: "#/components/schemas/LegalStatus" } } }
+        "400": { description: Explicit acceptance is required }
+        "401": { description: Authentication required }
+        "409": { description: Submitted legal versions are stale }
   /guest/{token}:
     get:
       operationId: getGuestVault
@@ -827,6 +878,44 @@ components:
       required: true
       schema: { type: string, enum: [retire, reactivate] }
   schemas:
+    LegalConfiguration:
+      type: object
+      required: [termsVersion, privacyVersion, termsUrl, privacyUrl]
+      properties:
+        termsVersion: { type: string }
+        privacyVersion: { type: string }
+        termsUrl: { type: string, const: /terms }
+        privacyUrl: { type: string, const: /privacy }
+    LegalStatus:
+      allOf:
+        - $ref: "#/components/schemas/LegalConfiguration"
+        - type: object
+          required: [accepted, acceptedAt]
+          properties:
+            accepted: { type: boolean }
+            acceptedAt: { type: ["string", "null"], format: date-time }
+    LegalConsentInput:
+      type: object
+      required: [accepted, termsVersion, privacyVersion]
+      properties:
+        accepted: { type: boolean, const: true }
+        termsVersion: { type: string, minLength: 1 }
+        privacyVersion: { type: string, minLength: 1 }
+    LegalSignupIntentInput:
+      type: object
+      required: [accepted, termsVersion, privacyVersion]
+      properties:
+        accepted: { type: boolean, const: true }
+        termsVersion: { type: string, minLength: 1 }
+        privacyVersion: { type: string, minLength: 1 }
+    LegalSignupIntent:
+      allOf:
+        - $ref: "#/components/schemas/LegalConfiguration"
+        - type: object
+          required: [token, expiresAt]
+          properties:
+            token: { type: string }
+            expiresAt: { type: string, format: date-time }
     HealthStatus:
       type: object
       properties:

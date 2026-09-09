@@ -18,6 +18,79 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Get the current public legal document versions and stable URLs
+ */
+export const GetLegalConfigurationResponse = zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.literal("/terms"),
+  "privacyUrl": zod.literal("/privacy")
+})
+
+
+/**
+ * @summary Get the signed-in account's current legal acceptance status
+ */
+export const GetLegalStatusResponse = zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.literal("/terms"),
+  "privacyUrl": zod.literal("/privacy")
+}).and(zod.object({
+  "accepted": zod.boolean(),
+  "acceptedAt": zod.coerce.date().nullable()
+}))
+
+
+/**
+ * @summary Issue a short-lived one-time server-signed signup acceptance intent
+ */
+
+
+
+
+export const CreateLegalSignupIntentBody = zod.object({
+  "accepted": zod.literal(true),
+  "termsVersion": zod.string().min(1),
+  "privacyVersion": zod.string().min(1)
+})
+
+export const CreateLegalSignupIntentResponse = zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.literal("/terms"),
+  "privacyUrl": zod.literal("/privacy")
+}).and(zod.object({
+  "token": zod.string(),
+  "expiresAt": zod.coerce.date()
+}))
+
+
+/**
+ * @summary Explicitly accept exactly the current Terms and Privacy Policy versions
+ */
+
+
+
+
+export const AcceptLegalConsentBody = zod.object({
+  "accepted": zod.literal(true),
+  "termsVersion": zod.string().min(1),
+  "privacyVersion": zod.string().min(1)
+})
+
+export const AcceptLegalConsentResponse = zod.object({
+  "termsVersion": zod.string(),
+  "privacyVersion": zod.string(),
+  "termsUrl": zod.literal("/terms"),
+  "privacyUrl": zod.literal("/privacy")
+}).and(zod.object({
+  "accepted": zod.boolean(),
+  "acceptedAt": zod.coerce.date().nullable()
+}))
+
+
+/**
  * @summary Load the sealed prompt form
  */
 export const getGuestVaultPathTokenMin = 32;

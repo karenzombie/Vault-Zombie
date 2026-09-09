@@ -1,7 +1,8 @@
 import { clerkClient, getAuth } from "@clerk/express";
-import { accountsTable, db, type Account } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { accountsTable, db, legalConsentsTable, legalSignupIntentsTable, type Account } from "@workspace/db";
+import { and, eq, sql } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
+import { currentLegalConfiguration, legalSignupIntentHash, verifyLegalSignupIntent } from "../lib/legal";
 
 const ADMIN_IDLE_LIMIT_MS = 30 * 60 * 1000;
 const ADMIN_ABSOLUTE_LIMIT_MS = 12 * 60 * 60 * 1000;
@@ -13,6 +14,7 @@ declare global {
       account?: Account;
       clerkSessionId?: string;
       factorVerificationAge?: [number, number] | null;
+      clerkUserId?: string;
     }
   }
 }
@@ -47,16 +49,49 @@ async function findOrCreateAccount(userId: string): Promise<Account> {
     primaryEmail.split("@")[0] ||
     "Vault Zombie operator";
 
-  const [created] = await db
-    .insert(accountsTable)
-    .values({
-      clerkSubject: userId,
-      role: "operator",
-      displayName,
-      email: primaryEmail,
-    })
-    .onConflictDoNothing({ target: accountsTable.clerkSubject })
-    .returning();
+  const metadata = user.unsafeMetadata && typeof user.unsafeMetadata === "object"
+    ? user.unsafeMetadata as Record<string, unknown>
+    : {};
+  const clerkAcceptedAt = (user as unknown as { legalAcceptedAt?: Date | number | null }).legalAcceptedAt;
+  const clerkDate = clerkAcceptedAt instanceof Date ? clerkAcceptedAt
+    : typeof clerkAcceptedAt === "number" ? new Date(clerkAcceptedAt) : undefined;
+  if (
+    metadata.legalAccepted !== true ||
+    !clerkDate ||
+    Number.isNaN(clerkDate.getTime())
+  ) {
+    throw Object.assign(new Error("Current legal acceptance is required before a local account can be created."), { code: "CONSENT_REQUIRED" });
+  }
+
+  const intentToken = metadata.legalSignupIntent;
+  const intentPayload = verifyLegalSignupIntent(intentToken);
+  if (!intentPayload || typeof intentToken !== "string") {
+    throw Object.assign(new Error("A valid legal signup intent is required."), { code: "CONSENT_REQUIRED" });
+  }
+  const created = await db.transaction(async (tx) => {
+    const locked = await tx.execute(sql`SELECT * FROM legal_signup_intents WHERE token_hash = ${legalSignupIntentHash(intentToken)} FOR UPDATE`);
+    const intent = locked.rows[0] as typeof legalSignupIntentsTable.$inferSelect | undefined;
+    if (!intent || intent.consumedAt || intent.expiresAt.getTime() <= Date.now()
+      || intent.nonce !== intentPayload.n || intent.termsVersion !== intentPayload.t
+      || intent.privacyVersion !== intentPayload.p || intent.acceptedAt.getTime() !== intentPayload.a
+      || intent.expiresAt.getTime() !== intentPayload.e || clerkDate.getTime() + 5000 < intent.acceptedAt.getTime()) {
+      throw Object.assign(new Error("The legal signup intent is invalid or already used."), { code: "CONSENT_REQUIRED" });
+    }
+    const [inserted] = await tx.insert(accountsTable).values({
+      clerkSubject: userId, role: "operator", displayName, email: primaryEmail,
+    }).onConflictDoNothing({ target: accountsTable.clerkSubject }).returning();
+    if (!inserted) return undefined;
+    await tx.insert(legalConsentsTable).values({
+      accountId: inserted.id,
+      termsVersion: intent.termsVersion,
+      privacyVersion: intent.privacyVersion,
+      acceptedAt: intent.acceptedAt,
+      clerkAcceptedAt: clerkDate,
+      clerkAcceptanceSource: "clerk_signup",
+    });
+    await tx.update(legalSignupIntentsTable).set({ consumedAt: new Date(), consumedClerkSubject: userId }).where(eq(legalSignupIntentsTable.id, intent.id));
+    return inserted;
+  });
   if (created) return created;
 
   const [raced] = await db
@@ -68,7 +103,33 @@ async function findOrCreateAccount(userId: string): Promise<Account> {
   return raced;
 }
 
-export async function requireOperator(
+export async function provisionCurrentConsentAccount(userId: string, config: ReturnType<typeof currentLegalConfiguration>): Promise<Account> {
+  const [existing] = await db.select().from(accountsTable).where(eq(accountsTable.clerkSubject, userId)).limit(1);
+  if (existing) return existing;
+  const user = await clerkClient.users.getUser(userId);
+  const email = user.emailAddresses.find((item) => item.id === user.primaryEmailAddressId)?.emailAddress ?? user.emailAddresses[0]?.emailAddress;
+  if (!email) throw new Error("Authenticated Clerk user has no verified email address.");
+  const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || email.split("@")[0] || "Vault Zombie operator";
+  const [created] = await db.transaction(async (tx) => {
+    const [account] = await tx.insert(accountsTable).values({ clerkSubject: userId, role: "operator", displayName, email }).onConflictDoNothing({ target: accountsTable.clerkSubject }).returning();
+    if (!account) return [];
+    await tx.insert(legalConsentsTable).values({ accountId: account.id, termsVersion: config.termsVersion, privacyVersion: config.privacyVersion, clerkAcceptanceSource: "operator_reconsent" });
+    return [account];
+  });
+  if (created) return created;
+  const [raced] = await db.select().from(accountsTable).where(eq(accountsTable.clerkSubject, userId)).limit(1);
+  if (!raced) throw new Error("Unable to create the local operator account.");
+  return raced;
+}
+
+export function requireClerkSession(req: Request, res: Response, next: NextFunction) {
+  const auth = getAuth(req);
+  if (!auth.userId || !auth.sessionId) return unauthorized(res, "AUTH_REQUIRED", "Authentication required.");
+  req.clerkUserId = auth.userId; req.clerkSessionId = auth.sessionId; req.factorVerificationAge = auth.factorVerificationAge;
+  return next();
+}
+
+export async function requireAuthenticatedAccount(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -90,8 +151,30 @@ export async function requireOperator(
     req.factorVerificationAge = auth.factorVerificationAge;
     return next();
   } catch (error) {
+    if ((error as { code?: string }).code === "CONSENT_REQUIRED") {
+      return forbidden(res, "CONSENT_REQUIRED", "Current legal acceptance is required.");
+    }
     next(error);
   }
+}
+
+export async function requireOperator(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  await requireAuthenticatedAccount(req, res, async () => {
+    try {
+      const config = currentLegalConfiguration();
+      const [consent] = await db.select({ id: legalConsentsTable.id }).from(legalConsentsTable).where(and(
+        eq(legalConsentsTable.accountId, req.account!.id),
+        eq(legalConsentsTable.termsVersion, config.termsVersion),
+        eq(legalConsentsTable.privacyVersion, config.privacyVersion),
+      )).limit(1);
+      if (!consent) return forbidden(res, "CONSENT_REQUIRED", "Accept the current Terms and Privacy Policy to continue.");
+      return next();
+    } catch (error) { return next(error); }
+  });
 }
 
 export async function requireAdmin(

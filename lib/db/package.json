@@ -8,9 +8,11 @@
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
-    "push": "drizzle-kit push --config ./drizzle.config.ts && node ./scripts/install-audit-trigger.mjs",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts && node ./scripts/install-audit-trigger.mjs",
-    "verify-audit-trigger": "node ./scripts/verify-audit-trigger.mjs"
+    "push": "drizzle-kit push --config ./drizzle.config.ts && node ./scripts/install-audit-trigger.mjs && node ./scripts/install-legal-consent-trigger.mjs && node ./scripts/install-legal-signup-intent-trigger.mjs",
+    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts && node ./scripts/install-audit-trigger.mjs && node ./scripts/install-legal-consent-trigger.mjs && node ./scripts/install-legal-signup-intent-trigger.mjs",
+    "verify-audit-trigger": "node ./scripts/verify-audit-trigger.mjs",
+    "verify-legal-consent-trigger": "node ./scripts/verify-legal-consent-trigger.mjs",
+    "verify-legal-signup-intent-trigger": "node ./scripts/verify-legal-signup-intent-trigger.mjs"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",

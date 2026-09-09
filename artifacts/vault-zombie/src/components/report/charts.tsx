@@ -52,7 +52,14 @@ export function Pictograph({ scoreboard, maxScore }: { scoreboard: ScoreboardEnt
   const highest = scoreboard.length > 0 ? Math.max(...scoreboard.map(s => s.total)) : 0;
   
   return (
-    <div className="picto" aria-label={`${scoreboard.length} guests, colored by accuracy`}>
+    <div className="picto" role="group" aria-label={`Guest accuracy: ${scoreboard.length} guests`}>
+      <ul className="sr-only">
+        {scoreboard.map((guest) => (
+          <li key={guest.guestId}>
+            {guest.displayName}: {guest.full} called it, {guest.total} total points.
+          </li>
+        ))}
+      </ul>
       {scoreboard.map(guest => {
         let color = "var(--hairline)";
         if (highest > 0 && guest.total === highest) {
@@ -65,7 +72,7 @@ export function Pictograph({ scoreboard, maxScore }: { scoreboard: ScoreboardEnt
         }
         
         return (
-          <span key={guest.guestId} className="person-icon" style={{ color }} title={`${guest.displayName}: ${guest.full} called`}>
+          <span key={guest.guestId} className="person-icon" style={{ color }} aria-hidden="true">
             <svg viewBox="0 0 20 26"><use href="#ic-person-fill"/></svg>
           </span>
         );
@@ -124,7 +131,13 @@ export function NumberSpread({ guesses, actualValue }: { guesses: number[], actu
   const getX = (val: number) => 30 + ((val - min) / range) * 270; // Map to 30..300 range
 
   return (
-    <svg viewBox="0 0 320 74" className="w-full h-auto mt-2">
+    <svg
+      viewBox="0 0 320 74"
+      className="w-full h-auto mt-2"
+      role="img"
+      aria-label={`Number guesses: ${guesses.join(", ")}. Actual value: ${actualValue}.`}
+    >
+      <desc>Guesses: {guesses.join(", ")}. Actual value: {actualValue}.</desc>
       <line x1="30" y1="40" x2="300" y2="40" stroke="hsl(var(--hairline))" strokeWidth="2"/>
       <line x1={getX(Math.min(...guesses))} y1="40" x2={getX(Math.max(...guesses))} y2="40" stroke="var(--sortof)" strokeWidth="2" opacity="0.5"/>
       

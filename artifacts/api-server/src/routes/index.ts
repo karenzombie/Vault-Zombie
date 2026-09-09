@@ -13,10 +13,12 @@ import adminLifecycleRouter from "./admin-lifecycle";
 import adminExportRouter from "./admin-export";
 import adminContentRouter from "./admin-content";
 import adminBackupRouter from "./admin-backup";
+import legalRouter from "./legal";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(legalRouter);
 router.use(authRouter);
 router.use(guestRouter);
 router.use(operatorRevealRouter);

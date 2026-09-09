@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { ClerkProvider, RedirectToSignIn, useAuth } from '@clerk/react';
 import { getGetAdminDashboardQueryKey, useGetAdminDashboard } from '@workspace/api-client-react';
+import { ConsentGate } from '@/components/consent-gate';
 
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/public/landing';
@@ -44,7 +45,7 @@ function requireOperator<T extends object>(Component: ComponentType<T>) {
       return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Checking your session…</div>;
     }
     if (!isSignedIn) return <RedirectToSignIn />;
-    return <Component {...props} />;
+    return <ConsentGate><Component {...props} /></ConsentGate>;
   };
 }
 
@@ -67,9 +68,13 @@ function MissingAdminConfiguration() {
 
 function AuthenticatedAdminRoute() {
   const { isLoaded, isSignedIn } = useAuth();
-  const dashboard = useGetAdminDashboard({ query: { enabled: isLoaded && isSignedIn, retry: false, queryKey: getGetAdminDashboardQueryKey() } });
   if (!isLoaded) return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Checking your session…</div>;
   if (!isSignedIn) return <RedirectToSignIn />;
+  return <ConsentGate><AdminAccess /></ConsentGate>;
+}
+
+function AdminAccess() {
+  const dashboard = useGetAdminDashboard({ query: { enabled: true, retry: false, queryKey: getGetAdminDashboardQueryKey() } });
   if (dashboard.isLoading) return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Verifying administrator access…</div>;
   if (dashboard.isError) return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">403 — Administrator access is required. Complete MFA and retry if your session is stale.</div>;
   return <AdminPage />;
@@ -122,6 +127,10 @@ function Router() {
   );
 }
 
+function LegalFooter() {
+  return <footer className="border-t border-hairline bg-background px-4 py-3 text-center text-sm text-text-2 print:hidden"><a data-testid="link-terms-footer" className="underline underline-offset-2" href="/terms">Terms and Conditions</a><span aria-hidden="true"> · </span><a data-testid="link-privacy-footer" className="underline underline-offset-2" href="/privacy">Privacy Policy</a></footer>;
+}
+
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
@@ -151,10 +160,10 @@ function App() {
               },
             }}
           >
-            {router}
+            <>{router}<LegalFooter /></>
           </ClerkProvider>
         ) : (
-          router
+          <>{router}<LegalFooter /></>
         )}
         <Toaster />
       </TooltipProvider>

@@ -10,7 +10,7 @@ import {
   RefundBillingRecordResponse, GrantVaultCompResponse,
 } from "@workspace/api-zod";
 import {
-  accountsTable, answersTable, appendAuditEvent, billingRecordsTable, db, declineGuestOverage, findUnresolvedRefundReservation, PLAN_POLICY, readUnlockedAnswers, refundAttemptsTable, runSensitiveAdminAction, UNRESOLVED_REFUND_STATUSES,
+  accountsTable, answersTable, billingRecordsTable, db, declineGuestOverage, findUnresolvedRefundReservation, PLAN_POLICY, readUnlockedAnswers, refundAttemptsTable, runSensitiveAdminAction, UNRESOLVED_REFUND_STATUSES,
   giftsTable, guestsTable, overageEventsTable, revealSlotsTable, submissionsTable, vaultTypesTable, vaultsTable, emailDeliveriesTable,
 } from "@workspace/db";
 import { ListAdminEmailDeliveriesResponse, RetryAdminEmailDeliveryParams, RetryAdminEmailDeliveryBody, RetryAdminEmailDeliveryResponse, ResendAdminGiftParams, ResendAdminGiftBody, ResendAdminGiftResponse } from "@workspace/api-zod";
@@ -38,6 +38,37 @@ const mutableRefundAttempt = (id: string) => and(
   isNull(refundAttemptsTable.completedAt),
   inArray(refundAttemptsTable.status, [...UNRESOLVED_REFUND_STATUSES]),
 );
+type RefundAttempt = typeof refundAttemptsTable.$inferSelect;
+interface BillingRefundReservation {
+  attempt: RefundAttempt;
+  paymentIntentId: string | null;
+  vaultId: string;
+  completed: boolean;
+  created: boolean;
+}
+interface GiftRefundReservation {
+  attempt: RefundAttempt;
+  paymentIntentId: string | null;
+  completed: boolean;
+  created: boolean;
+}
+interface BillingRefundCompletion {
+  billingRecordId: string;
+  vaultId: string;
+  status: "refunded";
+  currentTier: "lockbox";
+  requestId: string;
+  refundAttemptStatus: "completed";
+  completedNow: boolean;
+}
+interface GiftRefundCompletion {
+  giftId: string;
+  status: "refunded";
+  stripeRefundId: string;
+  requestId: string;
+  refundAttemptStatus: "completed";
+  completedNow: boolean;
+}
 
 adminBillingRouter.get("/admin/dashboard", requireOperator, requireAdmin, async (_req, res, next) => {
   try {
@@ -288,7 +319,7 @@ adminBillingRouter.post("/admin/billing/:billingRecordId/refund", ...sensitiveAd
   try {
     const { billingRecordId } = RefundBillingRecordParams.parse(req.params);
     const { reason, requestId } = RefundBillingRecordBody.parse(req.body);
-    const reservation = await db.transaction(async (tx) => {
+    const reservation = await runSensitiveAdminAction<BillingRefundReservation>({ actor: req.account!, action: "refund", targetType: "billing_record", targetId: billingRecordId, reason, details: { phase: "intent", requestId }, shouldAudit: (result) => result.created }, async (tx) => {
       const [located] = await tx.select({ vaultId: billingRecordsTable.vaultId }).from(billingRecordsTable).where(eq(billingRecordsTable.id, billingRecordId)).limit(1);
       if (!located?.vaultId) throw new Error("This billing record cannot be refunded.");
       // Global ordering for entitlement/refund serialization:
@@ -302,13 +333,11 @@ adminBillingRouter.post("/admin/billing/:billingRecordId/refund", ...sensitiveAd
         inArray(refundAttemptsTable.status, [...UNRESOLVED_REFUND_STATUSES]),
       )).limit(1).for("update");
       if (existing) {
-        await tx.update(refundAttemptsTable).set({ status: "reserved", lastError: null })
-          .where(mutableRefundAttempt(existing.id));
-        return { attempt: { ...existing, status: "reserved", lastError: null }, paymentIntentId: target.stripePaymentIntentId, vaultId: vault.id, completed: false };
+        return { attempt: existing, paymentIntentId: target.stripePaymentIntentId, vaultId: vault.id, completed: false, created: false };
       }
       const [requestCollision] = await tx.select().from(refundAttemptsTable).where(eq(refundAttemptsTable.id, requestId)).limit(1).for("update");
       if (requestCollision?.billingRecordId === billingRecordId && requestCollision.status === "completed") {
-        return { attempt: requestCollision, paymentIntentId: target.stripePaymentIntentId, vaultId: vault.id, completed: true };
+        return { attempt: requestCollision, paymentIntentId: target.stripePaymentIntentId, vaultId: vault.id, completed: true, created: false };
       }
       if (requestCollision) throw new Error("Refund action ID belongs to a different or terminal request.");
       if (
@@ -328,7 +357,7 @@ adminBillingRouter.post("/admin/billing/:billingRecordId/refund", ...sensitiveAd
         actorAccountId: req.account!.id, reason,
         idempotencyKey: `vault-zombie-refund:${requestId}`, status: "reserved",
       }).returning();
-      return { attempt, paymentIntentId: target.stripePaymentIntentId, vaultId: vault.id, completed: false };
+      return { attempt, paymentIntentId: target.stripePaymentIntentId, vaultId: vault.id, completed: false, created: true };
     });
     const { attempt } = reservation;
     if (reservation.completed) return res.json(RefundBillingRecordResponse.parse({
@@ -341,13 +370,16 @@ adminBillingRouter.post("/admin/billing/:billingRecordId/refund", ...sensitiveAd
         ? await getStripeClient().refunds.retrieve(attempt.stripeRefundId)
         : await getStripeClient().refunds.create({ payment_intent: reservation.paymentIntentId! }, { idempotencyKey: attempt.idempotencyKey });
     } catch (error) {
-      await db.update(refundAttemptsTable).set({ status: "unknown", stripeStatus: "unknown", attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Stripe refund outcome is unknown." })
+      await db.update(refundAttemptsTable).set({ status: attempt.stripeRefundId ? attempt.status : "unknown", stripeStatus: attempt.stripeRefundId ? attempt.stripeStatus : "unknown", attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Stripe refund outcome is unknown." })
         .where(mutableRefundAttempt(attempt.id));
       const retryable = new Error("Stripe refund outcome is unknown; retry this refund to reconcile it.");
       (retryable as Error & { status?: number }).status = 503;
       throw retryable;
     }
     if (!stripeRefund.id) throw new Error("Stripe refund was not confirmed.");
+    if (attempt.status === "stripe_succeeded" && stripeRefund.status !== "succeeded") {
+      throw new Error("Persisted Stripe success cannot be downgraded during reconciliation.");
+    }
     if (stripeRefund.status === "failed" || stripeRefund.status === "canceled") {
       await db.update(refundAttemptsTable).set({ status: stripeRefund.status, stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: `Stripe refund ${stripeRefund.status}.` })
         .where(mutableRefundAttempt(attempt.id));
@@ -355,15 +387,15 @@ adminBillingRouter.post("/admin/billing/:billingRecordId/refund", ...sensitiveAd
     }
     if (stripeRefund.status !== "succeeded" && stripeRefund.status !== "pending") throw new Error(`Unsupported Stripe refund status: ${stripeRefund.status}.`);
     try {
-      await db.update(refundAttemptsTable).set({ status: stripeRefund.status === "pending" ? "stripe_pending" : "reserved", stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: null })
+      await db.update(refundAttemptsTable).set({ status: stripeRefund.status === "pending" ? "stripe_pending" : "stripe_succeeded", stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: null })
         .where(mutableRefundAttempt(attempt.id));
     } catch (error) {
-      await db.update(refundAttemptsTable).set({ status: "unknown", stripeStatus: "unknown", attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Local refund reconciliation outcome is unknown." })
+      await db.update(refundAttemptsTable).set({ status: "stripe_succeeded", stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Local refund completion is pending." })
         .where(mutableRefundAttempt(attempt.id));
-      throw new Error("Stripe refund outcome is unknown after local reconciliation failed; retry this refund.");
+      throw new Error("Stripe refund succeeded but local completion is pending; retry this refund.");
     }
     if (stripeRefund.status === "pending") throw new Error("Stripe refund is pending; retry later to reconcile it.");
-    const result = await db.transaction(async (tx) => {
+    const result = await runSensitiveAdminAction<BillingRefundCompletion>({ actor: req.account!, action: "refund", targetType: "billing_record", targetId: billingRecordId, reason: attempt.reason, details: { phase: "completion", requestId: attempt.id, stripeRefundId: stripeRefund.id, status: stripeRefund.status }, shouldAudit: (result) => result.completedNow }, async (tx) => {
       const [vault] = await tx.select().from(vaultsTable).where(eq(vaultsTable.id, reservation.vaultId)).limit(1).for("update");
       if (!vault) throw new Error("Vault not found.");
       const [locked] = await tx.select().from(billingRecordsTable).where(eq(billingRecordsTable.id, billingRecordId)).limit(1).for("update");
@@ -372,13 +404,13 @@ adminBillingRouter.post("/admin/billing/:billingRecordId/refund", ...sensitiveAd
       if (!lockedAttempt) throw new Error("Refund reservation was not found.");
       if (lockedAttempt.completedAt || lockedAttempt.status === "completed") {
         if (!locked.vaultId || locked.stripeRefundId !== lockedAttempt.stripeRefundId) throw new Error("Completed refund state is inconsistent.");
-        return { billingRecordId: locked.id, vaultId: locked.vaultId, status: "refunded" as const, currentTier: "lockbox" as const, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const };
+        return { billingRecordId: locked.id, vaultId: locked.vaultId, status: "refunded" as const, currentTier: "lockbox" as const, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const, completedNow: false };
       }
       if (locked.status === "refunded" || locked.stripeRefundId) {
         if (locked.status !== "refunded" || locked.stripeRefundId !== stripeRefund.id || !locked.vaultId) throw new Error("This billing record cannot be reconciled to this refund.");
         const [completed] = await tx.update(refundAttemptsTable).set({ status: "completed", completedAt: new Date(), stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, lastError: null }).where(mutableRefundAttempt(attempt.id)).returning();
-        if (completed) await appendAuditEvent({ actorAccountId: req.account!.id, action: "refund", targetType: "billing_record", targetId: billingRecordId, reason: lockedAttempt.reason, details: { requestId: lockedAttempt.id } }, tx);
-        return { billingRecordId: locked.id, vaultId: locked.vaultId, status: "refunded" as const, currentTier: "lockbox" as const, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const };
+        if (!completed) throw new Error("Refund completion raced with another reconciliation.");
+        return { billingRecordId: locked.id, vaultId: locked.vaultId, status: "refunded" as const, currentTier: "lockbox" as const, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const, completedNow: true };
       }
       if (!locked.vaultId) throw new Error("Refunded billing target no longer has its vault.");
       const rows = await tx.select({ id: submissionsTable.id }).from(submissionsTable)
@@ -391,12 +423,11 @@ adminBillingRouter.post("/admin/billing/:billingRecordId/refund", ...sensitiveAd
       await tx.update(billingRecordsTable).set({ status: "refunded", stripeRefundId: stripeRefund.id }).where(eq(billingRecordsTable.id, locked.id));
       const [completed] = await tx.update(refundAttemptsTable).set({ status: "completed", completedAt: new Date(), stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, lastError: null }).where(mutableRefundAttempt(lockedAttempt.id)).returning();
       if (!completed) throw new Error("Refund completion raced with another reconciliation.");
-      await appendAuditEvent({ actorAccountId: req.account!.id, action: "refund", targetType: "billing_record", targetId: billingRecordId, reason: lockedAttempt.reason, details: { requestId: lockedAttempt.id } }, tx);
-      return { billingRecordId: locked.id, vaultId: vault.id, status: "refunded" as const, currentTier: "lockbox" as const, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const };
+      return { billingRecordId: locked.id, vaultId: vault.id, status: "refunded" as const, currentTier: "lockbox" as const, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const, completedNow: true };
     });
     return res.json(RefundBillingRecordResponse.parse(result));
   } catch (error) {
-    if (error instanceof Error && error.message.includes("outcome is unknown")) return res.status(503).json({ error: error.message, code: "REFUND_RECONCILIATION_REQUIRED", retryable: true });
+    if (error instanceof Error && (error.message.includes("outcome is unknown") || error.message.includes("local completion is pending"))) return res.status(503).json({ error: error.message, code: "REFUND_RECONCILIATION_REQUIRED", retryable: true });
     if (error instanceof Error && error.message.includes("refund is pending")) return res.status(503).json({ error: error.message, code: "REFUND_PENDING", retryable: true });
     return next(error);
   }
@@ -406,7 +437,7 @@ adminBillingRouter.post("/admin/gifts/:giftId/refund", ...sensitiveAdminGuards, 
   try {
     const { giftId } = RefundGiftParams.parse(req.params);
     const { reason, requestId } = RefundGiftBody.parse(req.body);
-    const reservation = await db.transaction(async (tx) => {
+    const reservation = await runSensitiveAdminAction<GiftRefundReservation>({ actor: req.account!, action: "refund", targetType: "gift", targetId: giftId, reason, details: { phase: "intent", requestId }, shouldAudit: (result) => result.created }, async (tx) => {
       const [target] = await tx.select().from(giftsTable).where(eq(giftsTable.id, giftId)).limit(1).for("update");
       if (!target) throw new Error("This gift cannot be refunded.");
       const [existing] = await tx.select().from(refundAttemptsTable).where(and(
@@ -414,13 +445,11 @@ adminBillingRouter.post("/admin/gifts/:giftId/refund", ...sensitiveAdminGuards, 
         inArray(refundAttemptsTable.status, [...UNRESOLVED_REFUND_STATUSES]),
       )).limit(1).for("update");
       if (existing) {
-        await tx.update(refundAttemptsTable).set({ status: "reserved", lastError: null })
-          .where(mutableRefundAttempt(existing.id));
-        return { attempt: { ...existing, status: "reserved", lastError: null }, paymentIntentId: target.stripePaymentIntentId, completed: false };
+        return { attempt: existing, paymentIntentId: target.stripePaymentIntentId, completed: false, created: false };
       }
       const [requestCollision] = await tx.select().from(refundAttemptsTable).where(eq(refundAttemptsTable.id, requestId)).limit(1).for("update");
       if (requestCollision?.giftId === giftId && requestCollision.status === "completed") {
-        return { attempt: requestCollision, paymentIntentId: target.stripePaymentIntentId, completed: true };
+        return { attempt: requestCollision, paymentIntentId: target.stripePaymentIntentId, completed: true, created: false };
       }
       if (requestCollision) throw new Error("Refund action ID belongs to a different or terminal request.");
       if (
@@ -433,7 +462,7 @@ adminBillingRouter.post("/admin/gifts/:giftId/refund", ...sensitiveAdminGuards, 
         id: requestId, targetType: "gift", giftId, actorAccountId: req.account!.id,
         reason, idempotencyKey: `vault-zombie-gift-refund:${requestId}`, status: "reserved",
       }).returning();
-      return { attempt, paymentIntentId: target.stripePaymentIntentId, completed: false };
+      return { attempt, paymentIntentId: target.stripePaymentIntentId, completed: false, created: true };
     });
     const { attempt } = reservation;
     if (reservation.completed) return res.json(RefundGiftResponse.parse({ giftId, status: "refunded", stripeRefundId: attempt.stripeRefundId!, requestId: attempt.id, refundAttemptStatus: attempt.status }));
@@ -443,13 +472,16 @@ adminBillingRouter.post("/admin/gifts/:giftId/refund", ...sensitiveAdminGuards, 
         ? await getStripeClient().refunds.retrieve(attempt.stripeRefundId)
         : await getStripeClient().refunds.create({ payment_intent: reservation.paymentIntentId! }, { idempotencyKey: attempt.idempotencyKey });
     } catch (error) {
-      await db.update(refundAttemptsTable).set({ status: "unknown", stripeStatus: "unknown", attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Stripe refund outcome is unknown." })
+      await db.update(refundAttemptsTable).set({ status: attempt.stripeRefundId ? attempt.status : "unknown", stripeStatus: attempt.stripeRefundId ? attempt.stripeStatus : "unknown", attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Stripe refund outcome is unknown." })
         .where(mutableRefundAttempt(attempt.id));
       const retryable = new Error("Stripe refund outcome is unknown; retry this refund to reconcile it.");
       (retryable as Error & { status?: number }).status = 503;
       throw retryable;
     }
     if (!stripeRefund.id) throw new Error("Stripe refund was not confirmed.");
+    if (attempt.status === "stripe_succeeded" && stripeRefund.status !== "succeeded") {
+      throw new Error("Persisted Stripe success cannot be downgraded during reconciliation.");
+    }
     if (stripeRefund.status === "failed" || stripeRefund.status === "canceled") {
       await db.update(refundAttemptsTable).set({ status: stripeRefund.status, stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: `Stripe refund ${stripeRefund.status}.` })
         .where(mutableRefundAttempt(attempt.id));
@@ -457,28 +489,28 @@ adminBillingRouter.post("/admin/gifts/:giftId/refund", ...sensitiveAdminGuards, 
     }
     if (stripeRefund.status !== "succeeded" && stripeRefund.status !== "pending") throw new Error(`Unsupported Stripe refund status: ${stripeRefund.status}.`);
     try {
-      await db.update(refundAttemptsTable).set({ status: stripeRefund.status === "pending" ? "stripe_pending" : "reserved", stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: null })
+      await db.update(refundAttemptsTable).set({ status: stripeRefund.status === "pending" ? "stripe_pending" : "stripe_succeeded", stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: null })
         .where(mutableRefundAttempt(attempt.id));
     } catch (error) {
-      await db.update(refundAttemptsTable).set({ status: "unknown", stripeStatus: "unknown", attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Local refund reconciliation outcome is unknown." })
+      await db.update(refundAttemptsTable).set({ status: "stripe_succeeded", stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, attemptedAt: new Date(), lastError: error instanceof Error ? error.message.slice(0, 1000) : "Local refund completion is pending." })
         .where(mutableRefundAttempt(attempt.id));
-      throw new Error("Stripe refund outcome is unknown after local reconciliation failed; retry this refund.");
+      throw new Error("Stripe refund succeeded but local completion is pending; retry this refund.");
     }
     if (stripeRefund.status === "pending") throw new Error("Stripe refund is pending; retry later to reconcile it.");
-    const result = await db.transaction(async (tx) => {
+    const result = await runSensitiveAdminAction<GiftRefundCompletion>({ actor: req.account!, action: "refund", targetType: "gift", targetId: giftId, reason: attempt.reason, details: { phase: "completion", requestId: attempt.id, stripeRefundId: stripeRefund.id, status: stripeRefund.status }, shouldAudit: (result) => result.completedNow }, async (tx) => {
       const [locked] = await tx.select().from(giftsTable).where(eq(giftsTable.id, giftId)).limit(1).for("update");
       if (!locked) throw new Error("This gift can no longer be refunded.");
       const [lockedAttempt] = await tx.select().from(refundAttemptsTable).where(eq(refundAttemptsTable.id, attempt.id)).limit(1).for("update");
       if (!lockedAttempt) throw new Error("Refund reservation was not found.");
       if (lockedAttempt.completedAt || lockedAttempt.status === "completed") {
         if (locked.stripeRefundId !== lockedAttempt.stripeRefundId) throw new Error("Completed refund state is inconsistent.");
-        return { giftId: locked.id, status: "refunded" as const, stripeRefundId: lockedAttempt.stripeRefundId!, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const };
+        return { giftId: locked.id, status: "refunded" as const, stripeRefundId: lockedAttempt.stripeRefundId!, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const, completedNow: false };
       }
       if (locked.status === "refunded" || locked.refundedAt || locked.stripeRefundId) {
         if (locked.status !== "refunded" || locked.stripeRefundId !== stripeRefund.id) throw new Error("This gift cannot be reconciled to this refund.");
         const [completed] = await tx.update(refundAttemptsTable).set({ status: "completed", completedAt: new Date(), stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, lastError: null }).where(mutableRefundAttempt(attempt.id)).returning();
-        if (completed) await appendAuditEvent({ actorAccountId: req.account!.id, action: "refund", targetType: "gift", targetId: giftId, reason: lockedAttempt.reason, details: { requestId: lockedAttempt.id } }, tx);
-        return { giftId: locked.id, status: "refunded" as const, stripeRefundId: stripeRefund.id, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const };
+        if (!completed) throw new Error("Refund completion raced with another reconciliation.");
+        return { giftId: locked.id, status: "refunded" as const, stripeRefundId: stripeRefund.id, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const, completedNow: true };
       }
       if (locked.status !== "purchased" || locked.redeemedAt || locked.redeemedVaultId || locked.redeemedBillingRecordId) {
         throw new Error("Gift redemption conflicted with the reserved succeeded refund.");
@@ -486,12 +518,11 @@ adminBillingRouter.post("/admin/gifts/:giftId/refund", ...sensitiveAdminGuards, 
       await tx.update(giftsTable).set({ status: "refunded", refundedAt: new Date(), stripeRefundId: stripeRefund.id }).where(eq(giftsTable.id, locked.id));
       const [completed] = await tx.update(refundAttemptsTable).set({ status: "completed", completedAt: new Date(), stripeRefundId: stripeRefund.id, stripeStatus: stripeRefund.status, lastError: null }).where(mutableRefundAttempt(lockedAttempt.id)).returning();
       if (!completed) throw new Error("Refund completion raced with another reconciliation.");
-      await appendAuditEvent({ actorAccountId: req.account!.id, action: "refund", targetType: "gift", targetId: giftId, reason: lockedAttempt.reason, details: { requestId: lockedAttempt.id } }, tx);
-      return { giftId: locked.id, status: "refunded" as const, stripeRefundId: stripeRefund.id, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const };
+      return { giftId: locked.id, status: "refunded" as const, stripeRefundId: stripeRefund.id, requestId: lockedAttempt.id, refundAttemptStatus: "completed" as const, completedNow: true };
     });
     return res.json(RefundGiftResponse.parse(result));
   } catch (error) {
-    if (error instanceof Error && error.message.includes("outcome is unknown")) return res.status(503).json({ error: error.message, code: "REFUND_RECONCILIATION_REQUIRED", retryable: true });
+    if (error instanceof Error && (error.message.includes("outcome is unknown") || error.message.includes("local completion is pending"))) return res.status(503).json({ error: error.message, code: "REFUND_RECONCILIATION_REQUIRED", retryable: true });
     if (error instanceof Error && error.message.includes("refund is pending")) return res.status(503).json({ error: error.message, code: "REFUND_PENDING", retryable: true });
     return next(error);
   }

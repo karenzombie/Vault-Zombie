@@ -14,6 +14,8 @@ export interface SensitiveActionContext<T = unknown> {
   targetId: string | ((result: T) => string);
   reason: string;
   details?: Record<string, string | number | boolean | null>;
+  /** Allows idempotent callers to reuse an already-audited action. */
+  shouldAudit?: (result: T) => boolean;
 }
 
 /**
@@ -33,14 +35,16 @@ export async function runSensitiveAdminAction<T>(
 
   return db.transaction(async (transaction) => {
     const result = await action(transaction);
-    await appendAuditEvent({
-      actorAccountId: context.actor.id,
-      action: context.action,
-      targetType: context.targetType,
-      targetId: typeof context.targetId === "function" ? context.targetId(result) : context.targetId,
-      reason,
-      details: context.details ?? {},
-    }, transaction);
+    if (context.shouldAudit?.(result) !== false) {
+      await appendAuditEvent({
+        actorAccountId: context.actor.id,
+        action: context.action,
+        targetType: context.targetType,
+        targetId: typeof context.targetId === "function" ? context.targetId(result) : context.targetId,
+        reason,
+        details: context.details ?? {},
+      }, transaction);
+    }
     return result;
   });
 }

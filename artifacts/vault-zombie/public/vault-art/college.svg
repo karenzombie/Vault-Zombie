@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Creator: CorelDRAW X5 -->
+<svg
+    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:ns1="http://sozi.baierouge.fr"
+    xmlns:cc="http://web.resource.org/cc/"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+    style="fill-rule:evenodd;text-rendering:geometricPrecision;image-rendering:optimizeQuality;clip-rule:evenodd;shape-rendering:geometricPrecision"
+    xml:space="preserve"
+    viewBox="0 0 7658 4877"
+  >
+ <defs
+    >
+  <style
+        type="text/css"
+      >
+    .str1 {stroke:#434242;stroke-width:7.62}
+    .str0 {stroke:#434242;stroke-width:70.55}
+    .fil2 {fill:none}
+    .fil3 {fill:#434242}
+    .fil1 {fill:url(#id0)}
+    .fil0 {fill:url(#id1)}
+  </style
+    >
+  <linearGradient
+        id="id0"
+        y2="2833.1"
+        gradientUnits="userSpaceOnUse"
+        x2="4159.6"
+        y1="1625.8"
+        x1="3754.1"
+      >
+   <stop
+          style="stop-color:#434242"
+          offset="0"
+      />
+   <stop
+          style="stop-color:#898989"
+          offset="1"
+      />
+  </linearGradient
+    >
+  <linearGradient
+        id="id1"
+        y2="2095.6"
+        gradientUnits="userSpaceOnUse"
+        x2="4071.9"
+        y1="952.44"
+        x1="3391.4"
+      >
+   <stop
+          style="stop-color:#434242"
+          offset="0"
+      />
+   <stop
+          style="stop-color:#2B2A29"
+          offset="1"
+      />
+  </linearGradient
+    >
+ </defs
+  >
+ <g
+      id="Layer_x0020_1"
+    >
+  <polygon
+        points="6001 1658 7658 0 3154 573 0 3488 2265 3130"
+        class="fil0"
+    />
+  <path
+        class="fil1"
+        d="m2234 3125c-122 186-226 383-313 588 5-2 10-5 13-11 559-1036 2342-568 2343-575 189-1341 2201-1471 2955-1119-165-102-339-190-518-264-532-293-540-385-494-494s-2810-53-3937 1171c157 243 120 419-50 705z"
+    />
+  <line
+        y1="3251"
+        x2="1048"
+        x1="1047"
+        y2="3563"
+        class="fil2 str0"
+    />
+  <circle
+        r="161"
+        class="fil3 str1"
+        transform="matrix(-1 .0027191 .0027191 1 1048.6 3690)"
+    />
+  <path
+        class="fil3"
+        d="m1210 3690s-90 897 16 1058c32 49 7 82-49 103-6 2-37-112-44-110s11 120 4 121c-122 28-322 16-433-15-6-2 112-312 107-314-9-3-140 303-147 299-150-66 410-455 225-1114 159-204 320-28 320-28z"
+    />
+ </g
+  >
+<metadata
+    ><rdf:RDF
+      ><cc:Work
+        ><dc:format
+          >image/svg+xml</dc:format
+        ><dc:type
+            rdf:resource="http://purl.org/dc/dcmitype/StillImage"
+        /><cc:license
+            rdf:resource="http://creativecommons.org/licenses/publicdomain/"
+        /><dc:publisher
+          ><cc:Agent
+              rdf:about="http://openclipart.org/"
+            ><dc:title
+              >Openclipart</dc:title
+            ></cc:Agent
+          ></dc:publisher
+        ></cc:Work
+      ><cc:License
+          rdf:about="http://creativecommons.org/licenses/publicdomain/"
+        ><cc:permits
+            rdf:resource="http://creativecommons.org/ns#Reproduction"
+        /><cc:permits
+            rdf:resource="http://creativecommons.org/ns#Distribution"
+        /><cc:permits
+            rdf:resource="http://creativecommons.org/ns#DerivativeWorks"
+        /></cc:License
+      ></rdf:RDF
+    ></metadata
+  ></svg
+>
