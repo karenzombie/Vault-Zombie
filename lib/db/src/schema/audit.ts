@@ -40,8 +40,8 @@ export const auditEventsTable = pgTable(
     index("audit_events_actor_idx").on(table.actorAccountId),
     index("audit_events_target_idx").on(table.targetType, table.targetId),
     index("audit_events_occurred_idx").on(table.occurredAt),
-    uniqueIndex("audit_events_one_completed_refund_target_unique")
-      .on(table.targetType, table.targetId)
+    uniqueIndex("audit_events_refund_phase_target_unique")
+      .on(table.targetType, table.targetId, sql`(details->>'phase')`)
       .where(sql`${table.action} = 'refund'`),
     uniqueIndex("audit_events_one_backup_push_target_unique")
       .on(table.targetType, table.targetId)

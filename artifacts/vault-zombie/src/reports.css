@@ -1,9 +1,6 @@
 /* Report Components CSS */
 /* Extracted from vaultzombie-report-rich.html reference */
 
-:focus-visible { outline: 2px solid var(--vault-accent); outline-offset: 2px; border-radius: 6px; }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
-
 .ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round; }
 .med { width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .med.bronze { background: var(--bronze-wash); color: var(--vault-accent); }
@@ -142,6 +139,9 @@
 @media print {
   .print-mode { background: #fff; padding: 0; min-height: 0; }
   .print-mode .report-panel { break-inside: avoid; border-color: #ccc; }
+  .print-mode > header,
+  .print-mode footer,
+  .print-mode .print-hidden { display: none !important; }
   .print-mode .report-mast { background: #fff !important; color: #000 !important; border: 1px solid #000; }
   .print-mode .report-mast .wm, 
   .print-mode .report-mast .wm .z, 

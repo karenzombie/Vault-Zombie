@@ -83,10 +83,10 @@ export const refundAttemptsTable = pgTable("refund_attempts", {
   uniqueIndex("refund_attempts_idempotency_unique").on(table.idempotencyKey),
   uniqueIndex("refund_attempts_billing_unresolved_unique")
     .on(table.billingRecordId)
-    .where(sql`${table.status} in ('reserved', 'stripe_pending', 'unknown') and ${table.billingRecordId} is not null`),
+    .where(sql`${table.status} in ('reserved', 'stripe_pending', 'unknown', 'stripe_succeeded') and ${table.billingRecordId} is not null`),
   uniqueIndex("refund_attempts_gift_unresolved_unique")
     .on(table.giftId)
-    .where(sql`${table.status} in ('reserved', 'stripe_pending', 'unknown') and ${table.giftId} is not null`),
+    .where(sql`${table.status} in ('reserved', 'stripe_pending', 'unknown', 'stripe_succeeded') and ${table.giftId} is not null`),
   index("refund_attempts_status_idx").on(table.status),
 ]);
 

@@ -21,3 +21,11 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+VAULT_ZOMBIE_PRIVACY_DOCUMENT = "VaultZombie-Privacy-Policy.pdf"
+VAULT_ZOMBIE_PRIVACY_VERSION = "September 8, 2026"
+VAULT_ZOMBIE_TERMS_DOCUMENT = "VaultZombie-Terms-and-Conditions.pdf"
+VAULT_ZOMBIE_TERMS_VERSION = "September 8, 2026"

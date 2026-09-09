@@ -7,7 +7,7 @@ import { pool } from "@workspace/db";
 
 const CODE_REPOSITORY = "karenzombie/vault_zombie_codebase";
 const REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
-const CORE_TABLES = ["accounts", "audit_events", "vaults", "vault_questions", "reveal_slots", "guests", "submissions", "answers", "question_outcomes", "answer_verdicts", "billing_records", "stripe_webhook_events", "refund_attempts", "gifts", "overage_events", "vault_types", "subcategories", "questions", "question_options", "email_deliveries", "backup_runs"];
+const CORE_TABLES = ["accounts", "audit_events", "legal_consents", "legal_signup_intents", "vaults", "vault_questions", "reveal_slots", "guests", "submissions", "answers", "question_outcomes", "answer_verdicts", "billing_records", "stripe_webhook_events", "refund_attempts", "gifts", "overage_events", "vault_types", "subcategories", "questions", "question_options", "email_deliveries", "backup_runs"];
 const MARKER_PATH = ".vault-zombie-backup-repository.json";
 const MARKER = '{"format":"vault-zombie-backup-repository","version":1,"application":"VaultZombie"}\n';
 export type BackupConfig = { repository: string; token: string };

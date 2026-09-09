@@ -174,8 +174,18 @@
   * {
     @apply border-border;
   }
+  html {
+    overflow-x: clip;
+    scroll-behavior: smooth;
+  }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    overflow-wrap: anywhere;
+  }
+  :focus-visible {
+    outline: 3px solid hsl(var(--ink));
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px hsl(var(--brass-lt));
   }
 }
 
@@ -215,22 +225,56 @@
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .shake {
+    animation: none !important;
+  }
+}
+
 @media print {
-  body * {
+  @page {
+    margin: 12mm;
+  }
+
+  body:has(#printable-gift-card) #root > * {
     visibility: hidden;
   }
-  #printable-gift-card, #printable-gift-card * {
+  body:has(#printable-gift-card) #printable-gift-card,
+  body:has(#printable-gift-card) #printable-gift-card * {
     visibility: visible;
   }
-  #printable-gift-card {
+  body:has(#printable-gift-card) #printable-gift-card {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+    max-width: none;
     margin: 0;
     padding: 0;
     box-shadow: none;
     border: none;
+    break-inside: avoid;
+  }
+  .print-mode {
+    min-height: 0 !important;
+  }
+  .print-mode .report-panel,
+  .print-mode .cert,
+  .print-mode .q {
+    break-inside: avoid;
   }
   .print-hidden {
     display: none !important;

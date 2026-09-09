@@ -12,6 +12,7 @@ import {
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware";
 import { stripeWebhookBoundary } from "./routes/stripe-webhook";
+import { currentLegalConfiguration, LegalConfigurationError } from "./lib/legal";
 
 const app: Express = express();
 
@@ -58,9 +59,24 @@ app.use(
   })),
 );
 
+function serveLegalDocument(kind: "terms" | "privacy") {
+  return (_req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const config = currentLegalConfiguration();
+      res.type("application/pdf");
+      res.setHeader("Content-Disposition", "inline");
+      return res.sendFile(kind === "terms" ? config.termsPath : config.privacyPath);
+    } catch (error) { return next(error); }
+  };
+}
+app.get("/terms", serveLegalDocument("terms"));
+app.get("/privacy", serveLegalDocument("privacy"));
 app.use("/api", router);
 
 const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
+  if (error instanceof LegalConfigurationError) {
+    return res.status(503).json({ error: error.message, code: "LEGAL_CONFIGURATION_MISSING" });
+  }
   if (error instanceof BackupConfigurationError) {
     return res.status(503).json({ error: error.message, code: "BACKUP_CONFIGURATION_MISSING", missingVariables: error.missingVariables });
   }

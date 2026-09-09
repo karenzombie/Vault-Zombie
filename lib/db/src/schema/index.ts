@@ -24,5 +24,7 @@ export * from "./billing";
 export * from "./content";
 export * from "./email";
 export * from "./enums";
+export * from "./legal-consents";
+export * from "./legal-signup-intents";
 export * from "./predictions";
 export * from "./vaults";

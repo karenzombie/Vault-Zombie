@@ -1,4 +1,4 @@
-export const UNRESOLVED_REFUND_STATUSES = ["reserved", "stripe_pending", "unknown"] as const;
+export const UNRESOLVED_REFUND_STATUSES = ["reserved", "stripe_pending", "unknown", "stripe_succeeded"] as const;
 export const TERMINAL_REFUND_STATUSES = ["failed", "canceled", "completed"] as const;
 
 export type RefundAttemptStatus =
@@ -10,9 +10,7 @@ export function isUnresolvedRefundStatus(status: string | null | undefined): sta
 }
 
 export function canTransitionRefundAttempt(from: string, to: RefundAttemptStatus): boolean {
-  if (!isUnresolvedRefundStatus(from)) return false;
-  if (to === "completed" || to === "failed" || to === "canceled") return true;
-  if (to === "reserved") return true;
-  if (to === "stripe_pending") return from === "reserved" || from === "unknown" || from === "stripe_pending";
-  return to === "unknown";
+  if (from === "reserved") return ["unknown", "stripe_pending", "stripe_succeeded", "failed", "canceled"].includes(to);
+  if (from === "unknown" || from === "stripe_pending") return ["stripe_pending", "stripe_succeeded", "failed", "canceled"].includes(to);
+  return from === "stripe_succeeded" && to === "completed";
 }

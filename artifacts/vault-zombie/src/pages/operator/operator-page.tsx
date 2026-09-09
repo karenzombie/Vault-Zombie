@@ -67,16 +67,16 @@ function OperatorReveal({ vaultId }: { vaultId: string }) {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      <header className="flex items-center justify-between px-5 py-4 bg-ink text-parchment sticky top-0 z-20">
+      <header className="flex items-center justify-between gap-3 px-3 py-4 sm:px-5 bg-ink text-parchment sticky top-0 z-20">
         <Link href="/">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-7 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
         </Link>
-        <div className="text-[11px] font-bold tracking-widest text-brass uppercase bg-white/10 px-3 py-1.5 rounded-full">
+        <div className="shrink-0 text-[10px] sm:text-[11px] font-bold tracking-wider sm:tracking-widest text-brass uppercase bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
           Live Operator
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-lg mx-auto p-4 flex flex-col pt-6">
+      <main className="flex-1 w-full max-w-lg mx-auto p-3 sm:p-4 flex flex-col pt-6">
         <OperatorOverageWarning vaultId={vaultId} />
 
         <Tabs defaultValue="reveal" className="w-full">
