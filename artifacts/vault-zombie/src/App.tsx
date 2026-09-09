@@ -128,7 +128,7 @@ function Router() {
 }
 
 function LegalFooter() {
-  return <footer className="border-t border-hairline bg-background px-4 py-3 text-center text-sm text-text-2 print:hidden"><a data-testid="link-terms-footer" className="underline underline-offset-2" href="/terms">Terms and Conditions</a><span aria-hidden="true"> · </span><a data-testid="link-privacy-footer" className="underline underline-offset-2" href="/privacy">Privacy Policy</a></footer>;
+  return <footer className="border-0 bg-[#F6F4F0] px-4 py-3 text-center text-sm text-ink print:hidden"><a data-testid="link-terms-footer" className="underline underline-offset-2 transition-colors hover:text-bronze" href="/terms">Terms and Conditions</a><span aria-hidden="true"> · </span><a data-testid="link-privacy-footer" className="underline underline-offset-2 transition-colors hover:text-bronze" href="/privacy">Privacy Policy</a></footer>;
 }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {

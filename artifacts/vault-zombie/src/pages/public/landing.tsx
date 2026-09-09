@@ -320,21 +320,19 @@ function Pricing() {
 
 function Footer() {
   return (
-    <footer className="bg-ink text-parchment py-16 px-6">
+    <footer className="border-t border-[#E4DED4] bg-[#F6F4F0] px-6 py-16 text-ink">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-        <Link href="/" className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
-          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-7 w-auto" />
-          <span className="font-display text-xl tracking-tight pt-1 text-[hsl(var(--brass-lt))]">
-            VaultZombie
-          </span>
+        <Link href="/" aria-label="Vault Zombie home" className="flex items-center gap-2">
+          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-12 w-auto shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-8 w-auto shrink-0" />
         </Link>
-        <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-brass-lt/80">
-          <Link href="/gifts/purchase" className="hover:text-parchment transition-colors">Gift a Vault</Link>
-          <Link href="/sign-in" className="hover:text-parchment transition-colors">Sign in</Link>
-          <Link href="/sign-up" className="hover:text-parchment transition-colors">Get started</Link>
+        <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-ink">
+          <Link href="/gifts/purchase" className="transition-colors hover:text-bronze">Gift a Vault</Link>
+          <Link href="/sign-in" className="transition-colors hover:text-bronze">Sign in</Link>
+          <Link href="/sign-up" className="transition-colors hover:text-bronze">Get started</Link>
         </div>
       </div>
-      <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-parchment/10 text-center text-xs text-gray">
+      <div className="mx-auto mt-12 max-w-6xl pt-8 text-center text-xs text-text-2">
         Sealed predictions, unlocked over time. A Zombie Platforms product.
       </div>
     </footer>
