@@ -59,7 +59,7 @@ export default function GiftPurchasePage() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      <header className="flex items-center justify-between px-5 py-4 bg-ink text-parchment border-b border-border sticky top-0 z-20">
+      <header className="flex items-center justify-between px-5 py-4 bg-ink text-primary-foreground border-b border-border sticky top-0 z-20">
         <Link href="/" className="flex items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-14 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
           <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-14 w-auto object-contain" />

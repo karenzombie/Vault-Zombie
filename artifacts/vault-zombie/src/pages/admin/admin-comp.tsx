@@ -107,7 +107,7 @@ export function AdminCompTab() {
           <Button 
             type="submit" 
             disabled={grantComp.isPending || vaultId.trim().length < 5 || reason.trim().length < 5} 
-            className="w-full bg-ink text-parchment hover:bg-ink-2 mt-2"
+            className="w-full bg-ink text-primary-foreground hover:bg-ink-2 mt-2"
           >
             {grantComp.isPending ? "Processing..." : "Grant Upgrade"}
           </Button>

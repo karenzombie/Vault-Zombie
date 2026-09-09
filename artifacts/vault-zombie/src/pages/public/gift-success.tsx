@@ -79,7 +79,7 @@ export default function GiftSuccessPage() {
         <p className="text-lg text-text-2">Your payment is complete. You can print this card or copy the details to send to the recipient.</p>
         
         <div className="flex flex-wrap justify-center gap-4">
-          <Button onClick={() => window.print()} className="bg-ink text-parchment hover:bg-ink-2 gap-2">
+          <Button onClick={() => window.print()} className="bg-ink text-primary-foreground hover:bg-ink-2 gap-2">
             <Printer className="w-4 h-4" /> Print Card
           </Button>
           <Button onClick={copyCode} variant="outline" className="gap-2 border-border">

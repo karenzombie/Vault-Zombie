@@ -12,7 +12,7 @@ export default function GiftCancelPage() {
             <Button variant="outline" size="lg">Return Home</Button>
           </Link>
           <Link href="/gifts/purchase">
-            <Button size="lg" className="bg-ink text-parchment hover:bg-ink-2">Try Again</Button>
+            <Button size="lg" className="bg-ink text-primary-foreground hover:bg-ink-2">Try Again</Button>
           </Link>
         </div>
       </div>

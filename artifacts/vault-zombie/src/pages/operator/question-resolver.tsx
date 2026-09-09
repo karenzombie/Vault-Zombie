@@ -113,7 +113,7 @@ export function QuestionResolver({ question, vaultId }: { question: RevealQuesti
                <Label className="text-ink font-bold text-sm">Host Note (Optional)</Label>
                <Textarea {...form.register("operatorNote")} placeholder="Add context for the room..." className="resize-none h-20 bg-muted/20" />
              </div>
-             <Button type="submit" disabled={resolveOutcome.isPending} className="w-full bg-ink text-brass-lt hover:bg-ink-2 py-6 text-base font-bold shadow-sm active:scale-[0.98] transition-transform">
+             <Button type="submit" disabled={resolveOutcome.isPending} className="w-full bg-ink text-primary-foreground hover:bg-ink-2 py-6 text-base font-bold shadow-sm active:scale-[0.98] transition-transform">
                 {resolveOutcome.isPending ? "Saving..." : "Save Note & Finish"}
              </Button>
           </form>
@@ -166,7 +166,7 @@ export function QuestionResolver({ question, vaultId }: { question: RevealQuesti
             <Textarea {...form.register("operatorNote")} placeholder="Add context for the room..." className="resize-none h-20 bg-muted/20" />
           </div>
 
-          <Button type="submit" disabled={resolveOutcome.isPending} className="w-full bg-ink text-brass-lt hover:bg-ink-2 py-6 text-base font-bold shadow-sm active:scale-[0.98] transition-transform">
+          <Button type="submit" disabled={resolveOutcome.isPending} className="w-full bg-ink text-primary-foreground hover:bg-ink-2 py-6 text-base font-bold shadow-sm active:scale-[0.98] transition-transform">
              {resolveOutcome.isPending ? "Saving..." : (isResolved ? "Update Outcome" : "Resolve Outcome")}
           </Button>
         </form>
@@ -238,7 +238,7 @@ function ClusterVerdictRow({ cluster, vaultId, revealSlotId, vaultQuestionId }: 
         <button 
           type="button"
           onClick={() => handleTier("zero")}
-          className={`flex-1 px-3 py-2 text-[13px] font-bold rounded-md transition-all ${currentTier === 'zero' ? 'bg-ink text-parchment shadow-sm' : 'text-text-2 hover:bg-muted'}`}
+          className={`flex-1 px-3 py-2 text-[13px] font-bold rounded-md transition-all ${currentTier === 'zero' ? 'bg-ink text-primary-foreground shadow-sm' : 'text-text-2 hover:bg-muted'}`}
         >
           Zero
         </button>

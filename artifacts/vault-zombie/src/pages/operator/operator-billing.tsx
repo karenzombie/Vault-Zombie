@@ -192,7 +192,7 @@ function UpgradeCard({ tier, name, amountCents, currency, onSelect, isPending, s
         size="sm" 
         onClick={() => { setSelect(tier); onSelect(tier); }} 
         disabled={isPending}
-        className="bg-ink text-parchment hover:bg-ink-2"
+        className="bg-ink text-primary-foreground hover:bg-ink-2"
       >
         {isPending ? "..." : "Upgrade"}
       </Button>

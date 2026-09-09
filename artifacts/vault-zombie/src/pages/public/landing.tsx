@@ -166,14 +166,14 @@ function VaultTypes() {
 
 function Trust() {
   return (
-    <section className="py-24 bg-ink text-parchment px-6 relative overflow-hidden">
+    <section className="py-24 bg-ink text-primary-foreground px-6 relative overflow-hidden">
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
       <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-12 text-center relative z-10">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 rounded-2xl bg-ink-2 border border-text-2 flex items-center justify-center text-brass mb-6">
             <Users className="w-8 h-8" />
           </div>
-          <h4 className="text-xl font-bold text-brass-lt mb-3">Account-free for guests</h4>
+          <h4 className="text-xl font-bold text-primary-foreground mb-3">Account-free for guests</h4>
           <p className="text-gray leading-relaxed max-w-xs">
             Guests scan a QR code and answer in seconds. No apps to install, no passwords to remember.
           </p>
@@ -182,7 +182,7 @@ function Trust() {
           <div className="w-16 h-16 rounded-2xl bg-ink-2 border border-text-2 flex items-center justify-center text-brass mb-6">
             <Shield className="w-8 h-8" />
           </div>
-          <h4 className="text-xl font-bold text-brass-lt mb-3">Sealed securely</h4>
+          <h4 className="text-xl font-bold text-primary-foreground mb-3">Sealed securely</h4>
           <p className="text-gray leading-relaxed max-w-xs">
             Every prediction stays completely locked. Nobody—not even the host—can peek before the reveal date.
           </p>
@@ -191,7 +191,7 @@ function Trust() {
           <div className="w-16 h-16 rounded-2xl bg-ink-2 border border-text-2 flex items-center justify-center text-brass mb-6">
             <Gift className="w-8 h-8" />
           </div>
-          <h4 className="text-xl font-bold text-brass-lt mb-3">Yours to keep</h4>
+          <h4 className="text-xl font-bold text-primary-foreground mb-3">Yours to keep</h4>
           <p className="text-gray leading-relaxed max-w-xs">
             No subscriptions. One payment unlocks your vault for years, and every plan can be given as a gift.
           </p>

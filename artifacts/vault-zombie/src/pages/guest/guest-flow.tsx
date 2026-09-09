@@ -58,7 +58,7 @@ export default function GuestFlow() {
       <div className="w-full sm:w-[400px] min-h-[100dvh] sm:min-h-[700px] bg-background sm:rounded-[32px] sm:shadow-[0_40px_80px_-30px_rgba(28,27,25,0.6)] sm:border sm:border-[#2a2825] flex flex-col relative overflow-hidden">
         
         {/* Top Bar */}
-        <button type="button" onClick={leaveForHome} className="bg-ink text-parchment p-4 flex items-center gap-3 shrink-0 text-left">
+        <button type="button" onClick={leaveForHome} className="bg-ink text-primary-foreground p-4 flex items-center gap-3 shrink-0 text-left">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-16 w-auto shrink-0" />
           <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-16 w-auto shrink-0" />
           <div className="ml-auto max-w-24 text-right text-[13px] font-bold leading-tight">{vault.name}</div>

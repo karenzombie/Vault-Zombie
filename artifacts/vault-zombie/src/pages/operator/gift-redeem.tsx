@@ -97,7 +97,7 @@ export default function GiftRedeemPage() {
           <Button 
             type="submit" 
             disabled={redeemGift.isPending || !code.trim() || !vaultId.trim()} 
-            className="w-full py-6 text-lg font-bold bg-ink text-parchment hover:bg-ink-2 mt-4"
+            className="w-full py-6 text-lg font-bold bg-ink text-primary-foreground hover:bg-ink-2 mt-4"
           >
             {redeemGift.isPending ? "Redeeming..." : "Apply Gift to Vault"}
           </Button>

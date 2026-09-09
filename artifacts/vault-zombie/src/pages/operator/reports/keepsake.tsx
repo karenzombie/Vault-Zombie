@@ -27,7 +27,7 @@ export default function KeepsakeReportPage() {
       printMode={true}
     >
       <div className="print:hidden mb-6 flex justify-end">
-        <Button onClick={() => window.print()} className="bg-ink text-brass-lt hover:bg-ink-2 gap-2">
+        <Button onClick={() => window.print()} className="bg-ink text-primary-foreground hover:bg-ink-2 gap-2">
           <Printer className="w-4 h-4" /> Print Keepsake
         </Button>
       </div>
