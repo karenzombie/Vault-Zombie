@@ -40,7 +40,7 @@ export function ReportLayout({
                <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-14 w-auto object-contain" />
             </Link>
             <div className="w-px h-5 bg-white/20"></div>
-            <Link href={finalBackUrl} className="flex min-w-0 items-center gap-2 text-sm font-bold text-primary-foreground hover:text-white transition-colors">
+             <Link href={finalBackUrl} className="flex min-w-0 items-center gap-2 text-sm font-bold text-brass-lt hover:text-white transition-colors">
               <ArrowLeft className="w-4 h-4 shrink-0" /> <span className="truncate">{backLabel}</span>
             </Link>
           </div>
@@ -64,7 +64,7 @@ export function ReportLayout({
               {title}
             </h1>
             
-            <div className="mt-3 text-[15px] text-primary-foreground/90 sub">
+            <div className="mt-3 text-[15px] text-brass-lt/90 sub">
               {subtitle}
             </div>
           </header>

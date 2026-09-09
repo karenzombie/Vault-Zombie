@@ -173,7 +173,7 @@ function Trust() {
           <div className="w-16 h-16 rounded-2xl bg-ink-2 border border-text-2 flex items-center justify-center text-brass mb-6">
             <Users className="w-8 h-8" />
           </div>
-          <h4 className="text-xl font-bold text-primary-foreground mb-3">Account-free for guests</h4>
+          <h4 className="text-xl font-bold text-brass-lt mb-3">Account-free for guests</h4>
           <p className="text-gray leading-relaxed max-w-xs">
             Guests scan a QR code and answer in seconds. No apps to install, no passwords to remember.
           </p>
@@ -182,7 +182,7 @@ function Trust() {
           <div className="w-16 h-16 rounded-2xl bg-ink-2 border border-text-2 flex items-center justify-center text-brass mb-6">
             <Shield className="w-8 h-8" />
           </div>
-          <h4 className="text-xl font-bold text-primary-foreground mb-3">Sealed securely</h4>
+          <h4 className="text-xl font-bold text-brass-lt mb-3">Sealed securely</h4>
           <p className="text-gray leading-relaxed max-w-xs">
             Every prediction stays completely locked. Nobody—not even the host—can peek before the reveal date.
           </p>
@@ -191,7 +191,7 @@ function Trust() {
           <div className="w-16 h-16 rounded-2xl bg-ink-2 border border-text-2 flex items-center justify-center text-brass mb-6">
             <Gift className="w-8 h-8" />
           </div>
-          <h4 className="text-xl font-bold text-primary-foreground mb-3">Yours to keep</h4>
+          <h4 className="text-xl font-bold text-brass-lt mb-3">Yours to keep</h4>
           <p className="text-gray leading-relaxed max-w-xs">
             No subscriptions. One payment unlocks your vault for years, and every plan can be given as a gift.
           </p>
