@@ -29,8 +29,9 @@ export default function AdminPage() {
     <div className="flex flex-col md:flex-row min-h-[100dvh] w-full text-foreground bg-background">
       <aside className="w-full md:w-[236px] bg-ink text-background flex flex-col md:p-4 shrink-0 md:fixed md:h-[100dvh] z-20">
         <div className="flex items-center gap-2 px-4 md:px-2 py-3 md:py-4 shrink-0 border-b border-white/10 md:border-0">
-          <Link href="/">
-            <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-6 md:h-8 w-auto cursor-pointer" />
+          <Link href="/" className="flex items-center gap-2">
+            <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-12 md:h-16 w-auto cursor-pointer" />
+            <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-8 md:h-10 w-auto" />
           </Link>
         </div>
         <div className="hidden md:block text-[11px] tracking-[0.1em] uppercase text-gray px-3 py-2 mt-4">System Admin</div>
@@ -38,7 +39,7 @@ export default function AdminPage() {
         <nav className="flex flex-row md:flex-col gap-1 px-2 md:px-0 pb-2 md:pb-0 md:mt-2 overflow-x-auto no-scrollbar items-center md:items-stretch">
           <NavButton id="dashboard" icon={<LayoutDashboard className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Dashboard" active={tab} setTab={(t) => setLocation(`/admin/${t}`)} />
           <NavButton id="vaults" icon={<Box className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Vaults" active={tab} setTab={(t) => setLocation(`/admin/${t}`)} />
-          <NavButton id="operators" icon={<Users className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Operators" active={tab} setTab={(t) => setLocation(`/admin/${t}`)} />
+          <NavButton id="operators" icon={<Users className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Hosts" active={tab} setTab={(t) => setLocation(`/admin/${t}`)} />
 
           <div className="hidden md:block text-[11px] tracking-[0.1em] uppercase text-gray px-3 py-2 mt-4">Finance</div>
           <NavButton id="revenue" icon={<TrendingUp className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Revenue" active={tab} setTab={(t) => setLocation(`/admin/${t}`)} />

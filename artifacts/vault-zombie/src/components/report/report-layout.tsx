@@ -12,7 +12,7 @@ export function ReportLayout({
   eyebrow = "Vault results",
   sealOpen = true,
   backUrl,
-  backLabel = "Back to Operator",
+  backLabel = "Back to Host",
   printMode = false
 }: { 
   children: ReactNode; 
@@ -35,8 +35,9 @@ export function ReportLayout({
         {/* Hide header in print mode entirely */}
         <header className="flex items-center justify-between gap-3 px-3 sm:px-5 py-4 bg-ink text-parchment sticky top-0 z-20 print:hidden">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-            <Link href="/" className="shrink-0">
-              <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-7 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+             <Link href="/" className="flex shrink-0 items-center gap-2">
+               <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-14 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+               <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-9 w-auto object-contain" />
             </Link>
             <div className="w-px h-5 bg-white/20"></div>
             <Link href={finalBackUrl} className="flex min-w-0 items-center gap-2 text-sm font-bold text-brass-lt hover:text-white transition-colors">

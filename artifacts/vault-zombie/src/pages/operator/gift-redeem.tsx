@@ -52,7 +52,7 @@ export default function GiftRedeemPage() {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col items-center justify-center p-4">
       <div className="absolute top-4 left-4">
         <Link href="/operator">
-          <Button variant="ghost" size="sm">← Back to Operator</Button>
+          <Button variant="ghost" size="sm">← Back to Host</Button>
         </Link>
       </div>
 

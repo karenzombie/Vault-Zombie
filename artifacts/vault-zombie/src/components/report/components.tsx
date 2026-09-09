@@ -47,7 +47,7 @@ export function OperatorNote({ note }: { note: string | null | undefined }) {
   if (!note) return null;
   return (
     <div className="opnote">
-      <span className="oplab">Operator note</span>
+      <span className="oplab">Host note</span>
       <span className="optxt">{note}</span>
     </div>
   );

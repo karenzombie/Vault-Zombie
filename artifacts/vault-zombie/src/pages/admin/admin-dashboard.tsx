@@ -11,7 +11,7 @@ export function AdminDashboardTab() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Operators" value={dashboard.operatorCount} icon={<Users className="w-5 h-5 text-gray" />} />
+        <StatCard title="Total Hosts" value={dashboard.operatorCount} icon={<Users className="w-5 h-5 text-gray" />} />
         <StatCard title="Total Vaults" value={dashboard.vaultCount} icon={<Box className="w-5 h-5 text-gray" />} />
         <StatCard title="Total Guests" value={dashboard.guestCount} icon={<HardDrive className="w-5 h-5 text-gray" />} />
         <StatCard title="Total Submissions" value={dashboard.submissionCount} icon={<Inbox className="w-5 h-5 text-gray" />} />

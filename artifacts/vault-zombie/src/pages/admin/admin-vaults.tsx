@@ -33,7 +33,7 @@ function VaultListView() {
         <div className="relative flex-1 max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray" />
           <Input 
-            placeholder="Search by ID, name, or operator..." 
+            placeholder="Search by ID, name, or host..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -47,7 +47,7 @@ function VaultListView() {
             <thead className="bg-muted text-text-2 font-bold tracking-wider uppercase text-[10px]">
               <tr>
                 <th className="px-6 py-4 border-b">Vault / ID</th>
-                <th className="px-6 py-4 border-b">Operator</th>
+                <th className="px-6 py-4 border-b">Host</th>
                 <th className="px-6 py-4 border-b">Tier / Type</th>
                 <th className="px-6 py-4 border-b">Status</th>
                 <th className="px-6 py-4 border-b text-right">Actions</th>
@@ -140,7 +140,7 @@ function VaultDetailView({ vaultId }: { vaultId: string }) {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-display text-xl text-ink">{v.name}</h3>
-                <div className="text-sm text-text-2 mt-1">Operator: {v.operatorName} • Type: {v.vaultTypeName}</div>
+                <div className="text-sm text-text-2 mt-1">Host: {v.operatorName} • Type: {v.vaultTypeName}</div>
               </div>
               <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                 v.status === 'live' ? 'bg-pop-tint text-pop-dk' : 

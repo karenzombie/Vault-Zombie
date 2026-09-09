@@ -39,7 +39,7 @@ function VaultIdPrompt() {
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-20 w-auto mx-auto mb-6" />
-          <h1 className="font-display text-4xl text-ink">Operator Login</h1>
+          <h1 className="font-display text-4xl text-ink">Host Login</h1>
           <p className="text-muted-foreground mt-3 text-lg leading-relaxed">Enter the Vault ID to access the live reveal surface.</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -68,11 +68,12 @@ function OperatorReveal({ vaultId }: { vaultId: string }) {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       <header className="flex items-center justify-between gap-3 px-3 py-4 sm:px-5 bg-ink text-parchment sticky top-0 z-20">
-        <Link href="/">
-          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-7 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+        <Link href="/" className="flex items-center gap-2">
+          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-14 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
+          <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-9 w-auto object-contain" />
         </Link>
         <div className="shrink-0 text-[10px] sm:text-[11px] font-bold tracking-wider sm:tracking-widest text-brass uppercase bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
-          Live Operator
+          Live Host
         </div>
       </header>
 

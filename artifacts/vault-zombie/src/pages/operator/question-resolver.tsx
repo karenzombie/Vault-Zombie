@@ -110,7 +110,7 @@ export function QuestionResolver({ question, vaultId }: { question: RevealQuesti
           
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4 border-t border-border">
              <div className="space-y-2">
-               <Label className="text-ink font-bold text-sm">Operator Note (Optional)</Label>
+               <Label className="text-ink font-bold text-sm">Host Note (Optional)</Label>
                <Textarea {...form.register("operatorNote")} placeholder="Add context for the room..." className="resize-none h-20 bg-muted/20" />
              </div>
              <Button type="submit" disabled={resolveOutcome.isPending} className="w-full bg-ink text-brass-lt hover:bg-ink-2 py-6 text-base font-bold shadow-sm active:scale-[0.98] transition-transform">
@@ -162,7 +162,7 @@ export function QuestionResolver({ question, vaultId }: { question: RevealQuesti
           )}
 
           <div className="space-y-2 pt-2">
-            <Label className="text-ink font-bold text-sm">Operator Note (Optional)</Label>
+            <Label className="text-ink font-bold text-sm">Host Note (Optional)</Label>
             <Textarea {...form.register("operatorNote")} placeholder="Add context for the room..." className="resize-none h-20 bg-muted/20" />
           </div>
 

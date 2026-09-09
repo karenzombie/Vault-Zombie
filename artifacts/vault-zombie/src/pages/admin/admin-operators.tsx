@@ -19,7 +19,7 @@ function OperatorListView() {
   const { data, isLoading } = useListAdminOperators();
   const [search, setSearch] = useState("");
 
-  if (isLoading) return <div className="p-12 text-center text-text-2">Loading operators...</div>;
+  if (isLoading) return <div className="p-12 text-center text-text-2">Loading hosts...</div>;
 
   const operators = data?.operators.filter(o => 
     o.id.includes(search) || o.email.toLowerCase().includes(search.toLowerCase()) || o.displayName.toLowerCase().includes(search.toLowerCase())
@@ -44,7 +44,7 @@ function OperatorListView() {
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-muted text-text-2 font-bold tracking-wider uppercase text-[10px]">
               <tr>
-                <th className="px-6 py-4 border-b">Operator / ID</th>
+                <th className="px-6 py-4 border-b">Host / ID</th>
                 <th className="px-6 py-4 border-b">Email</th>
                 <th className="px-6 py-4 border-b">Vaults</th>
                 <th className="px-6 py-4 border-b">Status</th>
@@ -75,7 +75,7 @@ function OperatorListView() {
                 </tr>
               ))}
               {operators.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-12 text-center text-text-2">No operators found.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-text-2">No hosts found.</td></tr>
               )}
             </tbody>
           </table>
@@ -89,8 +89,8 @@ function OperatorDetailView({ operatorId }: { operatorId: string }) {
   const { data, isLoading } = useGetAdminOperator(operatorId);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  if (isLoading) return <div className="p-12 text-center text-text-2">Loading operator detail...</div>;
-  if (!data) return <div className="p-12 text-center text-destructive">Operator not found.</div>;
+  if (isLoading) return <div className="p-12 text-center text-text-2">Loading host detail...</div>;
+  if (!data) return <div className="p-12 text-center text-destructive">Host not found.</div>;
 
   const { operator, vaults, billingRecords } = data;
 
@@ -100,7 +100,7 @@ function OperatorDetailView({ operatorId }: { operatorId: string }) {
         <Link href="/admin/operators">
           <Button variant="outline" size="sm" className="gap-2"><ArrowLeft className="w-4 h-4"/> Back</Button>
         </Link>
-        <h2 className="font-display text-2xl text-ink">Operator Detail: {operator.id}</h2>
+        <h2 className="font-display text-2xl text-ink">Host Detail: {operator.id}</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -231,8 +231,8 @@ function DeleteAccountDialog({ operatorId, open, onClose }: { operatorId: string
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-destructive flex items-center gap-2"><Trash2 className="w-5 h-5"/> Delete Operator Account</DialogTitle>
-          <DialogDescription>This action is irreversible and destroys all PII and vaults owned by this operator.</DialogDescription>
+          <DialogTitle className="text-destructive flex items-center gap-2"><Trash2 className="w-5 h-5"/> Delete Host Account</DialogTitle>
+          <DialogDescription>This action is irreversible and destroys all PII and vaults owned by this host.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleDelete} className="space-y-4">
            {preview && Object.keys(preview).length > 0 && (

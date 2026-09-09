@@ -10,7 +10,7 @@ export function LockedReport({ vaultId }: { vaultId: string }) {
         <h2 className="font-display text-2xl text-ink">Locked Report</h2>
         <p className="text-muted-foreground">This section requires a higher tier plan. Upgrade your vault to unlock deep-dive reports.</p>
         <div className="pt-4">
-          <Link href={`/operator?vaultId=${vaultId}`} className="text-vault-accent font-bold hover:underline">Return to Operator Dashboard</Link>
+          <Link href={`/operator?vaultId=${vaultId}`} className="text-vault-accent font-bold hover:underline">Return to Host Dashboard</Link>
         </div>
       </div>
     </div>

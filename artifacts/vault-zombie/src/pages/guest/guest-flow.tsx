@@ -59,10 +59,10 @@ export default function GuestFlow() {
         
         {/* Top Bar */}
         <button type="button" onClick={leaveForHome} className="bg-ink text-parchment p-4 flex items-center gap-3 shrink-0 text-left">
-          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-8 w-auto shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-16 w-auto shrink-0" />
           <div>
             <div className="font-bold text-[15px] leading-tight">{vault.name}</div>
-            <div className="text-[11px] text-brass tracking-wider uppercase">Vault Zombie</div>
+            <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="mt-1 h-8 w-auto" />
           </div>
         </button>
 

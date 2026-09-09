@@ -8,7 +8,7 @@ export function AdminOveragesTab() {
   return (
     <div className="space-y-6">
       <div className="bg-card border border-border rounded-xl p-5 mb-6 text-sm text-text-2">
-        <strong>History:</strong> This shows system overage events. Operators only see current unhandled state, not this history.
+        <strong>History:</strong> This shows system overage events. Hosts only see current unhandled state, not this history.
       </div>
       <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

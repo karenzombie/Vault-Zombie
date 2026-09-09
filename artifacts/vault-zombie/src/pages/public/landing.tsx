@@ -44,12 +44,10 @@ const VAULT_TYPES = [
 function Header() {
   return (
     <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-hairline">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
+      <div className="mx-auto flex h-24 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
         <Link href="/" aria-label="Vault Zombie home" className="flex min-w-0 items-center gap-2">
-          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-8 w-auto" />
-          <span className="font-display text-xl text-ink tracking-tight pt-1">
-            Vault<span className="text-bronze">Zombie</span>
-          </span>
+          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-16 w-auto shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}vaultzombie_text_png.png`} alt="VaultZombie" className="h-10 w-auto shrink-0" />
         </Link>
         <div className="flex shrink-0 items-center gap-3 md:gap-6">
           <Link href="/gifts/purchase" className="text-sm font-bold text-ink hover:text-bronze transition-colors hidden sm:block">
@@ -107,7 +105,7 @@ function HowItWorks() {
           <h2 className="text-sm font-bold tracking-widest uppercase text-bronze mb-3">You set the pace</h2>
           <h3 className="text-3xl md:text-4xl font-bold text-ink mb-4">Five reveal schedules</h3>
           <p className="text-lg text-text-2">
-            You decide how your vault opens. Operators choose among five reveal schedules. Unlocks happen automatically when the time comes.
+            You decide how your vault opens. Hosts choose among five reveal schedules. Unlocks happen automatically when the time comes.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
@@ -146,10 +144,10 @@ function VaultTypes() {
               {type.icon && (
                 <div className="h-28 bg-bronze-wash flex items-center justify-center">
                    <div
-                    className="w-16 h-16 bg-[hsl(var(--bronze))]"
+                    className={cn("bg-[hsl(var(--bronze))]", type.name === "Couple" ? "h-20 w-24" : "h-16 w-16")}
                     style={{
-                      WebkitMask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / contain`,
-                      mask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / contain`,
+                      WebkitMask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / ${type.name === "Couple" ? "90% 90%" : "contain"}`,
+                      mask: `url("${import.meta.env.BASE_URL}vault-art/${type.icon}") no-repeat center / ${type.name === "Couple" ? "90% 90%" : "contain"}`,
                     }}
                   />
                 </div>
@@ -186,7 +184,7 @@ function Trust() {
           </div>
           <h4 className="text-xl font-bold text-brass-lt mb-3">Sealed securely</h4>
           <p className="text-gray leading-relaxed max-w-xs">
-            Every prediction stays completely locked. Nobody—not even the operator—can peek before the reveal date.
+            Every prediction stays completely locked. Nobody—not even the host—can peek before the reveal date.
           </p>
         </div>
         <div className="flex flex-col items-center">
@@ -280,7 +278,7 @@ function Pricing() {
 
           {/* Vault (Featured) */}
           <div className="bg-background rounded-2xl border-2 border-vault-accent p-8 flex flex-col relative shadow-xl hover-elevate transition-transform transform md:-translate-y-2">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-ink text-brass-lt text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap shadow-md">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[var(--vault-accent)] text-ink text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap shadow-md">
               Most Popular
             </div>
             <h4 className="font-display text-2xl text-ink mb-2">Vault</h4>
@@ -326,8 +324,8 @@ function Footer() {
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
         <Link href="/" className="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-7 w-auto" />
-          <span className="font-display text-xl tracking-tight pt-1">
-            Vault<span className="text-brass">Zombie</span>
+          <span className="font-display text-xl tracking-tight pt-1 text-[hsl(var(--brass-lt))]">
+            VaultZombie
           </span>
         </Link>
         <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-brass-lt/80">
