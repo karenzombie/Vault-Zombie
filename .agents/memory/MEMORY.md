@@ -1,5 +1,5 @@
 - [Prelaunch validation status](prelaunch-validation-status.md) — flows are build-checked, not real-data verified; keep DB empty and importer strict until prelaunch validation.
 - [Gift resend boundary](gift-resend-boundary.md) — Step 8 retains card/contact data; actual resend delivery remains deferred to Step 9 email.
-- [Prelaunch email constraints](prelaunch-email-constraints.md) — never enable non-production sending or bypass authentication to inspect protected admin screens.
+- [Prelaunch email constraints](prelaunch-email-constraints.md) — development now sends real transactional email like production; do not bypass authentication to inspect protected admin screens.
 - [Versioned legal consent](versioned-legal-consent.md) — bind signup consent to server-signed one-time intents; never trust Clerk unsafe metadata as evidence.
 - [Refund audit phases](refund-audit-phases.md) — audit refund intent and completion separately around Stripe, retaining a monotonic succeeded recovery state.

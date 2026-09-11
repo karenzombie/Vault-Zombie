@@ -3,11 +3,7 @@ name: Prelaunch email and admin constraints
 description: Owner-confirmed boundaries for transactional email and protected admin verification before accounts exist.
 ---
 
-Real transactional email must remain disabled outside production. Do not add a test-send route, development allowlist, override, or other path that can send real mail from development.
-
-**Why:** The owner explicitly accepted development no-send behavior and deferred all real delivery verification.
-
-**How to apply:** Preserve the production-only delivery guard when changing the mailer or worker. Validate development behavior through durable queue state and logs only.
+Development sends real transactional email through Resend to the actual recipient, the same as production. The owner tests only with her own designated test addresses. Do not add a redirect, allowlist, or send guard unless the owner asks.
 
 Protected operator and admin screens must not be exposed through a development bypass, seeded account, self-granted role, or agent-created login.
 

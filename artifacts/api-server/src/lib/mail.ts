@@ -62,11 +62,6 @@ async function message(row: EmailDelivery) {
 }
 
 export async function processEmailOutbox() {
-  if (process.env.NODE_ENV !== "production") {
-    logger.info({ guard: "NODE_ENV !== production" }, "Email delivery guard active; queued messages were not sent");
-    if (!process.env.VAULT_ZOMBIE_APP_URL) logger.warn("VAULT_ZOMBIE_APP_URL is required before production email sending");
-    return { claimed: 0, sent: 0, guarded: true };
-  }
   const rows = await claimEmailDeliveries();
   let sent = 0;
   for (const row of rows) {
