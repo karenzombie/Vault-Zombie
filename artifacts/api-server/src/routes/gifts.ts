@@ -60,6 +60,7 @@ giftRouter.post("/gifts/checkout", async (req, res, next) => {
       cancel_url: `${appUrl.replace(/\/$/, "")}/gifts/checkout/cancelled`,
       metadata: { gift_id: gift.id },
       payment_intent_data: { metadata: { gift_id: gift.id } },
+      managed_payments: { enabled: false },
     }, { idempotencyKey: gift.id });
     if (!session.url) throw new Error("Stripe did not return a Checkout URL.");
     await db.update(giftsTable).set({ stripeCheckoutSessionId: session.id }).where(eq(giftsTable.id, gift.id));

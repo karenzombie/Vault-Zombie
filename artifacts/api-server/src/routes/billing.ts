@@ -189,6 +189,7 @@ billingRouter.post("/operator/vaults/:vaultId/checkout", requireOperator, async 
            payment_intent_data: {
              metadata: { billing_record_id: billingRecord.id, vault_id: vault.id },
            },
+          managed_payments: { enabled: false },
         }, { idempotencyKey: billingRecord.id });
     if (!session.url) throw new Error("Stripe did not return a Checkout URL.");
     await db.update(billingRecordsTable).set({
