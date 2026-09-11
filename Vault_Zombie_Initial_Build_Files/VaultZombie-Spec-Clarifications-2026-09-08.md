@@ -146,7 +146,7 @@ document changes or clarifies an earlier document, this document wins.
 - Report verification precisely: distinguish typechecks, builds, visual checks,
   real-data tests, and work that was not tested.
 - The agent does not back up code to GitHub. The owner pushes from the Replit
-  Git pane to `origin` (https://github.com/karenzombie/Vault-Zombie).
+  Git pane to `github` (https://github.com/karenzombie/Vault-Zombie).
 
 ## Reports and Lockbox
 

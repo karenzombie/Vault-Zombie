@@ -5,7 +5,7 @@ A sealed-prediction web app for life events, with scheduled reveals, outcomes, a
 
 ## Run & Operate
 
-- Code repository: `https://github.com/karenzombie/Vault-Zombie` (remote `origin`). The owner pushes to it from the Replit Git pane. The agent commits in the workspace but never pushes, force pushes, or uploads code to GitHub by any method, including the installed GitHub connection or the GitHub API.
+- Code repository: `https://github.com/karenzombie/Vault-Zombie` (remote `github`). The owner pushes to it from the Replit Git pane. The agent commits in the workspace but never pushes, force pushes, or uploads code to GitHub by any method, including the installed GitHub connection or the GitHub API.
 - Data backups must use a separate private repository configured later; never place plaintext database backups in the code repository.
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
 - `pnpm run typecheck` — full typecheck across all packages
