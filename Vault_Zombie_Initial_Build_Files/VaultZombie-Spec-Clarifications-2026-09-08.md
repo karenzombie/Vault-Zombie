@@ -145,10 +145,8 @@ document changes or clarifies an earlier document, this document wins.
   a reason to pause and report.
 - Report verification precisely: distinguish typechecks, builds, visual checks,
   real-data tests, and work that was not tested.
-- Every code backup must be verified by comparing the remote tree hash with the
-  local commit tree hash. Reconcile mismatches before reporting completion, and
-  report the local commit, remote head, shared tree hash, and whether the trees
-  are byte-for-byte identical. Document failed pushes and any workaround used.
+- The agent does not back up code to GitHub. The owner pushes from the Replit
+  Git pane to `origin` (https://github.com/karenzombie/Vault-Zombie).
 
 ## Reports and Lockbox
 
