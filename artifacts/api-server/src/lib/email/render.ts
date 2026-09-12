@@ -531,7 +531,7 @@ async function buildH2(row: EmailDelivery): Promise<Doc> {
     { done: true, label: CHECKLIST_LABELS.vaultType },
     { done: namesFilled, label: CHECKLIST_LABELS.names },
     { done: Boolean(vault.anchorDate), label: CHECKLIST_LABELS.eventDate },
-    { done: true, label: CHECKLIST_LABELS.revealSchedule },
+    { done: Boolean(vault.revealSchedule), label: CHECKLIST_LABELS.revealSchedule },
     { done: promptCount > 0, label: CHECKLIST_LABELS.prompts },
     { done: true, label: CHECKLIST_LABELS.guestLayout },
     { done: Boolean(vault.coverObjectKey), label: CHECKLIST_LABELS.cover },
@@ -550,6 +550,7 @@ async function buildH4(row: EmailDelivery, p: Record<string, unknown>): Promise<
   const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, row.vaultId));
   const firstRevealDate = slots.map((s) => s.revealDate).sort()[0] ?? null;
   if (!firstRevealDate) throw new Error("Sealed vault is missing its reveal schedule.");
+  if (!vault.revealSchedule) throw new Error("Sealed vault is missing its reveal schedule.");
   return h4VaultSealed({
     vaultName: p.vaultName, vaultId: row.vaultId, guestLink: guestLinkUrl(vault.guestToken),
     guestLimit: PLAN_POLICY[vault.entitledPlanTier].guestCap,

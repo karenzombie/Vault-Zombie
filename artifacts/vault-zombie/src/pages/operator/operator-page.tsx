@@ -38,7 +38,7 @@ export default function OperatorPage() {
 /** Maps a vault type's slug to its art silhouette in public/vault-art. The
  * "baby" question-bank slug maps to the new-baby.svg asset filename; every
  * other slug matches its filename directly. */
-const VAULT_ART: Record<string, string> = {
+export const VAULT_ART: Record<string, string> = {
   marriage: "marriage.svg",
   couple: "couple.svg",
   baby: "new-baby.svg",

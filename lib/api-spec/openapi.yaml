@@ -223,17 +223,38 @@ paths:
     post:
       operationId: redeemGift
       tags: [billing]
-      summary: Atomically redeem a purchased gift to an owned draft vault
+      summary: Atomically redeem a purchased gift into an unspent entitlement at the gifted tier
       requestBody:
         required: true
         content: { application/json: { schema: { $ref: "#/components/schemas/RedeemGiftInput" } } }
       responses:
         "200": { description: Gift redeemed, content: { application/json: { schema: { $ref: "#/components/schemas/RedeemGiftResult" } } } }
-        "400": { description: Gift cannot be redeemed to this vault }
         "401": { description: Authentication required }
-        "404": { description: Gift or vault not found }
+        "404": { description: Gift not found }
         "409": { description: Gift already redeemed or refunded }
         "429": { description: Rate limit reached }
+  /operator/entitlements:
+    post:
+      operationId: startEntitlement
+      tags: [billing]
+      summary: Start (or reuse) an unspent entitlement at a chosen tier, ahead of creating a vault
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/EntitlementStartInput" } } }
+      responses:
+        "201": { description: "Entitlement ready, or Checkout started", content: { application/json: { schema: { $ref: "#/components/schemas/EntitlementStart" } } } }
+        "401": { description: Authentication required }
+        "503": { description: Stripe billing configuration is unavailable }
+  /operator/entitlements/sessions/{checkoutSessionId}:
+    get:
+      operationId: getEntitlementByCheckoutSession
+      tags: [billing]
+      summary: Poll an entitlement's Checkout status by session ID after a Stripe return
+      parameters: [{ $ref: "#/components/parameters/CheckoutSessionId" }]
+      responses:
+        "200": { description: Entitlement status, content: { application/json: { schema: { $ref: "#/components/schemas/EntitlementStatus" } } } }
+        "401": { description: Authentication required }
+        "404": { description: Entitlement not found }
   /operator/vaults/{vaultId}/overage:
     get:
       operationId: getOperatorOverageStatus
@@ -701,6 +722,26 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/OperatorVaultList" }
         "401": { description: Authentication required }
+    post:
+      operationId: createOperatorVault
+      tags: [operator]
+      summary: Spend an unspent entitlement to create a draft vault
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CreateDraftVaultInput" } } }
+      responses:
+        "201": { description: Draft vault created, content: { application/json: { schema: { $ref: "#/components/schemas/CreateDraftVaultResult" } } } }
+        "400": { description: Invalid vault type or subject values }
+        "401": { description: Authentication required }
+        "409": { description: "The entitlement is missing, already spent, or not paid" }
+  /operator/vault-types:
+    get:
+      operationId: listOperatorVaultTypes
+      tags: [operator]
+      summary: List the active vault types a host can choose from when creating a vault
+      responses:
+        "200": { description: Active vault types, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OperatorVaultType" } } } } }
+        "401": { description: Authentication required }
   /operator/vaults/{vaultId}/delete:
     post:
       operationId: deleteOperatorVault
@@ -1037,17 +1078,56 @@ components:
         description: { type: string }
     RedeemGiftInput:
       type: object
-      required: [code, vaultId]
+      required: [code]
       properties:
         code: { type: string, minLength: 12, maxLength: 64 }
-        vaultId: { type: string, format: uuid }
     RedeemGiftResult:
       type: object
-      required: [vaultId, billingRecordId, tier]
+      required: [billingRecordId, tier]
       properties:
-        vaultId: { type: string, format: uuid }
         billingRecordId: { type: string, format: uuid }
         tier: { type: string, enum: [safe, vault, deep_vault] }
+    EntitlementStartInput:
+      type: object
+      required: [targetTier]
+      properties:
+        targetTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+    EntitlementStart:
+      type: object
+      required: [status, billingRecordId, targetTier]
+      properties:
+        status: { type: string, enum: [ready, checkout] }
+        billingRecordId: { type: string, format: uuid }
+        targetTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        checkoutUrl: { type: ["string", "null"], format: uri }
+    EntitlementStatus:
+      type: object
+      required: [billingRecordId, targetTier, status]
+      properties:
+        billingRecordId: { type: string, format: uuid }
+        targetTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        status: { type: string, enum: [pending, paid, failed, expired, disputed, refunded, comped] }
+    CreateDraftVaultInput:
+      type: object
+      required: [billingRecordId, vaultTypeId, name]
+      properties:
+        billingRecordId: { type: string, format: uuid }
+        vaultTypeId: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        subjectValues: { type: object, additionalProperties: { type: string } }
+    CreateDraftVaultResult:
+      type: object
+      required: [vaultId]
+      properties:
+        vaultId: { type: string, format: uuid }
+    OperatorVaultType:
+      type: object
+      required: [id, slug, name, requiredSubjectTokens]
+      properties:
+        id: { type: string, format: uuid }
+        slug: { type: string }
+        name: { type: string }
+        requiredSubjectTokens: { type: array, items: { type: string } }
     OverageStatus:
       type: object
       required: [vaultId, heldSubmissionCount, unresolved, nearestRevealDate]

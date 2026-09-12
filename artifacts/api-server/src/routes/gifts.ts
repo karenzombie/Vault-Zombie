@@ -1,12 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import {
   CreateGiftCheckoutBody, CreateGiftCheckoutResponse, GetGiftCardParams,
   GetGiftCardResponse, GetGiftCardByCheckoutSessionParams, RedeemGiftBody, RedeemGiftResponse,
 } from "@workspace/api-zod";
-import { billingRecordsTable, db, enqueueEmail, findUnresolvedRefundReservation, giftsTable, vaultsTable } from "@workspace/db";
-import { findStripePrice, getStripeClient, TIER_ORDER, type PaidTier } from "../lib/stripe";
+import { billingRecordsTable, db, enqueueEmail, findUnresolvedRefundReservation, giftsTable } from "@workspace/db";
+import { findStripePrice, getStripeClient, type PaidTier } from "../lib/stripe";
 import { requireOperator } from "../middlewares/auth";
 import { getTrustedAppUrl } from "../lib/app-url";
 
@@ -115,23 +115,18 @@ giftRouter.post("/operator/gifts/redeem", requireOperator, async (req, res, next
       if (refundReservation) {
         return { kind: "refund-reserved" as const };
       }
-      const [vault] = await tx.select().from(vaultsTable).where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, req.account!.id))).limit(1).for("update");
-      if (!vault) return { kind: "vault-missing" as const };
-      const vaultRefundReservation = await findUnresolvedRefundReservation(tx, { vaultId: vault.id });
-      if (vaultRefundReservation) return { kind: "refund-reserved" as const };
-      if (vault.status !== "draft" || TIER_ORDER[gift.targetTier] <= TIER_ORDER[vault.entitledPlanTier]) return { kind: "invalid-vault" as const };
+      // Redemption grants an unspent entitlement (vaultId/appliedAt null) at the gifted
+      // tier; the host spends it on the details form (2.4), same as any other entitlement.
       const [billing] = await tx.insert(billingRecordsTable).values({
-        vaultId: vault.id, operatorId: req.account!.id, fromTier: vault.entitledPlanTier,
+        vaultId: null, operatorId: req.account!.id, fromTier: "lockbox",
         targetTier: gift.targetTier, amountCents: gift.amountCents, currency: gift.currency,
-        status: "paid", source: "gift", giftCode: gift.code, appliedAt: new Date(),
+        status: "paid", source: "gift", giftCode: gift.code,
       }).returning();
-      await tx.update(vaultsTable).set({ entitledPlanTier: gift.targetTier }).where(eq(vaultsTable.id, vault.id));
-      await tx.update(giftsTable).set({ status: "redeemed", redeemedAt: new Date(), redeemedVaultId: vault.id, redeemedBillingRecordId: billing.id }).where(eq(giftsTable.id, gift.id));
+      await tx.update(giftsTable).set({ status: "redeemed", redeemedAt: new Date(), redeemedBillingRecordId: billing.id }).where(eq(giftsTable.id, gift.id));
       return { kind: "ok" as const, billing, gift };
     });
-    if (result.kind === "missing" || result.kind === "vault-missing") return res.status(404).json({ error: "Gift or vault not found." });
+    if (result.kind === "missing") return res.status(404).json({ error: "Gift not found." });
     if (result.kind === "unavailable" || result.kind === "refund-reserved") return res.status(409).json({ error: result.kind === "refund-reserved" ? "This gift has a refund in progress." : "This gift is no longer redeemable." });
-    if (result.kind === "invalid-vault") return res.status(400).json({ error: "Choose an owned draft vault below the gift tier." });
     // F3: gift redeemed, to the gifter. Same fallback email precedence as F1 (see stripe-webhook.ts).
     const f3Email = result.gift.gifterEmail ?? result.gift.stripeBuyerEmail;
     if (f3Email) {
@@ -143,7 +138,7 @@ giftRouter.post("/operator/gifts/redeem", requireOperator, async (req, res, next
         });
       } catch (error) { req.log.error({ err: error, giftId: result.gift.id }, "Gift redeemed email enqueue failed"); }
     }
-    return res.json(RedeemGiftResponse.parse({ vaultId: input.vaultId, billingRecordId: result.billing.id, tier: result.billing.targetTier }));
+    return res.json(RedeemGiftResponse.parse({ billingRecordId: result.billing.id, tier: result.billing.targetTier }));
   } catch (error) { return next(error); }
 });
 

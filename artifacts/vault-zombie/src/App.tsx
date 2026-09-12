@@ -15,6 +15,7 @@ import GiftPurchasePage from '@/pages/public/gift-purchase';
 import GiftSuccessPage from '@/pages/public/gift-success';
 import GiftCancelPage from '@/pages/public/gift-cancel';
 import GiftRedeemPage from '@/pages/operator/gift-redeem';
+import VaultNewPage from '@/pages/operator/vault-new';
 import OperatorPage, { OperatorReveal } from '@/pages/operator/operator-page';
 import { useParams } from 'wouter';
 import AdminPage from '@/pages/admin/admin';
@@ -70,6 +71,7 @@ const AuthenticatedRevealReport = requireOperator(RevealReportPage);
 const AuthenticatedQuestionReport = requireOperator(QuestionReportPage);
 const AuthenticatedGuestReport = requireOperator(GuestPersonalReportPage);
 const AuthenticatedGiftRedeem = requireOperator(GiftRedeemPage);
+const AuthenticatedVaultNew = requireOperator(VaultNewPage);
 function MissingAdminConfiguration() {
   return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">Administrator access is unavailable because authentication is not configured.</div>;
 }
@@ -120,6 +122,7 @@ function Router() {
 
         {/* Main Operator Route */}
         <Route path="/operator" component={AuthenticatedOperator} />
+        <Route path="/operator/vaults/new" component={AuthenticatedVaultNew} />
         <Route path="/operator/vaults/:vaultId" component={AuthenticatedOperatorReveal} />
         <Route path="/operator/gifts/redeem" component={AuthenticatedGiftRedeem} />
 

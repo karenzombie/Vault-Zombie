@@ -322,7 +322,7 @@ export const GetGiftCardByCheckoutSessionResponse = zod.object({
 
 
 /**
- * @summary Atomically redeem a purchased gift to an owned draft vault
+ * @summary Atomically redeem a purchased gift into an unspent entitlement at the gifted tier
  */
 export const redeemGiftBodyCodeMin = 12;
 export const redeemGiftBodyCodeMax = 64;
@@ -330,14 +330,48 @@ export const redeemGiftBodyCodeMax = 64;
 
 
 export const RedeemGiftBody = zod.object({
-  "code": zod.string().min(redeemGiftBodyCodeMin).max(redeemGiftBodyCodeMax),
-  "vaultId": zod.string().uuid()
+  "code": zod.string().min(redeemGiftBodyCodeMin).max(redeemGiftBodyCodeMax)
 })
 
 export const RedeemGiftResponse = zod.object({
-  "vaultId": zod.string().uuid(),
   "billingRecordId": zod.string().uuid(),
   "tier": zod.enum(['safe', 'vault', 'deep_vault'])
+})
+
+
+/**
+ * @summary Start (or reuse) an unspent entitlement at a chosen tier, ahead of creating a vault
+ */
+export const StartEntitlementBody = zod.object({
+  "targetTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault'])
+})
+
+export const StartEntitlementResponse = zod.object({
+  "status": zod.enum(['ready', 'checkout']),
+  "billingRecordId": zod.string().uuid(),
+  "targetTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "checkoutUrl": zod.string().url().nullish()
+})
+
+
+/**
+ * @summary Poll an entitlement's Checkout status by session ID after a Stripe return
+ */
+export const getEntitlementByCheckoutSessionPathCheckoutSessionIdMin = 8;
+export const getEntitlementByCheckoutSessionPathCheckoutSessionIdMax = 255;
+
+
+export const getEntitlementByCheckoutSessionPathCheckoutSessionIdRegExp = new RegExp('^cs_');
+
+
+export const GetEntitlementByCheckoutSessionParams = zod.object({
+  "checkoutSessionId": zod.coerce.string().min(getEntitlementByCheckoutSessionPathCheckoutSessionIdMin).max(getEntitlementByCheckoutSessionPathCheckoutSessionIdMax).regex(getEntitlementByCheckoutSessionPathCheckoutSessionIdRegExp)
+})
+
+export const GetEntitlementByCheckoutSessionResponse = zod.object({
+  "billingRecordId": zod.string().uuid(),
+  "targetTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'disputed', 'refunded', 'comped'])
 })
 
 
@@ -1590,6 +1624,37 @@ export const ListOperatorVaultsResponse = zod.object({
   "vaultTypeSlug": zod.string()
 }))
 })
+
+
+/**
+ * @summary Spend an unspent entitlement to create a draft vault
+ */
+export const createOperatorVaultBodyNameMax = 120;
+
+
+
+export const CreateOperatorVaultBody = zod.object({
+  "billingRecordId": zod.string().uuid(),
+  "vaultTypeId": zod.string().uuid(),
+  "name": zod.string().min(1).max(createOperatorVaultBodyNameMax),
+  "subjectValues": zod.record(zod.string(), zod.string()).optional()
+})
+
+export const CreateOperatorVaultResponse = zod.object({
+  "vaultId": zod.string().uuid()
+})
+
+
+/**
+ * @summary List the active vault types a host can choose from when creating a vault
+ */
+export const ListOperatorVaultTypesResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "requiredSubjectTokens": zod.array(zod.string())
+})
+export const ListOperatorVaultTypesResponse = zod.array(ListOperatorVaultTypesResponseItem)
 
 
 /**

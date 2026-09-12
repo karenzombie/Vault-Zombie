@@ -6,10 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface RedeemGiftInput {
-  /**
-     * @minLength 12
-     * @maxLength 64
-     */
-  code: string;
+export interface OperatorVaultType {
+  id: string;
+  slug: string;
+  name: string;
+  requiredSubjectTokens: string[];
 }

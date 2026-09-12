@@ -8,7 +8,6 @@
 import type { RedeemGiftResultTier } from './redeemGiftResultTier';
 
 export interface RedeemGiftResult {
-  vaultId: string;
   billingRecordId: string;
   tier: RedeemGiftResultTier;
 }

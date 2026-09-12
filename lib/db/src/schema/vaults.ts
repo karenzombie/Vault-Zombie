@@ -43,7 +43,7 @@ export const vaultsTable = pgTable(
     entitledPlanTier: planTierEnum("entitled_plan_tier")
       .notNull()
       .default("lockbox"),
-    revealSchedule: revealScheduleEnum("reveal_schedule").notNull(),
+    revealSchedule: revealScheduleEnum("reveal_schedule"),
     guestLayout: guestLayoutEnum("guest_layout")
       .notNull()
       .default("one_at_a_time"),

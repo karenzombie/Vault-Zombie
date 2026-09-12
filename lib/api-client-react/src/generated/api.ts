@@ -55,9 +55,14 @@ import type {
   ContentMutationInput,
   ContentReorderInput,
   ContentReorderResult,
+  CreateDraftVaultInput,
+  CreateDraftVaultResult,
   DeleteAdminAccount200,
   DeleteAdminVault200,
   EmailRetryResult,
+  EntitlementStart,
+  EntitlementStartInput,
+  EntitlementStatus,
   FinaleReport,
   GetAdminAccountDeletionPreview200,
   GetAdminOperatorParams,
@@ -92,6 +97,7 @@ import type {
   ManualVaultActionResult,
   OperatorVaultDeleteResult,
   OperatorVaultList,
+  OperatorVaultType,
   OutcomeInput,
   OverageDeclineResult,
   OverageStatus,
@@ -1212,7 +1218,7 @@ export const getRedeemGiftUrl = () => {
 }
 
 /**
- * @summary Atomically redeem a purchased gift to an owned draft vault
+ * @summary Atomically redeem a purchased gift into an unspent entitlement at the gifted tier
  */
 export const redeemGift = async (redeemGiftInput: RedeemGiftInput, options?: Parameters<typeof customFetch>[1]): Promise<RedeemGiftResult> => {
 
@@ -1261,7 +1267,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RedeemGiftMutationError = ErrorType<void>
 
     /**
- * @summary Atomically redeem a purchased gift to an owned draft vault
+ * @summary Atomically redeem a purchased gift into an unspent entitlement at the gifted tier
  */
 export const useRedeemGift = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof redeemGift>>, TError,{data: BodyType<RedeemGiftInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1273,6 +1279,154 @@ export const useRedeemGift = <TError = ErrorType<void>,
       > => {
       return useMutation(getRedeemGiftMutationOptions(options));
     }
+
+export const getStartEntitlementUrl = () => {
+
+
+
+
+  return `/api/operator/entitlements`
+}
+
+/**
+ * @summary Start (or reuse) an unspent entitlement at a chosen tier, ahead of creating a vault
+ */
+export const startEntitlement = async (entitlementStartInput: EntitlementStartInput, options?: Parameters<typeof customFetch>[1]): Promise<EntitlementStart> => {
+
+  return customFetch<EntitlementStart>(getStartEntitlementUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(entitlementStartInput)
+  }
+);}
+
+
+
+
+
+export const getStartEntitlementMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startEntitlement>>, TError,{data: BodyType<EntitlementStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startEntitlement>>, TError,{data: BodyType<EntitlementStartInput>}, TContext> => {
+
+const mutationKey = ['startEntitlement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startEntitlement>>, {data: BodyType<EntitlementStartInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startEntitlement(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartEntitlementMutationResult = NonNullable<Awaited<ReturnType<typeof startEntitlement>>>
+    export type StartEntitlementMutationBody = BodyType<EntitlementStartInput>
+    export type StartEntitlementMutationError = ErrorType<void>
+
+    /**
+ * @summary Start (or reuse) an unspent entitlement at a chosen tier, ahead of creating a vault
+ */
+export const useStartEntitlement = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startEntitlement>>, TError,{data: BodyType<EntitlementStartInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startEntitlement>>,
+        TError,
+        {data: BodyType<EntitlementStartInput>},
+        TContext
+      > => {
+      return useMutation(getStartEntitlementMutationOptions(options));
+    }
+
+export const getGetEntitlementByCheckoutSessionUrl = (checkoutSessionId: string,) => {
+
+
+
+
+  return `/api/operator/entitlements/sessions/${checkoutSessionId}`
+}
+
+/**
+ * @summary Poll an entitlement's Checkout status by session ID after a Stripe return
+ */
+export const getEntitlementByCheckoutSession = async (checkoutSessionId: string, options?: Parameters<typeof customFetch>[1]): Promise<EntitlementStatus> => {
+
+  return customFetch<EntitlementStatus>(getGetEntitlementByCheckoutSessionUrl(checkoutSessionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetEntitlementByCheckoutSessionQueryKey = (checkoutSessionId: string,) => {
+    return [
+    `/api/operator/entitlements/sessions/${checkoutSessionId}`
+    ] as const;
+    }
+
+
+export const getGetEntitlementByCheckoutSessionQueryOptions = <TData = Awaited<ReturnType<typeof getEntitlementByCheckoutSession>>, TError = ErrorType<void>>(checkoutSessionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEntitlementByCheckoutSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEntitlementByCheckoutSessionQueryKey(checkoutSessionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntitlementByCheckoutSession>>> = ({ signal }) => getEntitlementByCheckoutSession(checkoutSessionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: checkoutSessionId !== null && checkoutSessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEntitlementByCheckoutSession>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetEntitlementByCheckoutSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getEntitlementByCheckoutSession>>>
+export type GetEntitlementByCheckoutSessionQueryError = ErrorType<void>
+
+
+/**
+ * @summary Poll an entitlement's Checkout status by session ID after a Stripe return
+ */
+
+export function useGetEntitlementByCheckoutSession<TData = Awaited<ReturnType<typeof getEntitlementByCheckoutSession>>, TError = ErrorType<void>>(
+ checkoutSessionId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getEntitlementByCheckoutSession>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetEntitlementByCheckoutSessionQueryOptions(checkoutSessionId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetOperatorOverageStatusUrl = (vaultId: string,) => {
 
@@ -4533,6 +4687,154 @@ export function useListOperatorVaults<TData = Awaited<ReturnType<typeof listOper
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListOperatorVaultsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateOperatorVaultUrl = () => {
+
+
+
+
+  return `/api/operator/vaults`
+}
+
+/**
+ * @summary Spend an unspent entitlement to create a draft vault
+ */
+export const createOperatorVault = async (createDraftVaultInput: CreateDraftVaultInput, options?: Parameters<typeof customFetch>[1]): Promise<CreateDraftVaultResult> => {
+
+  return customFetch<CreateDraftVaultResult>(getCreateOperatorVaultUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createDraftVaultInput)
+  }
+);}
+
+
+
+
+
+export const getCreateOperatorVaultMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOperatorVault>>, TError,{data: BodyType<CreateDraftVaultInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createOperatorVault>>, TError,{data: BodyType<CreateDraftVaultInput>}, TContext> => {
+
+const mutationKey = ['createOperatorVault'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOperatorVault>>, {data: BodyType<CreateDraftVaultInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createOperatorVault(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOperatorVaultMutationResult = NonNullable<Awaited<ReturnType<typeof createOperatorVault>>>
+    export type CreateOperatorVaultMutationBody = BodyType<CreateDraftVaultInput>
+    export type CreateOperatorVaultMutationError = ErrorType<void>
+
+    /**
+ * @summary Spend an unspent entitlement to create a draft vault
+ */
+export const useCreateOperatorVault = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOperatorVault>>, TError,{data: BodyType<CreateDraftVaultInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createOperatorVault>>,
+        TError,
+        {data: BodyType<CreateDraftVaultInput>},
+        TContext
+      > => {
+      return useMutation(getCreateOperatorVaultMutationOptions(options));
+    }
+
+export const getListOperatorVaultTypesUrl = () => {
+
+
+
+
+  return `/api/operator/vault-types`
+}
+
+/**
+ * @summary List the active vault types a host can choose from when creating a vault
+ */
+export const listOperatorVaultTypes = async ( options?: Parameters<typeof customFetch>[1]): Promise<OperatorVaultType[]> => {
+
+  return customFetch<OperatorVaultType[]>(getListOperatorVaultTypesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOperatorVaultTypesQueryKey = () => {
+    return [
+    `/api/operator/vault-types`
+    ] as const;
+    }
+
+
+export const getListOperatorVaultTypesQueryOptions = <TData = Awaited<ReturnType<typeof listOperatorVaultTypes>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOperatorVaultTypes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOperatorVaultTypesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOperatorVaultTypes>>> = ({ signal }) => listOperatorVaultTypes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOperatorVaultTypes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOperatorVaultTypesQueryResult = NonNullable<Awaited<ReturnType<typeof listOperatorVaultTypes>>>
+export type ListOperatorVaultTypesQueryError = ErrorType<void>
+
+
+/**
+ * @summary List the active vault types a host can choose from when creating a vault
+ */
+
+export function useListOperatorVaultTypes<TData = Awaited<ReturnType<typeof listOperatorVaultTypes>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOperatorVaultTypes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOperatorVaultTypesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

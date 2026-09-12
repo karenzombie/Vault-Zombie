@@ -140,7 +140,6 @@ export interface RedeemGiftInput {
      * @maxLength 64
      */
   code: string;
-  vaultId: string;
 }
 
 export type RedeemGiftResultTier = typeof RedeemGiftResultTier[keyof typeof RedeemGiftResultTier];
@@ -153,9 +152,101 @@ export const RedeemGiftResultTier = {
 } as const;
 
 export interface RedeemGiftResult {
-  vaultId: string;
   billingRecordId: string;
   tier: RedeemGiftResultTier;
+}
+
+export type EntitlementStartInputTargetTier = typeof EntitlementStartInputTargetTier[keyof typeof EntitlementStartInputTargetTier];
+
+
+export const EntitlementStartInputTargetTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface EntitlementStartInput {
+  targetTier: EntitlementStartInputTargetTier;
+}
+
+export type EntitlementStartStatus = typeof EntitlementStartStatus[keyof typeof EntitlementStartStatus];
+
+
+export const EntitlementStartStatus = {
+  ready: 'ready',
+  checkout: 'checkout',
+} as const;
+
+export type EntitlementStartTargetTier = typeof EntitlementStartTargetTier[keyof typeof EntitlementStartTargetTier];
+
+
+export const EntitlementStartTargetTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface EntitlementStart {
+  status: EntitlementStartStatus;
+  billingRecordId: string;
+  targetTier: EntitlementStartTargetTier;
+  /** @nullable */
+  checkoutUrl?: string | null;
+}
+
+export type EntitlementStatusTargetTier = typeof EntitlementStatusTargetTier[keyof typeof EntitlementStatusTargetTier];
+
+
+export const EntitlementStatusTargetTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type EntitlementStatusStatus = typeof EntitlementStatusStatus[keyof typeof EntitlementStatusStatus];
+
+
+export const EntitlementStatusStatus = {
+  pending: 'pending',
+  paid: 'paid',
+  failed: 'failed',
+  expired: 'expired',
+  disputed: 'disputed',
+  refunded: 'refunded',
+  comped: 'comped',
+} as const;
+
+export interface EntitlementStatus {
+  billingRecordId: string;
+  targetTier: EntitlementStatusTargetTier;
+  status: EntitlementStatusStatus;
+}
+
+export type CreateDraftVaultInputSubjectValues = {[key: string]: string};
+
+export interface CreateDraftVaultInput {
+  billingRecordId: string;
+  vaultTypeId: string;
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  subjectValues?: CreateDraftVaultInputSubjectValues;
+}
+
+export interface CreateDraftVaultResult {
+  vaultId: string;
+}
+
+export interface OperatorVaultType {
+  id: string;
+  slug: string;
+  name: string;
+  requiredSubjectTokens: string[];
 }
 
 export interface OverageStatus {

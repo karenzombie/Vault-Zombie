@@ -158,7 +158,57 @@ async function processVerifiedEvent(event: Stripe.Event) {
     // Do not consume an otherwise valid event that arrived before its local
     // Checkout correlation write; Stripe can retry it after correlation exists.
     if (!billingRecord) throw new Error("Unmatched Stripe event; retry required.");
-    if (!billingRecord.vaultId) throw new Error(`Billing record ${billingRecord.id} has no vault.`);
+    if (!billingRecord.vaultId) {
+      // Stage 2's tier-first flow: an entitlement purchased before any vault exists.
+      // It stays unspent (vaultId/appliedAt null) until spent at vault creation, so
+      // there is no vault to lock or entitlement to raise here.
+      const entitlementRefundReservation = await findUnresolvedRefundReservation(tx, { billingRecordId: billingRecord.id });
+      if (entitlementRefundReservation) {
+        throw new Error("Billing refund reservation is unresolved; retry webhook later.");
+      }
+      await tx.update(stripeWebhookEventsTable).set({
+        billingRecordId: billingRecord.id,
+      }).where(eq(stripeWebhookEventsTable.stripeEventId, event.id));
+      const entitlementCommonUpdate = {
+        stripeCheckoutSessionId: references.checkoutSessionId ?? billingRecord.stripeCheckoutSessionId,
+        stripePaymentIntentId: references.paymentIntentId ?? billingRecord.stripePaymentIntentId,
+        stripeChargeId: references.chargeId ?? billingRecord.stripeChargeId,
+      };
+      if (billingRecord.status === "refunded") return "ignored" as const;
+      if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
+        if (billingRecord.status === "disputed") return "ignored" as const;
+        const shouldActivate = event.type === "checkout.session.async_payment_succeeded"
+          || event.data.object.payment_status === "paid";
+        if (!shouldActivate) {
+          await tx.update(billingRecordsTable).set(entitlementCommonUpdate)
+            .where(eq(billingRecordsTable.id, billingRecord.id));
+          return "pending" as const;
+        }
+        if (billingRecord.status === "paid") {
+          await tx.update(billingRecordsTable).set(entitlementCommonUpdate)
+            .where(eq(billingRecordsTable.id, billingRecord.id));
+          return "ignored" as const;
+        }
+        await tx.update(billingRecordsTable).set({
+          ...entitlementCommonUpdate,
+          status: "paid",
+        }).where(eq(billingRecordsTable.id, billingRecord.id));
+        return "entitlement-paid" as const;
+      }
+      if (event.type !== "charge.dispute.created" && billingRecord.status !== "pending") {
+        return "ignored" as const;
+      }
+      const entitlementStatus = event.type === "checkout.session.expired"
+        ? "expired"
+        : event.type === "charge.dispute.created"
+          ? "disputed"
+          : "failed";
+      await tx.update(billingRecordsTable).set({
+        ...entitlementCommonUpdate,
+        status: entitlementStatus,
+      }).where(eq(billingRecordsTable.id, billingRecord.id));
+      return entitlementStatus;
+    }
     // One lock order is shared with refund creation/finalization:
     // vault -> billing record -> refund attempt.
     const [lockedVault] = await tx.select().from(vaultsTable)
