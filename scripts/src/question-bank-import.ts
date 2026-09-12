@@ -1,6 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  importQuestionBank,
+  validateQuestionBank,
+  type QuestionBankImport,
+  type QuestionBankImportQuestion,
+  type QuestionBankImportSubcategory,
+} from "@workspace/db";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const bankDirectory = path.resolve(
@@ -106,8 +113,9 @@ async function parseBank(filename: string): Promise<ParsedQuestion[]> {
     }
 
     const prompt = normalizePrompt(vaultSlug, cells[1]);
-    const rawOptions =
-      cells[3] === "140 char" || cells[3] === "" ? [] : cells[3].split(" / ");
+    const isChoice =
+      answerType === "multiple_choice" || answerType === "name_pick";
+    const rawOptions = isChoice ? cells[3].split(" / ") : [];
     const options = rawOptions.map((option) => {
       const normalized = normalizePrompt(vaultSlug, option.trim());
       return normalized ===
@@ -203,7 +211,140 @@ async function loadMetadata() {
   }
 }
 
+interface VaultTypeMeta {
+  slug: string;
+  name: string;
+  requiredSubjectTokens: string[];
+  displayOrder: number;
+}
+
+const vaultTypeMeta: VaultTypeMeta[] = [
+  { slug: "marriage", name: "Marriage (Wedding)", requiredSubjectTokens: ["[Partner A]", "[Partner B]"], displayOrder: 1 },
+  { slug: "couple", name: "Couple", requiredSubjectTokens: ["[Partner A]", "[Partner B]"], displayOrder: 2 },
+  { slug: "baby", name: "New Baby", requiredSubjectTokens: ["[Baby]", "[Parent A]", "[Parent B]"], displayOrder: 3 },
+  { slug: "child-growth", name: "Child Growth", requiredSubjectTokens: ["[Child]", "[Parent A]", "[Parent B]"], displayOrder: 4 },
+  { slug: "college", name: "College", requiredSubjectTokens: ["[Student]"], displayOrder: 5 },
+  { slug: "job", name: "Job / Occupation", requiredSubjectTokens: ["[Person]"], displayOrder: 6 },
+  { slug: "travel", name: "Travel", requiredSubjectTokens: ["[Traveler]"], displayOrder: 7 },
+  { slug: "retirement", name: "Retirement", requiredSubjectTokens: ["[Retiree]"], displayOrder: 8 },
+  { slug: "new-business", name: "New Business / Startup", requiredSubjectTokens: ["[Business]", "[Founder]"], displayOrder: 9 },
+  { slug: "new-year", name: "New Year / Year Ahead", requiredSubjectTokens: ["[Person]"], displayOrder: 10 },
+];
+
+function buildImportBanks(
+  questions: ParsedQuestion[],
+  metadataByKey: Map<string, QuestionMetadata>,
+): QuestionBankImport[] {
+  const bySlug = new Map<string, ParsedQuestion[]>();
+  for (const question of questions) {
+    const slug = question.sourceKey.split(":")[0];
+    if (!bySlug.has(slug)) bySlug.set(slug, []);
+    bySlug.get(slug)!.push(question);
+  }
+
+  return vaultTypeMeta.map((meta) => {
+    const slugQuestions = bySlug.get(meta.slug) ?? [];
+    const bySubcategory = new Map<number, ParsedQuestion[]>();
+    for (const question of slugQuestions) {
+      if (!bySubcategory.has(question.subcategoryOrder)) {
+        bySubcategory.set(question.subcategoryOrder, []);
+      }
+      bySubcategory.get(question.subcategoryOrder)!.push(question);
+    }
+
+    const subcategories: QuestionBankImportSubcategory[] = [...bySubcategory.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([subcategoryOrder, subQuestions]) => {
+        const entry = metadataByKey;
+        const questionInputs: QuestionBankImportQuestion[] = subQuestions
+          .sort((a, b) => a.localRow - b.localRow)
+          .map((question) => {
+            const meta = entry.get(question.sourceKey);
+            const questionInput: QuestionBankImportQuestion = {
+              sourceKey: question.sourceKey,
+              prompt: question.prompt,
+              answerType: question.answerType,
+              displayOrder: question.localRow,
+              options: question.options,
+            };
+            if (question.answerType === "number" && meta?.number) {
+              questionInput.number = meta.number;
+            }
+            if (question.answerType === "free_text" && meta?.freeTextMode) {
+              questionInput.freeTextMode = meta.freeTextMode;
+            }
+            return questionInput;
+          });
+        return {
+          sourceKey: `${meta.slug}:${subcategoryOrder}`,
+          name: subQuestions[0].subcategoryName,
+          displayOrder: subcategoryOrder,
+          questions: questionInputs,
+        };
+      });
+
+    return {
+      vaultType: {
+        slug: meta.slug,
+        name: meta.name,
+        requiredSubjectTokens: meta.requiredSubjectTokens,
+        displayOrder: meta.displayOrder,
+      },
+      subcategories,
+    };
+  });
+}
+
+async function runApply() {
+  const files = (await readdir(bankDirectory))
+    .filter((file) => /^vaultzombie-questions-.+\.md$/.test(file))
+    .sort();
+  const banks = await Promise.all(files.map(parseBank));
+  const questions = banks.flat();
+  const metadata = await loadMetadata();
+  const metadataByKey = new Map(metadata.map((entry) => [entry.sourceKey, entry]));
+
+  const importBanks = buildImportBanks(questions, metadataByKey);
+
+  const allIssues: string[] = [];
+  for (const bank of importBanks) {
+    const issues = validateQuestionBank(bank);
+    for (const issue of issues) {
+      allIssues.push(`${bank.vaultType.slug}: ${issue.path}: ${issue.message}`);
+    }
+  }
+
+  if (allIssues.length > 0) {
+    process.stderr.write(
+      [
+        `Import validation failed with ${allIssues.length} unresolved item(s).`,
+        ...allIssues,
+        "",
+      ].join("\n"),
+    );
+    process.exitCode = 1;
+    return;
+  }
+
+  const results: { slug: string; subcategoryCount: number; questionCount: number; optionCount: number }[] = [];
+  for (const bank of importBanks) {
+    const result = await importQuestionBank(bank);
+    results.push({ slug: bank.vaultType.slug, ...result });
+  }
+
+  process.stdout.write("Import complete. Zero unresolved items.\n");
+  for (const result of results) {
+    process.stdout.write(
+      `  ${result.slug}: ${result.questionCount} questions, ${result.subcategoryCount} sub-categories, ${result.optionCount} options\n`,
+    );
+  }
+}
+
 async function main() {
+  if (process.argv.includes("--apply")) {
+    await runApply();
+    return;
+  }
   const files = (await readdir(bankDirectory))
     .filter((file) => /^vaultzombie-questions-.+\.md$/.test(file))
     .sort();

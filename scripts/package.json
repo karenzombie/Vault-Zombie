@@ -7,6 +7,7 @@
     "hello": "tsx ./src/hello.ts",
     "setup:stripe-products": "tsx ./src/stripe-product-setup.ts",
     "validate:question-banks": "tsx ./src/question-bank-import.ts --validate",
+    "import:question-banks": "tsx ./src/question-bank-import.ts --apply",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
@@ -14,6 +15,7 @@
     "tsx": "catalog:"
   },
   "dependencies": {
-    "stripe": "^22.6.1"
+    "stripe": "^22.6.1",
+    "@workspace/db": "workspace:*"
   }
 }

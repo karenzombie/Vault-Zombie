@@ -1,0 +1,2051 @@
+[
+  {
+    "sourceKey": "marriage:1:1",
+    "number": {
+      "unit": "moves",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:1:7",
+    "number": {
+      "unit": "bedrooms",
+      "minimum": 0,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:2:1",
+    "number": {
+      "unit": "children",
+      "minimum": 0,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:2:5",
+    "number": {
+      "unit": "pets",
+      "minimum": 0,
+      "maximum": 12,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:2:7",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:3:1",
+    "number": {
+      "unit": "cars",
+      "minimum": 0,
+      "maximum": 6,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:3:11",
+    "number": {
+      "unit": "thousands of dollars",
+      "minimum": 0,
+      "maximum": 200,
+      "closeBand": 5
+    }
+  },
+  {
+    "sourceKey": "marriage:4:14",
+    "number": {
+      "unit": "jobs",
+      "minimum": 0,
+      "maximum": 20,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "marriage:5:1",
+    "number": {
+      "unit": "countries",
+      "minimum": 0,
+      "maximum": 50,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "marriage:5:13",
+    "number": {
+      "unit": "trips",
+      "minimum": 0,
+      "maximum": 24,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "marriage:7:5",
+    "number": {
+      "unit": "date nights",
+      "minimum": 0,
+      "maximum": 30,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:8:10",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 25,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "marriage:1:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:1:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:2:8",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:3:5",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:3:8",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:3:13",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:4:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:4:12",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:5:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:5:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:6:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:6:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:6:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:7:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:7:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:7:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:8:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "marriage:8:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:8:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "marriage:8:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:1:2",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "couple:1:6",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 60,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "couple:2:3",
+    "number": {
+      "unit": "moves",
+      "minimum": 0,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "couple:2:12",
+    "number": {
+      "unit": "bedrooms",
+      "minimum": 0,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "couple:3:10",
+    "number": {
+      "unit": "jobs",
+      "minimum": 0,
+      "maximum": 20,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "couple:4:1",
+    "number": {
+      "unit": "countries",
+      "minimum": 0,
+      "maximum": 50,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "couple:4:13",
+    "number": {
+      "unit": "trips",
+      "minimum": 0,
+      "maximum": 24,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "couple:6:4",
+    "number": {
+      "unit": "date nights",
+      "minimum": 0,
+      "maximum": 30,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "couple:8:11",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "couple:1:8",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:1:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:2:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:2:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:3:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:3:13",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:4:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:4:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:5:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:5:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:5:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:6:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:6:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:6:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:7:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:7:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:8:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "couple:8:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:8:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "couple:8:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:1:4",
+    "number": {
+      "unit": "inches",
+      "minimum": 14,
+      "maximum": 24,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "baby:1:7",
+    "number": {
+      "unit": "days",
+      "minimum": 0,
+      "maximum": 21,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "baby:1:11",
+    "number": {
+      "unit": "people",
+      "minimum": 0,
+      "maximum": 30,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "baby:4:1",
+    "number": {
+      "unit": "months",
+      "minimum": 6,
+      "maximum": 24,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "baby:4:3",
+    "number": {
+      "unit": "months",
+      "minimum": 4,
+      "maximum": 24,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "baby:4:5",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 18,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "baby:4:8",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 24,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "baby:5:9",
+    "number": {
+      "unit": "visitors",
+      "minimum": 0,
+      "maximum": 40,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "baby:6:5",
+    "number": {
+      "unit": "middle names",
+      "minimum": 0,
+      "maximum": 4,
+      "closeBand": 0
+    }
+  },
+  {
+    "sourceKey": "baby:7:1",
+    "number": {
+      "unit": "diapers",
+      "minimum": 30,
+      "maximum": 150,
+      "closeBand": 10
+    }
+  },
+  {
+    "sourceKey": "baby:7:9",
+    "number": {
+      "unit": "outfits",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "baby:1:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:1:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:1:12",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:2:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:2:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:2:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:2:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:3:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:3:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:3:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:4:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:4:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:4:10",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:4:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:5:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:5:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:6:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:6:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:6:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:6:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:6:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:7:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:7:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:7:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:7:8",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:7:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:8:1",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:8:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:8:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:8:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:8:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "baby:8:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "baby:8:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:2:8",
+    "number": {
+      "unit": "inches",
+      "minimum": 48,
+      "maximum": 84,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "child-growth:3:7",
+    "number": {
+      "unit": "schools",
+      "minimum": 1,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:4:5",
+    "number": {
+      "unit": "years old",
+      "minimum": 4,
+      "maximum": 18,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:5:12",
+    "number": {
+      "unit": "activities",
+      "minimum": 0,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:6:1",
+    "number": {
+      "unit": "months",
+      "minimum": 6,
+      "maximum": 24,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:6:3",
+    "number": {
+      "unit": "years old",
+      "minimum": 2,
+      "maximum": 12,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:6:6",
+    "number": {
+      "unit": "years old",
+      "minimum": 5,
+      "maximum": 18,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:6:9",
+    "number": {
+      "unit": "years old",
+      "minimum": 0,
+      "maximum": 16,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:6:13",
+    "number": {
+      "unit": "years old",
+      "minimum": 0,
+      "maximum": 18,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:7:10",
+    "number": {
+      "unit": "careers",
+      "minimum": 1,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "child-growth:1:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:1:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:1:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:2:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:2:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:2:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:2:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:3:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:3:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:3:10",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:4:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:4:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:4:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:5:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:5:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:5:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:5:10",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:5:13",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:6:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:6:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:6:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:7:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:7:5",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "child-growth:7:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:7:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:8:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:8:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:8:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "child-growth:8:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:1:8",
+    "number": {
+      "unit": "all-nighters",
+      "minimum": 0,
+      "maximum": 30,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "college:2:3",
+    "number": {
+      "unit": "moves",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "college:2:11",
+    "number": {
+      "unit": "roommates",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "college:3:8",
+    "number": {
+      "unit": "friends",
+      "minimum": 0,
+      "maximum": 20,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "college:4:9",
+    "number": {
+      "unit": "events",
+      "minimum": 0,
+      "maximum": 50,
+      "closeBand": 5
+    }
+  },
+  {
+    "sourceKey": "college:5:6",
+    "number": {
+      "unit": "jobs",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "college:5:11",
+    "number": {
+      "unit": "thousands of dollars",
+      "minimum": 0,
+      "maximum": 200,
+      "closeBand": 5
+    }
+  },
+  {
+    "sourceKey": "college:7:4",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 36,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "college:7:12",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "college:8:11",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 25,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "college:1:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:1:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:1:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:2:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:2:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:3:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:3:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:3:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:4:1",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:4:2",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:4:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:4:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:4:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:4:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:5:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:5:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:5:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:6:2",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:6:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:6:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:6:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:6:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:6:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:7:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:7:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:7:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:8:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:8:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:8:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "college:8:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "college:8:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:1:3",
+    "number": {
+      "unit": "careers",
+      "minimum": 1,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "job:2:1",
+    "number": {
+      "unit": "companies",
+      "minimum": 1,
+      "maximum": 20,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "job:2:7",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 30,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "job:3:2",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 20,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "job:3:9",
+    "number": {
+      "unit": "thousands of dollars",
+      "minimum": 0,
+      "maximum": 500,
+      "closeBand": 15
+    }
+  },
+  {
+    "sourceKey": "job:4:1",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "job:4:10",
+    "number": {
+      "unit": "promotions",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "job:6:9",
+    "number": {
+      "unit": "risks",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "job:7:2",
+    "number": {
+      "unit": "years old",
+      "minimum": 40,
+      "maximum": 85,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "job:7:11",
+    "number": {
+      "unit": "people",
+      "minimum": 0,
+      "maximum": 100,
+      "closeBand": 10
+    }
+  },
+  {
+    "sourceKey": "job:8:9",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 25,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "job:1:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "job:1:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:1:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:2:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "job:2:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:2:12",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "job:3:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "job:3:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:4:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:4:8",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "job:4:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:5:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:5:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:5:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:5:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:6:2",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:6:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:6:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:7:1",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:7:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:7:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:7:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:8:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "job:8:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:8:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "job:8:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:1:1",
+    "number": {
+      "unit": "countries",
+      "minimum": 0,
+      "maximum": 30,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "travel:1:6",
+    "number": {
+      "unit": "cities",
+      "minimum": 0,
+      "maximum": 60,
+      "closeBand": 4
+    }
+  },
+  {
+    "sourceKey": "travel:4:1",
+    "number": {
+      "unit": "friends",
+      "minimum": 0,
+      "maximum": 50,
+      "closeBand": 5
+    }
+  },
+  {
+    "sourceKey": "travel:5:8",
+    "number": {
+      "unit": "bags",
+      "minimum": 0,
+      "maximum": 8,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "travel:8:10",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 24,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "travel:1:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:1:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:1:8",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:1:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:1:12",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:2:1",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:2:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:2:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:2:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:2:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:2:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:3:2",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:3:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:3:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:3:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:3:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:4:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:4:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:4:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:4:10",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:4:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:5:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:5:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:5:10",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:5:12",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:6:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:6:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:6:5",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:6:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:6:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:6:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:7:1",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:7:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:7:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:7:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:7:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:7:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:8:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:8:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:8:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "travel:8:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "travel:8:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:1:5",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 24,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "retirement:2:7",
+    "number": {
+      "unit": "hobbies",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "retirement:3:1",
+    "number": {
+      "unit": "countries",
+      "minimum": 0,
+      "maximum": 50,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "retirement:3:11",
+    "number": {
+      "unit": "trips",
+      "minimum": 0,
+      "maximum": 24,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "retirement:5:10",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "retirement:7:11",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "retirement:8:10",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "retirement:1:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:1:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:1:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:1:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:1:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:2:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:2:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:2:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:2:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:3:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:3:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:3:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:3:12",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:4:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:4:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:4:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:4:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:5:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:5:5",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:5:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:5:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:6:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:6:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:6:8",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:6:10",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:6:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:7:4",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:7:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:7:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:7:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:8:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "retirement:8:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:8:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:8:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "retirement:8:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:1:2",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-business:1:4",
+    "number": {
+      "unit": "employees",
+      "minimum": 0,
+      "maximum": 100,
+      "closeBand": 5
+    }
+  },
+  {
+    "sourceKey": "new-business:1:11",
+    "number": {
+      "unit": "customers",
+      "minimum": 0,
+      "maximum": 1000,
+      "closeBand": 50
+    }
+  },
+  {
+    "sourceKey": "new-business:2:2",
+    "number": {
+      "unit": "people",
+      "minimum": 0,
+      "maximum": 50,
+      "closeBand": 3
+    }
+  },
+  {
+    "sourceKey": "new-business:3:3",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 24,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "new-business:3:5",
+    "number": {
+      "unit": "thousands of dollars",
+      "minimum": 0,
+      "maximum": 1000,
+      "closeBand": 25
+    }
+  },
+  {
+    "sourceKey": "new-business:3:11",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-business:5:6",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-business:8:10",
+    "number": {
+      "unit": "years",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-business:1:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:1:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:2:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:2:5",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:2:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:2:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:2:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:3:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:3:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:3:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:4:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:4:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:4:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:4:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:4:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:5:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:5:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:5:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:5:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:5:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:6:2",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:6:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:6:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:6:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:6:10",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:6:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:7:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-business:7:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:7:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:7:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:7:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:8:2",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:8:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:8:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:8:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-business:8:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:1:10",
+    "number": {
+      "unit": "changes",
+      "minimum": 0,
+      "maximum": 10,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-year:2:7",
+    "number": {
+      "unit": "resolutions",
+      "minimum": 0,
+      "maximum": 15,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-year:3:11",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 12,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-year:4:2",
+    "number": {
+      "unit": "trips",
+      "minimum": 0,
+      "maximum": 20,
+      "closeBand": 2
+    }
+  },
+  {
+    "sourceKey": "new-year:8:10",
+    "number": {
+      "unit": "months",
+      "minimum": 0,
+      "maximum": 12,
+      "closeBand": 1
+    }
+  },
+  {
+    "sourceKey": "new-year:1:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:1:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:1:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:1:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:2:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:2:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:2:5",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:2:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:2:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:3:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:3:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:3:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:3:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:4:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:4:5",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:4:7",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:4:9",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:4:11",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:5:3",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:5:6",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:5:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:5:10",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:5:12",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:6:1",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:6:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:6:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:6:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:6:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:6:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:7:1",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:7:3",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:7:5",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:7:7",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:7:9",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:7:11",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:8:2",
+    "freeTextMode": "scoreable"
+  },
+  {
+    "sourceKey": "new-year:8:4",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:8:6",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:8:8",
+    "freeTextMode": "keepsake"
+  },
+  {
+    "sourceKey": "new-year:8:11",
+    "freeTextMode": "keepsake"
+  }
+]

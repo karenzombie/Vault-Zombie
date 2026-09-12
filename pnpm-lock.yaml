@@ -664,6 +664,9 @@ importers:
 
   scripts:
     dependencies:
+      '@workspace/db':
+        specifier: workspace:*
+        version: link:../lib/db
       stripe:
         specifier: ^22.6.1
         version: 22.6.1(@types/node@25.9.5)
