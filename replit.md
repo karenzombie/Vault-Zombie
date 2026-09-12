@@ -50,6 +50,7 @@ A sealed-prediction web app for life events, with scheduled reveals, outcomes, a
 _Populate as you build — explicit user instructions worth remembering across sessions._
 
 - **Standing rule (applies to every task): the agent does not make product decisions.** When something is unspecified, missing, ambiguous, or cannot be built as written, stop and report it, then wait — for prices, plan tiers, schedules, names, wording, limits, timing, defaults, or anything a person would recognize as a choice rather than an implementation detail. Do not choose a default, fallback, placeholder, or invented value, even when the code would work and even when nothing calls it yet. Reporting an unanswered question is always the right outcome.
+  - **"Stop and report" means stop before building, and wait for an answer.** Flagging a decision after it has already been built does not satisfy this rule. If you find yourself about to write "worth your awareness" or "a call I made" in a report, that is the moment to stop and ask instead — before writing the code, not after. This also applies when a spec document says one thing and you believe something else fits better: report the difference and wait, rather than building your own version and noting it afterward.
 
 ## Gotchas
 

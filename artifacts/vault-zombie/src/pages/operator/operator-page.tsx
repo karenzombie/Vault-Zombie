@@ -139,17 +139,16 @@ export function OperatorReveal({ vaultId }: { vaultId: string }) {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      <header className="flex items-center justify-between gap-3 px-3 py-4 sm:px-5 bg-ink text-primary-foreground sticky top-0 z-20">
-        <Link href="/" className="flex items-center gap-2">
-          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-14 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
-          <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-14 w-auto object-contain" />
-        </Link>
-        <div className="shrink-0 text-[10px] sm:text-[11px] font-bold tracking-wider sm:tracking-widest text-brass uppercase bg-white/10 px-2 sm:px-3 py-1.5 rounded-full">
-          Live Host
+      <SiteHeader />
+      <div className="flex justify-center px-3 sm:px-4 pt-4">
+        <div className="w-full max-w-lg flex justify-end">
+          <div className="shrink-0 text-[10px] sm:text-[11px] font-bold tracking-wider sm:tracking-widest text-bronze uppercase bg-bronze-wash px-2 sm:px-3 py-1.5 rounded-full">
+            Live Host
+          </div>
         </div>
-      </header>
+      </div>
 
-      <main className="flex-1 w-full max-w-lg mx-auto p-3 sm:p-4 flex flex-col pt-6">
+      <main className="flex-1 w-full max-w-lg mx-auto p-3 sm:p-4 flex flex-col pt-2">
         <OperatorOverageWarning vaultId={vaultId} />
         {hasPaidAccess && healthData?.referralCount != null && (
           <div className="mb-4 rounded-lg border border-border bg-white px-4 py-3 flex items-center justify-between">
@@ -235,11 +234,14 @@ export function OperatorReveal({ vaultId }: { vaultId: string }) {
             </div>
           </TabsContent>
 
-          <TabsContent value="billing" className="pb-24 focus-visible:outline-none space-y-6">
+          <TabsContent value="billing" className="pb-24 focus-visible:outline-none">
             <OperatorBillingPanel vaultId={vaultId} />
-            <DeleteVaultSection vaultId={vaultId} />
           </TabsContent>
         </Tabs>
+
+        <div className="mt-10 pt-6 border-t-2 border-destructive/30">
+          <DeleteVaultSection vaultId={vaultId} />
+        </div>
       </main>
     </div>
   );

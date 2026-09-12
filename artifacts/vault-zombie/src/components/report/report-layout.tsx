@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { IconSprite } from "./icons";
 import { WaxSeal } from "./components";
 import { ArrowLeft } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
 
 export function ReportLayout({ 
   children, 
@@ -33,21 +34,17 @@ export function ReportLayout({
       <div className={`min-h-[100dvh] bg-background text-foreground flex flex-col font-sans ${printMode ? 'print-mode print:bg-white print:p-0' : ''}`}>
         
         {/* Hide header in print mode entirely */}
-        <header className="flex items-center justify-between gap-3 px-3 sm:px-5 py-4 bg-ink text-primary-foreground sticky top-0 z-20 print:hidden">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-             <Link href="/" className="flex shrink-0 items-center gap-2">
-               <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-14 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
-               <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-14 w-auto object-contain" />
-            </Link>
-            <div className="w-px h-5 bg-white/20"></div>
-             <Link href={finalBackUrl} className="flex min-w-0 items-center gap-2 text-sm font-bold text-brass-lt hover:text-white transition-colors">
+        <div className="print:hidden">
+          <SiteHeader />
+          <div className="flex items-center justify-between gap-3 px-3 sm:px-5 py-3 bg-bronze-wash border-b border-hairline">
+            <Link href={finalBackUrl} className="flex min-w-0 items-center gap-2 text-sm font-bold text-ink hover:text-bronze transition-colors">
               <ArrowLeft className="w-4 h-4 shrink-0" /> <span className="truncate">{backLabel}</span>
             </Link>
+            <div className="text-[11px] font-bold tracking-widest text-bronze uppercase bg-white px-3 py-1.5 rounded-full hidden sm:block">
+              Vault Report
+            </div>
           </div>
-          <div className="text-[11px] font-bold tracking-widest text-brass uppercase bg-white/10 px-3 py-1.5 rounded-full hidden sm:block">
-            Vault Report
-          </div>
-        </header>
+        </div>
 
         <main className={`flex-1 w-full max-w-2xl mx-auto p-3 sm:p-6 pb-24 ${printMode ? 'print:max-w-none print:w-full print:p-0' : ''}`}>
           

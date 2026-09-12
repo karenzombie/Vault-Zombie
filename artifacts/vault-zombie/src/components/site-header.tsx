@@ -8,11 +8,12 @@ import { cn } from "@/lib/utils";
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
 
 /**
- * The shared site header (Flow1 Build Stages 1.1). Used by the landing page, the
- * auth pages, the host dashboard, and the reveal surface. The guest flow, the
- * report pages, and the admin console keep their own specialized chrome, since
- * none of those are named in 1.1's link set and none are called out in the
- * stage's "done" checklist.
+ * The shared site header (Flow1 Build Stages 1.1, extended by the Stage 1
+ * correction of 2026-09-11). Used on every signed-in page — the landing page,
+ * the auth pages, the host dashboard, the reveal surface, and the report
+ * pages — so a host always has My vaults, Gift a vault, and Sign out
+ * available. The guest flow keeps its own minimal header, since guests never
+ * sign in.
  */
 export function SiteHeader() {
   return PUBLISHABLE_KEY ? <AuthAwareSiteHeader /> : <SiteHeaderChrome isSignedIn={false} onSignOut={() => {}} />;
