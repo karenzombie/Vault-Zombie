@@ -57,7 +57,7 @@ function Header() {
             Sign in
           </Link>
           <Link href="/sign-up" className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}>
-            Get started
+            Sign up
           </Link>
         </div>
       </div>
@@ -329,7 +329,7 @@ function Footer() {
         <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-ink">
           <Link href="/gifts/purchase" className="transition-colors hover:text-bronze">Gift a Vault</Link>
           <Link href="/sign-in" className="transition-colors hover:text-bronze">Sign in</Link>
-          <Link href="/sign-up" className="transition-colors hover:text-bronze">Get started</Link>
+          <Link href="/sign-up" className="transition-colors hover:text-bronze">Sign up</Link>
         </div>
       </div>
       <div className="mx-auto mt-12 max-w-6xl pt-8 text-center text-xs text-text-2">
