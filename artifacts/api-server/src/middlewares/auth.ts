@@ -42,7 +42,7 @@ function forbidden(res: Response, code: string, message: string) {
   return res.status(403).json({ error: message, code });
 }
 
-async function findOrCreateAccount(userId: string): Promise<Account> {
+export async function findOrCreateAccount(userId: string): Promise<Account> {
   const [existing] = await db
     .select()
     .from(accountsTable)

@@ -1,9 +1,9 @@
 import { Router, type IRouter } from "express";
 import { and, desc, eq } from "drizzle-orm";
 import { AcceptLegalConsentBody, AcceptLegalConsentResponse, CreateLegalSignupIntentBody, CreateLegalSignupIntentResponse, GetLegalStatusResponse } from "@workspace/api-zod";
-import { accountsTable, db, legalConsentsTable, legalSignupIntentsTable } from "@workspace/db";
+import { db, legalConsentsTable, legalSignupIntentsTable } from "@workspace/db";
 import { createLegalSignupIntent, currentLegalConfiguration } from "../lib/legal";
-import { provisionCurrentConsentAccount, requireClerkSession } from "../middlewares/auth";
+import { findOrCreateAccount, provisionCurrentConsentAccount, requireClerkSession } from "../middlewares/auth";
 
 const legalRouter: IRouter = Router();
 const publicConfig = () => {
@@ -29,8 +29,20 @@ legalRouter.post("/legal/signup-intent", async (req, res, next): Promise<void> =
 legalRouter.get("/legal/status", requireClerkSession, async (req, res, next): Promise<void> => {
   try {
     const config = publicConfig();
-    const [account] = await db.select({ id: accountsTable.id }).from(accountsTable).where(eq(accountsTable.clerkSubject, req.clerkUserId!)).limit(1);
-    if (!account) { res.json(GetLegalStatusResponse.parse({ ...config, accepted: false, acceptedAt: null })); return; }
+    let account: { id: string } | undefined;
+    try {
+      account = await findOrCreateAccount(req.clerkUserId!);
+    } catch (error) {
+      // A signed-in Clerk user with no local account yet and no valid
+      // sign-up consent to consume (e.g. legacy session, malformed intent)
+      // is reported as not-yet-accepted rather than surfaced as an error;
+      // the ConsentGate flow below is what creates the account in that case.
+      if ((error as { code?: string }).code === "CONSENT_REQUIRED") {
+        res.json(GetLegalStatusResponse.parse({ ...config, accepted: false, acceptedAt: null }));
+        return;
+      }
+      throw error;
+    }
     const [consent] = await db.select().from(legalConsentsTable).where(and(eq(legalConsentsTable.accountId, account.id), eq(legalConsentsTable.termsVersion, config.termsVersion), eq(legalConsentsTable.privacyVersion, config.privacyVersion))).orderBy(desc(legalConsentsTable.acceptedAt)).limit(1);
     res.json(GetLegalStatusResponse.parse({ ...config, accepted: Boolean(consent), acceptedAt: consent?.acceptedAt?.toISOString() ?? null }));
   } catch (error) { next(error); }
