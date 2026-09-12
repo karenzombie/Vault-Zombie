@@ -64,25 +64,31 @@ export type Block =
   | { kind: "bulletList"; items: string[] }
   | { kind: "receiptTable"; rows: Array<{ label: string; value: string }>; total: { label: string; value: string } }
   | { kind: "checklist"; items: Array<{ done: boolean; label: string }> }
-  | { kind: "resultScoreTiles"; tiles: Array<{ count: string; label: string } | { rank: string; of: string }> }
+  | { kind: "resultScoreTiles"; tiles: Array<{ kind: ResultKind; count: string; label: string } | { rank: string; of: string }> }
   | { kind: "predictionsTable"; rows: Array<{ prompt: string; said: string; note?: string | null; result: ResultKind }> };
 
 function td(content: string, style = "") { return `<td style="${style}">${content}</td>`; }
 function tableWrap(inner: string, style = "width:100%;border-collapse:collapse;") { return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="${style}"><tr>${inner}</tr></table>`; }
 
-function blockHtml(block: Block): string {
+function blockHtml(block: Block, ctx: { dark?: boolean } = {}): string {
   switch (block.kind) {
-    case "paragraph":
-      return `<p style="font-family:${FONT};font-size:16px;line-height:1.5;color:${COLOR.ink};margin:0 0 16px">${block.text}</p>`;
-    case "greeting":
-      return `<p style="font-family:${FONT};font-size:16px;line-height:1.5;color:${COLOR.ink};margin:0 0 16px">${block.text}</p>`;
+    case "paragraph": {
+      const color = ctx.dark ? COLOR.parchment : COLOR.ink;
+      return `<p style="font-family:${FONT};font-size:16px;line-height:1.5;color:${color};margin:0 0 16px">${block.text}</p>`;
+    }
+    case "greeting": {
+      const color = ctx.dark ? COLOR.parchment : COLOR.ink;
+      return `<p style="font-family:${FONT};font-size:16px;line-height:1.5;color:${color};margin:0 0 16px">${block.text}</p>`;
+    }
     case "sectionHeading": {
       const iconHtml = block.icon ? iconImg(block.icon, block.dark ? "brass" : "bronze") : "";
       const color = block.dark ? COLOR.brassLight : COLOR.ink;
       return `<h2 style="font-family:${FONT};font-size:17px;font-weight:600;color:${color};margin:0 0 12px">${iconHtml}${block.text}</h2>`;
     }
     case "highlightBand":
-      return `<div style="background:${COLOR.bronzeWash};border-radius:8px;padding:20px;margin:0 0 20px">${block.children.map(blockHtml).join("")}</div>`;
+      // Spans the full card width, like the header band (spec 3.3) — bleeds out of the
+      // body's 32px side padding via negative margins instead of sitting inset.
+      return `<div style="background:${COLOR.bronzeWash};padding:20px 32px;margin:0 -32px 20px">${block.children.map((child) => blockHtml(child, ctx)).join("")}</div>`;
     case "codeBox":
       return `<div style="background:${COLOR.white};border:2px dashed ${COLOR.brass};border-radius:8px;padding:16px;text-align:center;margin:0 0 12px">` +
         `<span style="font-family:${FONT};font-size:24px;font-weight:700;letter-spacing:0.14em;color:${COLOR.ink}">${escapeHtml(block.code)}</span>` +
@@ -92,7 +98,8 @@ function blockHtml(block: Block): string {
         `<a href="${block.url}" style="font-family:${FONT};font-size:16px;color:${COLOR.bronze};text-decoration:underline;word-break:break-all">${block.url}</a>` +
         (block.note ? `<div style="font-family:${FONT};font-size:14px;color:${COLOR.ink};margin-top:8px">${block.note}</div>` : "") + `</div>`;
     case "darkBand":
-      return `<div style="background:${COLOR.ink};border-radius:8px;padding:20px;margin:0 0 20px">${block.children.map(blockHtml).join("")}</div>`;
+      // Same full-bleed treatment as highlightBand; children render with dark-context colors.
+      return `<div style="background:${COLOR.ink};padding:20px 32px;margin:0 -32px 20px">${block.children.map((child) => blockHtml(child, { dark: true })).join("")}</div>`;
     case "statTiles": {
       const cells = block.tiles.map((tile) => td(
         `<div style="background:${COLOR.ink};border:1px solid ${COLOR.text2};border-radius:8px;padding:14px 8px;text-align:center">` +
@@ -136,9 +143,10 @@ function blockHtml(block: Block): string {
             `<div style="font-family:${FONT};font-size:24px;font-weight:700;color:${COLOR.brass}">${escapeHtml(tile.rank)}</div>` +
             `<div style="font-family:${FONT};font-size:13px;color:${COLOR.parchment};margin-top:4px">${escapeHtml(tile.of)}</div></div>`, "padding:4px");
         }
-        return td(`<div style="background:${COLOR.white};border:1px solid ${COLOR.hairline};border-radius:8px;padding:14px 8px;text-align:center">` +
-          `<div style="font-family:${FONT};font-size:24px;font-weight:700;color:${COLOR.ink}">${escapeHtml(tile.count)}</div>` +
-          `<div style="font-family:${FONT};font-size:13px;color:${COLOR.text2};margin-top:4px">${escapeHtml(tile.label)}</div></div>`, "padding:4px");
+        const colors = RESULT_COLOR[tile.kind];
+        return td(`<div style="background:${colors.bg};border:1px solid ${COLOR.hairline};border-radius:8px;padding:14px 8px;text-align:center">` +
+          `<div style="font-family:${FONT};font-size:24px;font-weight:700;color:${colors.text}">${escapeHtml(tile.count)}</div>` +
+          `<div style="font-family:${FONT};font-size:13px;color:${colors.text};margin-top:4px">${escapeHtml(tile.label)}</div></div>`, "padding:4px");
       }).join("");
       return tableWrap(cells);
     }
@@ -212,7 +220,7 @@ export function renderDoc(input: { eyebrow: string; heading: string; blocks: Blo
   const heading = `<tr><td style="padding:28px 32px 4px;text-align:center">` +
     `<div style="font-family:${FONT};font-size:13px;font-weight:600;color:${COLOR.bronze};margin:0 0 6px">${escapeHtml(input.eyebrow)}</div>` +
     `<div style="font-family:${FONT};font-size:28px;font-weight:700;color:${COLOR.ink};margin:0 0 20px">${escapeHtml(input.heading)}</div></td></tr>`;
-  const body = `<tr><td style="padding:0 32px 28px">${input.blocks.map(blockHtml).join("")}</td></tr>`;
+  const body = `<tr><td style="padding:0 32px 28px">${input.blocks.map((block) => blockHtml(block)).join("")}</td></tr>`;
   const html = `<!doctype html><html><body style="margin:0;padding:24px 12px;background:${COLOR.parchment}">` +
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:${COLOR.white};border:1px solid ${COLOR.hairline};border-radius:12px">` +
     `${header}${heading}${body}</table>${footerHtml(input.footer)}</body></html>`;

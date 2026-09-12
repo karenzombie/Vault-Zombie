@@ -248,6 +248,7 @@ async function processVerifiedEvent(event: Stripe.Event) {
         amountCents: billingRecord.amountCents,
         currency: billingRecord.currency,
         stripePaymentIntentId: commonBillingUpdate.stripePaymentIntentId,
+        paidAt: new Date().toISOString(),
       };
     }
 
@@ -327,7 +328,7 @@ export const stripeWebhookBoundary: RequestHandler = async (req, res) => {
           vaultId: result.vaultId,
           payload: {
             fromTier: result.fromTier, targetTier: result.targetTier, amountCents: result.amountCents,
-            currency: result.currency, stripePaymentIntentId: result.stripePaymentIntentId,
+            currency: result.currency, stripePaymentIntentId: result.stripePaymentIntentId, paidAt: result.paidAt,
           },
         });
       } catch (error) { req.log.error({ err: error, stripeEventId: event.id }, "Host receipt email enqueue failed"); }

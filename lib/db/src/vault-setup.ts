@@ -42,11 +42,14 @@ export async function createDraftVault(input: {
     guestTokenHash: tokenHash(guestToken),
     referrerCode,
   }).returning();
-  const [operator] = await db.select({ email: accountsTable.email, displayName: accountsTable.displayName }).from(accountsTable).where(eq(accountsTable.id, input.operatorId)).limit(1);
+  const [operator] = await db.select({ email: accountsTable.email }).from(accountsTable).where(eq(accountsTable.id, input.operatorId)).limit(1);
   if (operator?.email) {
+    // H2's copy and checklist are built from the vault's live setup state at render time
+    // (see buildH2 in render.ts), so the payload only needs to identify the vault.
     await enqueueEmail({
       dedupeKey: `vault-created:${vault.id}`, eventType: "vault_created", recipientEmail: operator.email,
-      payload: { displayName: operator.displayName, vaultId: vault.id, vaultName: vault.name },
+      vaultId: vault.id,
+      payload: { vaultId: vault.id },
     });
   }
   return { vault, guestToken };

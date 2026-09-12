@@ -3,11 +3,11 @@
  * using verbatim copy and the layout/formatting primitives.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import {
   answersTable, db, getGuestPersonalReport,
   guestsTable, overageEventsTable, PLAN_POLICY, revealSlotsTable, submissionsTable,
-  vaultsTable, type EmailDelivery, type PlanTier,
+  vaultQuestionsTable, vaultsTable, vaultTypesTable, type EmailDelivery, type PlanTier,
 } from "@workspace/db";
 import { TIER_ORDER, findStripePrice, getStripeClient, type PaidTier } from "../stripe";
 import { daysBetween, formatEmailDate, formatEmailMoney, formatElapsedTime, formatPlanDuration } from "../format";
@@ -40,6 +40,11 @@ const SCHEDULE_NAME: Record<string, string> = {
 };
 
 function operatorVaultUrl(vaultId: string) { return `${appUrl()}/operator/vaults/${vaultId}`; }
+// Stage 2 has not built the vault-creation screen yet; the spec still calls for a
+// direct link, so this points at the eventual route rather than falling back to
+// the site root (per explicit instruction: point there anyway, expected to 404 today).
+function operatorNewVaultUrl() { return `${appUrl()}/operator/vaults/new`; }
+function linkTag(url: string) { return `<a href="${url}" style="color:${"#8A6D3B"};text-decoration:underline;word-break:break-all">${url}</a>`; }
 function operatorRevealUrl(vaultId: string, revealSlotId?: string | null) {
   return revealSlotId ? `${appUrl()}/operator/vaults/${vaultId}/reveals/${revealSlotId}` : operatorVaultUrl(vaultId);
 }
@@ -67,78 +72,146 @@ async function findUpgradeOption(currentTier: PlanTier, guestCount: number) {
 
 // ---- F1/F2/F3: gift emails ----
 
-function giftReceiptBlocks(p: Record<string, unknown>) {
+function planTiles(tier: PlanTier) {
+  const policy = PLAN_POLICY[tier];
   return [
-    { kind: "receiptTable", rows: [
-      { label: "Plan", value: TIER_NAME[String(p.targetTier)] ?? String(p.targetTier) },
-      { label: "Purchased", value: formatEmailDate(String(p.purchasedAt)) },
-    ], total: { label: "Total", value: formatEmailMoney(Number(p.amountCents)) } },
-  ] satisfies Block[];
+    { number: String(policy.guestCap), label: "guests" },
+    { number: formatPlanDuration(policy.durationYears), label: "of reveals" },
+  ] satisfies Array<{ number: string; label: string }>;
 }
 
 function f1GiftDelivery(p: Record<string, unknown>): Doc {
   const code = String(p.giftCode);
-  return {
-    subject: "Your Vault Zombie gift purchase 🎁",
-    eyebrow: "Gift purchased",
-    heading: "Your gift is ready to send",
-    blocks: [
-      { kind: "paragraph", text: `Thanks for gifting ${escapeHtml(TIER_NAME[String(p.targetTier)] ?? String(p.targetTier))}! Here's the code to pass along, plus your receipt.` },
-      { kind: "codeBox", code, note: "Share this code with the person you're gifting." },
-      { kind: "sectionHeading", icon: "receipt", text: "Your receipt" },
-      ...giftReceiptBlocks(p),
-      { kind: "button", url: giftRedeemUrl(), label: "View gift details" },
-    ],
-    footer: { questionsLine: "purchase" },
-  };
+  const tier = String(p.targetTier) as PlanTier;
+  const tierName = TIER_NAME[tier] ?? String(tier);
+  const recipientEmail = p.recipientEmail ? String(p.recipientEmail) : null;
+  const toLine = p.toLine ? String(p.toLine) : null;
+  const fromLine = p.fromLine ? String(p.fromLine) : null;
+  const blocks: Block[] = [
+    { kind: "paragraph", text: `You just gave someone a ${escapeHtml(tierName)} vault from Vault Zombie. Their friends and family will seal predictions about their future, and the predictions unlock over time so everyone can see who called it.` },
+    { kind: "highlightBand", children: [
+      { kind: "sectionHeading", icon: "key", text: "Your gift code" },
+      { kind: "codeBox", code, note: "The code never expires." },
+    ] },
+    { kind: "sectionHeading", icon: "gift-box", text: "How to give it" },
+    { kind: "paragraph", text: "Pass the code along however you like: forward this email, write it in a card, or print the gift card from your confirmation page." },
+  ];
+  if (recipientEmail) blocks.push({ kind: "paragraph", text: `We also sent the code directly to ${escapeHtml(recipientEmail)}.` });
+  blocks.push(
+    { kind: "sectionHeading", text: "How they redeem it" },
+    { kind: "numberedSteps", steps: [
+      `Go to ${linkTag(giftRedeemUrl())}`,
+      "Sign up for a free account, or sign in",
+      `Enter the code, and their ${escapeHtml(tierName)} vault is ready to set up`,
+    ] },
+    { kind: "paragraph", text: "We'll email you when they redeem it." },
+    { kind: "darkBand", children: [
+      { kind: "sectionHeading", icon: "group", text: `What's included in ${escapeHtml(tierName)}`, dark: true },
+      { kind: "statTiles", tiles: planTiles(tier) },
+    ] },
+    { kind: "sectionHeading", icon: "receipt", text: "Your receipt" },
+  );
+  const receiptRows: Array<{ label: string; value: string }> = [
+    { label: `${tierName} vault (gift)`, value: formatEmailMoney(Number(p.amountCents)) },
+    { label: "Date", value: formatEmailDate(String(p.purchasedAt)) },
+    { label: "Payment ID", value: String(p.stripePaymentIntentId) },
+  ];
+  if (toLine || fromLine) receiptRows.push({ label: "To and from", value: `${toLine ?? ""}, from ${fromLine ?? ""}` });
+  blocks.push(
+    { kind: "receiptTable", rows: receiptRows, total: { label: "Total", value: formatEmailMoney(Number(p.amountCents)) } },
+    { kind: "paragraph", text: "Changed your mind? You can get a refund within 90 days of purchase, as long as the gift hasn't been redeemed. Contact info@zombieplatforms.com." },
+  );
+  return { subject: "Thank you for your gift! Your Vault Zombie code is inside", eyebrow: "Gift secured", heading: "Thank you for your gift!", blocks, footer: {} };
 }
 
 function f2GiftRecipientDelivery(p: Record<string, unknown>): Doc {
   const code = String(p.giftCode);
+  const tier = String(p.targetTier) as PlanTier;
+  const tierName = TIER_NAME[tier] ?? String(tier);
+  const toLine = p.toLine ? String(p.toLine) : null;
   const fromLine = p.fromLine ? String(p.fromLine) : null;
   return {
-    subject: "You've been gifted a Vault Zombie vault! 🎁",
+    subject: fromLine ? `${fromLine} gave you a Vault Zombie vault! 🎁` : "You've been given a Vault Zombie vault! 🎁",
     eyebrow: "A gift for you",
-    heading: fromLine ? `${fromLine} sent you a gift!` : "You've got a gift!",
+    heading: "You've been given a gift!",
     blocks: [
-      { kind: "paragraph", text: `Someone gave you ${escapeHtml(TIER_NAME[String(p.targetTier)] ?? String(p.targetTier))} on Vault Zombie. Use the code below to redeem it.` },
-      { kind: "codeBox", code, note: "Enter this code when you start your vault." },
-      { kind: "button", url: giftRedeemUrl(), label: "Redeem your gift" },
+      { kind: "greeting", text: toLine ? `Hi ${escapeHtml(toLine)},` : "Hi there," },
+      { kind: "paragraph", text: fromLine ? `${escapeHtml(fromLine)} gave you a ${escapeHtml(tierName)} vault from Vault Zombie.` : `You've been given a ${escapeHtml(tierName)} vault from Vault Zombie.` },
+      { kind: "sectionHeading", icon: "gift-box", text: "What is Vault Zombie?" },
+      { kind: "paragraph", text: "It's a way to collect sealed predictions about your future from the people who know you best, at a wedding, a new baby, a graduation, a new job, or any big moment. The predictions stay sealed, even from you, and unlock over time so everyone can see who called it." },
+      { kind: "highlightBand", children: [
+        { kind: "sectionHeading", icon: "key", text: "Your gift code" },
+        { kind: "codeBox", code },
+      ] },
+      { kind: "sectionHeading", text: "How to redeem it" },
+      { kind: "numberedSteps", steps: [
+        `Go to ${linkTag(giftRedeemUrl())}`,
+        "Sign up for a free account, or sign in if you already have one",
+        `Enter your code, and your ${escapeHtml(tierName)} vault is ready to set up`,
+      ] },
+      { kind: "paragraph", text: "Your code never expires, so redeem it whenever you're ready." },
+      { kind: "darkBand", children: [
+        { kind: "sectionHeading", icon: "group", text: `What's included in ${escapeHtml(tierName)}`, dark: true },
+        { kind: "statTiles", tiles: planTiles(tier) },
+      ] },
     ],
     footer: {},
   };
 }
 
 function f3GiftRedeemed(p: Record<string, unknown>): Doc {
+  const tier = String(p.targetTier) as PlanTier;
+  const tierName = TIER_NAME[tier] ?? String(tier);
+  const toLine = p.toLine ? String(p.toLine) : null;
   return {
-    subject: "Your Vault Zombie gift was redeemed",
+    subject: "Your gift was redeemed! 🎉",
     eyebrow: "Gift redeemed",
-    heading: "Your gift found a home",
+    heading: "Your gift landed!",
     blocks: [
-      { kind: "paragraph", text: `Good news — the gift code ${escapeHtml(String(p.giftCode))} was just redeemed for ${escapeHtml(TIER_NAME[String(p.targetTier)] ?? String(p.targetTier))}${p.toLine ? ` by ${escapeHtml(String(p.toLine))}` : ""}.` },
-      { kind: "receiptTable", rows: [
-        { label: "Purchased", value: formatEmailDate(String(p.purchasedAt)) },
-        { label: "Redeemed", value: formatEmailDate(String(p.redeemedAt)) },
-      ], total: { label: "Plan", value: TIER_NAME[String(p.targetTier)] ?? String(p.targetTier) } },
+      { kind: "paragraph", text: toLine ? `Good news: ${escapeHtml(toLine)} just redeemed the ${escapeHtml(tierName)} vault you gave them.` : `The ${escapeHtml(tierName)} vault you gave was just redeemed.` },
+      { kind: "paragraph", text: "Now they can set it up, choose their prompts, and invite their people to start predicting." },
+      { kind: "paragraph", text: "Thank you for sharing Vault Zombie." },
+      { kind: "highlightBand", children: [
+        { kind: "sectionHeading", icon: "gift-box", text: "Gift details" },
+        { kind: "bulletList", items: [
+          `Gift: ${escapeHtml(tierName)} vault`,
+          `Code: ${escapeHtml(String(p.giftCode))}`,
+          `Purchased: ${escapeHtml(formatEmailDate(String(p.purchasedAt)))}`,
+          `Redeemed: ${escapeHtml(formatEmailDate(String(p.redeemedAt)))}`,
+        ] },
+      ] },
     ],
-    footer: { questionsLine: "purchase" },
+    footer: {},
   };
 }
 
 // ---- H1: welcome ----
-function h1HostWelcome(p: Record<string, unknown>): Doc {
+function h1HostWelcome(_p: Record<string, unknown>): Doc {
   return {
-    subject: "Welcome to Vault Zombie",
-    eyebrow: "Welcome",
-    heading: `Welcome, ${escapeHtml(String(p.displayName ?? "there"))}!`,
+    subject: "Welcome to Vault Zombie! Let's build your first vault",
+    eyebrow: "Welcome aboard",
+    heading: "Welcome to Vault Zombie!",
     blocks: [
-      { kind: "paragraph", text: "You're in. Vault Zombie lets you seal predictions from your guests, then reveal them on your own schedule — no peeking, not even for you." },
-      { kind: "numberedSteps", steps: [
-        "Pick a vault type and set up your questions.",
-        "Share your write-only guest link. Nobody, including you, can read a prediction before it unlocks.",
-        "When it's time, mark what really happened, and we'll score everyone for you.",
+      { kind: "paragraph", text: "You just started something your people will be talking about for years." },
+      { kind: "highlightBand", children: [
+        { kind: "sectionHeading", icon: "lock", text: "How it works" },
+        { kind: "numberedSteps", steps: [
+          "Create a vault for your big moment and choose the prompts your guests will answer.",
+          "Share your QR code or link. Guests answer in about a minute, with no account needed.",
+          "Each prediction seals the moment it's submitted. Not even you can peek.",
+          "Predictions unlock on the reveal schedule you choose, and you mark who called it.",
+        ] },
       ] },
-      { kind: "button", url: appUrl(), label: "Start your first vault" },
+      { kind: "button", url: operatorNewVaultUrl(), label: "Create your first vault" },
+      { kind: "darkBand", children: [
+        { kind: "sectionHeading", icon: "qr-code", text: "Tips for a great turnout", dark: true },
+        { kind: "bulletList", items: [
+          "Put your QR code where no one can miss it, like a table card or your welcome sign.",
+          "Add a few prompts of your own. The personal ones get the best answers.",
+          "Keep it light. Guests can answer in about a minute, so nudge them to jump in.",
+        ] },
+      ] },
+      { kind: "paragraph", text: "Start free with a Lockbox vault, or choose Safe, Vault, or Deep Vault for bigger events and longer reveals." },
     ],
     footer: {},
   };
@@ -146,16 +219,31 @@ function h1HostWelcome(p: Record<string, unknown>): Doc {
 
 // ---- H2: vault created ----
 function h2VaultCreated(p: Record<string, unknown>): Doc {
+  const vaultType = String(p.vaultType);
+  const tier = String(p.planTier) as PlanTier;
+  const tierName = TIER_NAME[tier] ?? String(tier);
   const checklist = p.checklist as Array<{ done: boolean; label: string }>;
   return {
-    subject: `${String(p.vaultName)} is on its way`,
+    subject: `Your ${vaultType} vault is saved! Here's what's next`,
     eyebrow: "Vault started",
-    heading: `${String(p.vaultName)} is taking shape`,
+    heading: "Your vault is saved!",
     blocks: [
-      { kind: "paragraph", text: "Here's where things stand. Finish the checklist below, then seal your vault when you're ready." },
-      { kind: "sectionHeading", icon: "pencil", text: "Setup checklist" },
-      { kind: "checklist", items: checklist },
-      { kind: "button", url: operatorVaultUrl(String(p.vaultId)), label: "Continue setup" },
+      { kind: "paragraph", text: `Nice start. Your ${escapeHtml(vaultType)} vault on the ${escapeHtml(tierName)} plan is saved, so you can finish setting it up whenever you're ready. Drafts never expire.` },
+      { kind: "button", url: operatorVaultUrl(String(p.vaultId)), label: "Finish setting up your vault" },
+      { kind: "highlightBand", children: [
+        { kind: "sectionHeading", icon: "pencil", text: "Your setup checklist" },
+        { kind: "checklist", items: checklist },
+      ] },
+      { kind: "sectionHeading", icon: "lock", text: "Before you seal, remember" },
+      { kind: "bulletList", items: [
+        "Guests can't answer until your vault is sealed.",
+        "Once sealed, your prompts, reveal schedule, and reveal dates are locked in for good. Take a final look before you seal.",
+        "After sealing, you'll get your share link, QR code, and printable cards.",
+      ] },
+      { kind: "darkBand", children: [
+        { kind: "sectionHeading", icon: "group", text: "Your plan includes", dark: true },
+        { kind: "statTiles", tiles: planTiles(tier) },
+      ] },
     ],
     footer: {},
   };
@@ -163,33 +251,70 @@ function h2VaultCreated(p: Record<string, unknown>): Doc {
 
 // ---- H3: host receipt ----
 function h3HostReceipt(p: Record<string, unknown>): Doc {
+  const fromTier = String(p.fromTier) as PlanTier;
+  const targetTier = String(p.targetTier) as PlanTier;
+  const isUpgrade = fromTier !== "lockbox";
+  const tierName = TIER_NAME[targetTier] ?? String(targetTier);
+  const fromTierName = TIER_NAME[fromTier] ?? String(fromTier);
+  const darkBandChildren: Block[] = [
+    { kind: "sectionHeading", icon: "group", text: `What's included in ${escapeHtml(tierName)}`, dark: true },
+    { kind: "statTiles", tiles: planTiles(targetTier) },
+  ];
+  if (isUpgrade) darkBandChildren.push({ kind: "paragraph", text: "Your upgrade raises your guest limit. Your reveal schedule and dates stay exactly as they were when you sealed the vault." });
+  const blocks: Block[] = [
+    { kind: "paragraph", text: isUpgrade
+      ? `Your vault is now upgraded from ${escapeHtml(fromTierName)} to ${escapeHtml(tierName)}.`
+      : `Your ${escapeHtml(tierName)} plan is active and ready to go.` },
+    { kind: "button", url: operatorVaultUrl(String(p.vaultId)), label: isUpgrade ? "Open your vault" : "Continue setting up your vault" },
+    { kind: "darkBand", children: darkBandChildren },
+    { kind: "sectionHeading", icon: "receipt", text: "Your receipt" },
+    { kind: "receiptTable", rows: [
+      { label: "Item", value: isUpgrade ? `Upgrade from ${fromTierName} to ${tierName}` : `${tierName} plan` },
+      { label: "Date", value: formatEmailDate(String(p.paidAt)) },
+      { label: "Payment ID", value: String(p.stripePaymentIntentId) },
+    ], total: { label: "Total", value: formatEmailMoney(Number(p.amountCents)) } },
+    { kind: "paragraph", text: "Keep this email for your records." },
+  ];
   return {
-    subject: "Your Vault Zombie receipt",
+    subject: isUpgrade ? "Your Vault Zombie upgrade receipt" : "Your Vault Zombie receipt",
     eyebrow: "Payment received",
-    heading: "You're upgraded!",
-    blocks: [
-      { kind: "paragraph", text: `Your vault is now on ${escapeHtml(TIER_NAME[String(p.targetTier)] ?? String(p.targetTier))}. Thanks for keeping the vault going.` },
-      { kind: "sectionHeading", icon: "receipt", text: "Your receipt" },
-      { kind: "receiptTable", rows: [
-        { label: "From", value: TIER_NAME[String(p.fromTier)] ?? String(p.fromTier) },
-        { label: "To", value: TIER_NAME[String(p.targetTier)] ?? String(p.targetTier) },
-      ], total: { label: "Charged", value: formatEmailMoney(Number(p.amountCents)) } },
-      { kind: "button", url: operatorVaultUrl(String(p.vaultId)), label: "Open your vault" },
-    ],
+    heading: "Thank you for your purchase!",
+    blocks,
     footer: { questionsLine: "purchase" },
   };
 }
 
 // ---- H4: vault sealed ----
 function h4VaultSealed(p: Record<string, unknown>): Doc {
+  const vaultName = String(p.vaultName);
   return {
-    subject: `${String(p.vaultName)} is sealed 🔒`,
-    eyebrow: "Sealed",
-    heading: "Your vault is sealed",
+    subject: `${vaultName} is sealed and ready for guests! 🔒`,
+    eyebrow: "Vault sealed",
+    heading: "Your vault is ready for guests!",
     blocks: [
-      { kind: "sectionHeading", icon: "lock", text: `${escapeHtml(String(p.vaultName))} is sealed` },
-      { kind: "paragraph", text: "Guests can now submit predictions through your write-only link. Nobody can read a prediction before it unlocks, not even you." },
-      { kind: "button", url: operatorVaultUrl(String(p.vaultId)), label: "Share your guest link" },
+      { kind: "paragraph", text: `${escapeHtml(vaultName)} is sealed and live. Time to get your people predicting.` },
+      { kind: "highlightBand", children: [
+        { kind: "sectionHeading", icon: "qr-code", text: "Share with your guests" },
+        { kind: "linkBox", url: String(p.guestLink) },
+        { kind: "paragraph", text: "Guests can use this link or scan your QR code. They answer in about a minute and never need an account." },
+      ] },
+      { kind: "button", url: operatorVaultUrl(String(p.vaultId)), label: "Get your QR code and printable cards" },
+      { kind: "sectionHeading", icon: "lock", text: "What sealing means" },
+      { kind: "paragraph", text: "Your prompts, reveal schedule, and reveal dates are now locked in. Every prediction seals the moment a guest submits it. No one can read one before its reveal date, not even you." },
+      { kind: "darkBand", children: [
+        { kind: "sectionHeading", text: "Your vault at a glance", dark: true },
+        { kind: "bulletList", items: [
+          bulletIcon("group", "brass", `Guest limit: ${Number(p.guestLimit)}`),
+          bulletIcon("hourglass", "brass", `Reveal schedule: ${escapeHtml(String(p.revealScheduleName))}`),
+          bulletIcon("calendar", "brass", `First reveal: ${escapeHtml(formatEmailDate(String(p.firstRevealDate)))}`),
+        ] },
+      ] },
+      { kind: "sectionHeading", text: "What happens next" },
+      { kind: "numberedSteps", steps: [
+        "Guests answer and seal their predictions.",
+        "We email you the moment a reveal is ready to open.",
+        "You mark the results, and your guests find out who called it.",
+      ] },
     ],
     footer: {},
   };
@@ -198,10 +323,11 @@ function h4VaultSealed(p: Record<string, unknown>): Doc {
 // ---- H5: reveal ready (operator) ----
 function h5RevealOperator(p: Record<string, unknown>): Doc {
   return {
-    subject: `${String(p.vaultName)}: a reveal just opened`,
-    eyebrow: "Reveal open",
-    heading: "It's time to mark a reveal",
+    subject: `It's reveal day for ${String(p.vaultName)}! 🔓`,
+    eyebrow: "Reveal ready",
+    heading: "It's time to open your vault!",
     blocks: [
+      { kind: "paragraph", text: `A batch of predictions in ${escapeHtml(String(p.vaultName))} just unlocked. Your guests sealed these ${escapeHtml(String(p.elapsedSinceSealing))} ago, and now you get to see who called it.` },
       { kind: "highlightBand", children: [
         { kind: "sectionHeading", icon: "open-lock", text: "This reveal" },
         { kind: "bulletList", items: [
@@ -317,10 +443,10 @@ function g1GuestSealed(p: Record<string, unknown>): Doc {
 function g2GuestResults(p: Record<string, unknown>): Doc {
   const guestName = p.guestName ? String(p.guestName) : null;
   const rows = p.rows as Array<{ prompt: string; said: string; note?: string | null; result: ResultKind }>;
-  const scoreTiles: Array<{ count: string; label: string } | { rank: string; of: string }> = [
-    { count: String(p.full), label: "came true" },
-    { count: String(p.half), label: "sort of" },
-    { count: String(p.zero), label: "nope" },
+  const scoreTiles: Array<{ kind: ResultKind; count: string; label: string } | { rank: string; of: string }> = [
+    { kind: "full", count: String(p.full), label: "came true" },
+    { kind: "half", count: String(p.half), label: "sort of" },
+    { kind: "zero", count: String(p.zero), label: "nope" },
   ];
   if (p.rank) scoreTiles.push({ rank: `#${p.rank}`, of: `of ${p.guestCount}` });
   return {
@@ -359,17 +485,77 @@ export async function buildDoc(row: EmailDelivery): Promise<Doc> {
     case "gift_redeemed": return f3GiftRedeemed(p);
     case "host_welcome": return h1HostWelcome(p);
     case "host_receipt": return h3HostReceipt(p);
-    case "operator_vault_sealed": return h4VaultSealed(p);
+    case "operator_vault_sealed": return buildH4(row, p);
     case "reveal_operator": return h5RevealOperator(p);
     case "unmarked_reveal_nudge": return h6UnmarkedNudge(p);
     case "operator_overage_initial": return buildH7(row, p);
     case "operator_overage_escalation": return buildH8(row, p);
     case "guest_submission_confirmation": return buildG1(row, p);
     case "guest_personal_report": return buildG2(row);
-    case "vault_created": return h2VaultCreated(p);
+    case "vault_created": return buildH2(row);
     default:
       throw new Error(`No email template is defined for event type "${row.eventType}".`);
   }
+}
+
+const CHECKLIST_LABELS = {
+  vaultType: "Choose your vault type",
+  names: "Add the names for your vault",
+  eventDate: "Set your event date",
+  revealSchedule: "Choose your reveal schedule",
+  prompts: "Pick your prompts, and add your own",
+  guestLayout: "Choose how guests see the prompts: one at a time, or all on one page",
+  cover: "Pick a cover",
+  sealed: "Seal your vault",
+} as const;
+
+async function buildH2(row: EmailDelivery): Promise<Doc> {
+  if (!row.vaultId) throw new Error("Vault created email is missing its vault.");
+  const [vault] = await db.select({
+    vaultTypeId: vaultsTable.vaultTypeId, planTier: vaultsTable.planTier,
+    subjectValues: vaultsTable.subjectValues, anchorDate: vaultsTable.anchorDate,
+    revealSchedule: vaultsTable.revealSchedule, coverObjectKey: vaultsTable.coverObjectKey,
+    status: vaultsTable.status,
+  }).from(vaultsTable).where(eq(vaultsTable.id, row.vaultId)).limit(1);
+  if (!vault) throw new Error("Vault no longer exists.");
+  const [vaultType] = await db.select({ name: vaultTypesTable.name, requiredSubjectTokens: vaultTypesTable.requiredSubjectTokens })
+    .from(vaultTypesTable).where(eq(vaultTypesTable.id, vault.vaultTypeId)).limit(1);
+  if (!vaultType) throw new Error("Vault type no longer exists.");
+  const [{ value: promptCount }] = await db.select({ value: count() }).from(vaultQuestionsTable)
+    .where(and(eq(vaultQuestionsTable.vaultId, row.vaultId), eq(vaultQuestionsTable.enabled, true)));
+  const namesFilled = vaultType.requiredSubjectTokens.every((token) => Boolean(vault.subjectValues?.[token]?.trim()));
+  const checklist = [
+    { done: true, label: CHECKLIST_LABELS.vaultType },
+    { done: namesFilled, label: CHECKLIST_LABELS.names },
+    { done: Boolean(vault.anchorDate), label: CHECKLIST_LABELS.eventDate },
+    { done: true, label: CHECKLIST_LABELS.revealSchedule },
+    { done: promptCount > 0, label: CHECKLIST_LABELS.prompts },
+    { done: true, label: CHECKLIST_LABELS.guestLayout },
+    { done: Boolean(vault.coverObjectKey), label: CHECKLIST_LABELS.cover },
+    { done: vault.status === "sealed", label: CHECKLIST_LABELS.sealed },
+  ];
+  return h2VaultCreated({ vaultId: row.vaultId, vaultType: vaultType.name, planTier: vault.planTier, checklist });
+}
+
+async function buildH4(row: EmailDelivery, p: Record<string, unknown>): Promise<Doc> {
+  if (!row.vaultId) throw new Error("Vault sealed email is missing its vault.");
+  const [vault] = await db.select({ entitledPlanTier: vaultsTable.entitledPlanTier, revealSchedule: vaultsTable.revealSchedule })
+    .from(vaultsTable).where(eq(vaultsTable.id, row.vaultId)).limit(1);
+  if (!vault) throw new Error("Vault no longer exists.");
+  const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, row.vaultId));
+  const firstRevealDate = slots.map((s) => s.revealDate).sort()[0] ?? null;
+  if (!firstRevealDate) throw new Error("Sealed vault is missing its reveal schedule.");
+  // NOTE: the guest-facing link needs the raw guest token, but only its hash is ever
+  // persisted (minted once at vault creation and returned to the caller, never stored).
+  // There is no way to recover it here without a schema change, which is out of scope
+  // for an email-template fix. Falling back to the operator's vault page, which is the
+  // only accurate destination available today; see final report.
+  return h4VaultSealed({
+    vaultName: p.vaultName, vaultId: row.vaultId, guestLink: operatorVaultUrl(row.vaultId),
+    guestLimit: PLAN_POLICY[vault.entitledPlanTier].guestCap,
+    revealScheduleName: SCHEDULE_NAME[vault.revealSchedule] ?? vault.revealSchedule,
+    firstRevealDate,
+  });
 }
 
 async function buildH7(row: EmailDelivery, p: Record<string, unknown>): Promise<Doc> {

@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, isNotNull, isNull, lte, min, or } from "drizzle-orm";
 import { accountsTable, answerVerdictsTable, answersTable, db, enqueueEmail, getGuestRevealReportEligibility, guestsTable, overageEventsTable, questionsTable, revealSlotsTable, submissionsTable, vaultQuestionsTable, vaultsTable } from "@workspace/db";
-import { daysBetween } from "./format";
+import { daysBetween, formatElapsedTime } from "./format";
 import { logger } from "./logger";
 
 /** DB-derived recurring work. Dedupe keys make this safe after downtime/restarts. */
@@ -29,7 +29,7 @@ export async function evaluateEmailWork(now = new Date()) {
   const slots = await db.select({
     id: revealSlotsTable.id, vaultId: vaultsTable.id, vaultName: vaultsTable.name, label: revealSlotsTable.label,
     revealDate: revealSlotsTable.revealDate, manualUnlockEmailsEnabled: revealSlotsTable.manualUnlockEmailsEnabled,
-    operatorId: vaultsTable.operatorId, operatorEmail: accountsTable.email,
+    operatorId: vaultsTable.operatorId, operatorEmail: accountsTable.email, sealedAt: vaultsTable.sealedAt,
   }).from(revealSlotsTable).innerJoin(vaultsTable, eq(revealSlotsTable.vaultId, vaultsTable.id))
     .innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id))
     .where(and(eq(vaultsTable.status, "sealed"), overrideSlotIds.length
@@ -47,7 +47,7 @@ export async function evaluateEmailWork(now = new Date()) {
     const predictionRows = await db.selectDistinct({ submissionId: answersTable.submissionId }).from(answersTable)
       .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
       .where(and(eq(submissionsTable.vaultId, slot.vaultId), eq(answersTable.revealSlotId, slot.id), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
-    if (await enqueueEmail({ dedupeKey: `reveal-operator:${slot.id}`, eventType: "reveal_operator", recipientEmail: slot.operatorEmail, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName, revealLabel: slot.label, revealDate: slot.revealDate, guestCount: uniqueGuests.length, predictionCount: predictionRows.length } })) queued++;
+    if (await enqueueEmail({ dedupeKey: `reveal-operator:${slot.id}`, eventType: "reveal_operator", recipientEmail: slot.operatorEmail, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName, revealLabel: slot.label, revealDate: slot.revealDate, guestCount: uniqueGuests.length, predictionCount: predictionRows.length, elapsedSinceSealing: slot.sealedAt ? formatElapsedTime(slot.sealedAt, now) : "some time" } })) queued++;
     for (const guest of uniqueGuests) {
       try {
         const eligibility = await getGuestRevealReportEligibility(slot.vaultId, slot.operatorId, guest.id, slot.id);

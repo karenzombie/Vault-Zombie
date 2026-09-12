@@ -15,7 +15,7 @@ async function sendWelcomeEmail(account: Account) {
   if (!account.email) return;
   await enqueueEmail({
     dedupeKey: `host-welcome:${account.id}`, eventType: "host_welcome", recipientEmail: account.email,
-    payload: { displayName: account.displayName },
+    payload: {},
   });
 }
 
