@@ -8,6 +8,15 @@ import {
 import { questionOptionsTable, questionsTable } from "./schema/content";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
 
+/**
+ * A custom prompt (vaultQuestionsTable.questionId null) has no bank question row.
+ * Its answerType is always free_text; its scoreable/keepsake mark lives on
+ * vaultQuestionsTable.customFreeTextMode instead of questionsTable.freeTextMode.
+ */
+const CUSTOM_ANSWER_TYPE = "free_text" as const;
+const answerTypeExpr = sql<string>`coalesce(${questionsTable.answerType}, ${CUSTOM_ANSWER_TYPE})`;
+const freeTextModeExpr = sql<string | null>`coalesce(${questionsTable.freeTextMode}, ${vaultQuestionsTable.customFreeTextMode})`;
+
 export type VerdictTier = "full" | "half" | "zero";
 
 export class RevealScoringError extends Error {
@@ -44,10 +53,10 @@ async function questionContext(vaultId: string, revealSlotId: string, vaultQuest
     vaultQuestionId: vaultQuestionsTable.id,
     prompt: vaultQuestionsTable.promptSnapshot,
     questionId: questionsTable.id,
-    answerType: questionsTable.answerType,
-    freeTextMode: questionsTable.freeTextMode,
+    answerType: answerTypeExpr,
+    freeTextMode: freeTextModeExpr,
     numberCloseBand: questionsTable.numberCloseBand,
-  }).from(vaultQuestionsTable).innerJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
+  }).from(vaultQuestionsTable).leftJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
     .where(and(eq(vaultQuestionsTable.id, vaultQuestionId), eq(vaultQuestionsTable.vaultId, vaultId))).limit(1);
   if (!question) throw new RevealScoringError("Vault question not found.", 404);
   return question;
@@ -91,9 +100,9 @@ export async function listUnlockedRevealWork(vaultId: string, operatorId: string
   const ids = [...new Set(answers.map((answer) => answer.vaultQuestionId))];
   const contexts = await db.select({
     vaultQuestionId: vaultQuestionsTable.id, prompt: vaultQuestionsTable.promptSnapshot,
-    answerType: questionsTable.answerType, freeTextMode: questionsTable.freeTextMode,
+    answerType: answerTypeExpr, freeTextMode: freeTextModeExpr,
     numberCloseBand: questionsTable.numberCloseBand,
-  }).from(vaultQuestionsTable).innerJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
+  }).from(vaultQuestionsTable).leftJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
     .where(inArray(vaultQuestionsTable.id, ids));
   const outcomes = await db.select().from(questionOutcomesTable)
     .where(inArray(questionOutcomesTable.vaultQuestionId, ids));
@@ -152,6 +161,8 @@ export async function resolveRevealQuestionOutcome(
   const question = await questionContext(vaultId, revealSlotId, vaultQuestionId);
   assertOutcomeInput(question, input);
   if (input.trueOptionId) {
+    // Custom prompts are always free_text, so a choice outcome always implies a bank question.
+    if (!question.questionId) throw new RevealScoringError("True option does not belong to this question.");
     const [option] = await db.select({ id: questionOptionsTable.id }).from(questionOptionsTable)
       .where(and(eq(questionOptionsTable.id, input.trueOptionId), eq(questionOptionsTable.questionId, question.questionId))).limit(1);
     if (!option) throw new RevealScoringError("True option does not belong to this question.");
@@ -226,8 +237,8 @@ export async function getOperatorScoreboard(vaultId: string, operatorId: string)
   if (!answers.length) return { entries: [] };
   const verdicts = await db.select().from(answerVerdictsTable).where(inArray(answerVerdictsTable.answerId, answers.map((answer) => answer.id)));
   const verdictByAnswer = new Map(verdicts.map((verdict) => [verdict.answerId, verdict]));
-  const contexts = await db.select({ id: vaultQuestionsTable.id, freeTextMode: questionsTable.freeTextMode })
-    .from(vaultQuestionsTable).innerJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
+  const contexts = await db.select({ id: vaultQuestionsTable.id, freeTextMode: freeTextModeExpr })
+    .from(vaultQuestionsTable).leftJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
     .where(inArray(vaultQuestionsTable.id, [...new Set(answers.map((answer) => answer.vaultQuestionId))]));
   const modeByQuestion = new Map(contexts.map((context) => [context.id, context.freeTextMode]));
   const scores = new Map<string, { guestId: string; displayName: string; full: number; half: number; zero: number }>();

@@ -1,7 +1,21 @@
 import { useState } from "react";
 import { Link, Redirect, useLocation, useSearch } from "wouter";
-import { useListUnlockedRevealWork, useGetVaultHealthReport, useListOperatorVaults, useDeleteOperatorVault } from "@workspace/api-client-react";
+import {
+  useListUnlockedRevealWork,
+  useGetVaultHealthReport,
+  useListOperatorVaults,
+  useDeleteOperatorVault,
+  useGetSealedVaultDateInfo,
+  useChangeSealedVaultEventDate,
+  usePreviewSealedVaultDateChange,
+  getGetSealedVaultDateInfoQueryKey,
+  type RevealSlotPreview,
+} from "@workspace/api-client-react";
 import type { OperatorVaultListVaultsItem } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -145,6 +159,12 @@ export function OperatorReveal({ vaultId }: { vaultId: string }) {
           <div className="shrink-0 text-[10px] sm:text-[11px] font-bold tracking-wider sm:tracking-widest text-bronze uppercase bg-bronze-wash px-2 sm:px-3 py-1.5 rounded-full">
             Live Host
           </div>
+        </div>
+      </div>
+
+      <div className="flex justify-center px-3 sm:px-4 pt-3">
+        <div className="w-full max-w-lg">
+          <EventDateChangeSection vaultId={vaultId} />
         </div>
       </div>
 
@@ -298,6 +318,121 @@ function DeleteVaultSection({ vaultId }: { vaultId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function formatAnchorDate(value: string): string {
+  return new Date(`${value}T12:00:00.000Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
+/** Flow1 Build Stages 3.5: the sealed-vault event date control. Lives on the
+ * vault's live page, not in setup, since setup is draft-only. */
+function EventDateChangeSection({ vaultId }: { vaultId: string }) {
+  const queryClient = useQueryClient();
+  const info = useGetSealedVaultDateInfo(vaultId);
+  const preview = usePreviewSealedVaultDateChange();
+  const change = useChangeSealedVaultEventDate();
+  const [open, setOpen] = useState(false);
+  const [newDate, setNewDate] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [confirmedPreview, setConfirmedPreview] = useState<RevealSlotPreview[] | null>(null);
+
+  if (!info.data || !info.data.revealSchedule) return null;
+
+  function handlePreview(date: string) {
+    setNewDate(date);
+    setError(null);
+    setConfirmedPreview(null);
+    if (!date) return;
+    preview.mutate(
+      { vaultId, data: { newAnchorDate: date } },
+      {
+        onSuccess: (res) => setConfirmedPreview(res.revealSlots),
+        onError: (err: any) => setError(err?.message ?? "That date isn't allowed."),
+      },
+    );
+  }
+
+  function handleConfirm() {
+    if (!newDate) return;
+    change.mutate(
+      { vaultId, data: { newAnchorDate: newDate } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetSealedVaultDateInfoQueryKey(vaultId) });
+          setOpen(false);
+          setNewDate("");
+          setConfirmedPreview(null);
+        },
+        onError: (err: any) => setError(err?.message ?? "That date isn't allowed."),
+      },
+    );
+  }
+
+  if (info.data.locked) {
+    return (
+      <div className="mb-2 flex items-center gap-2 text-xs text-text-2 bg-muted/40 border border-border rounded-lg px-3 py-2">
+        <Calendar className="w-3.5 h-3.5 shrink-0" />
+        <span>Your first reveal has opened, so the date is set from here on.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-2 bg-card border border-border rounded-lg px-3 py-2">
+      <button
+        type="button"
+        data-testid="button-toggle-date-change"
+        className="flex items-center justify-between w-full text-xs font-bold text-ink"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="flex items-center gap-2">
+          <Calendar className="w-3.5 h-3.5" />
+          Event date: {info.data.anchorDate ? formatAnchorDate(info.data.anchorDate) : "Not set"}
+        </span>
+        <span className="text-bronze">{open ? "Close" : "Change"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          <div className="max-w-xs">
+            <Label htmlFor="new-anchor-date" className="text-xs">New event date</Label>
+            <Input
+              id="new-anchor-date"
+              data-testid="input-new-anchor-date"
+              type="date"
+              value={newDate}
+              onChange={(e) => handlePreview(e.target.value)}
+            />
+          </div>
+
+          {error && <p className="text-sm text-destructive" data-testid="text-date-change-error">{error}</p>}
+
+          {confirmedPreview && !error && (
+            <div className="text-sm">
+              <p className="text-xs font-bold uppercase tracking-wide text-gray mb-1">This will move your reveals to</p>
+              <ul className="space-y-0.5 text-ink">
+                {confirmedPreview.map((slot, i) => (
+                  <li key={i} data-testid={`text-date-change-slot-${i}`}>
+                    {slot.label}: {formatAnchorDate(slot.revealDate)}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                size="sm"
+                className="mt-3"
+                data-testid="button-confirm-date-change"
+                disabled={change.isPending}
+                onClick={handleConfirm}
+              >
+                {change.isPending ? "Saving…" : "Confirm new date"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

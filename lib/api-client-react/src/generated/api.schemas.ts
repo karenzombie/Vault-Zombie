@@ -249,6 +249,262 @@ export interface OperatorVaultType {
   requiredSubjectTokens: string[];
 }
 
+export type VaultSetupDetailStatus = typeof VaultSetupDetailStatus[keyof typeof VaultSetupDetailStatus];
+
+
+export const VaultSetupDetailStatus = {
+  draft: 'draft',
+  sealed: 'sealed',
+  active: 'active',
+  completed: 'completed',
+} as const;
+
+export type VaultSetupDetailPlanTier = typeof VaultSetupDetailPlanTier[keyof typeof VaultSetupDetailPlanTier];
+
+
+export const VaultSetupDetailPlanTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type VaultSetupDetailEntitledPlanTier = typeof VaultSetupDetailEntitledPlanTier[keyof typeof VaultSetupDetailEntitledPlanTier];
+
+
+export const VaultSetupDetailEntitledPlanTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+/**
+ * @nullable
+ */
+export type VaultSetupDetailRevealSchedule = typeof VaultSetupDetailRevealSchedule[keyof typeof VaultSetupDetailRevealSchedule] | null;
+
+
+export const VaultSetupDetailRevealSchedule = {
+  weekly_sprint: 'weekly_sprint',
+  monthly_x3: 'monthly_x3',
+  monthly_year: 'monthly_year',
+  half_then_annual: 'half_then_annual',
+  annual_keepsake: 'annual_keepsake',
+} as const;
+
+export interface VaultSetupDetail {
+  id: string;
+  name: string;
+  status: VaultSetupDetailStatus;
+  planTier: VaultSetupDetailPlanTier;
+  entitledPlanTier: VaultSetupDetailEntitledPlanTier;
+  vaultTypeId: string;
+  vaultTypeName: string;
+  /** @nullable */
+  revealSchedule: VaultSetupDetailRevealSchedule;
+  /** @nullable */
+  anchorDate: string | null;
+  /** @nullable */
+  milestoneDate: string | null;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  milestoneLabel: string | null;
+}
+
+export type UpdateVaultSetupInputPlanTier = typeof UpdateVaultSetupInputPlanTier[keyof typeof UpdateVaultSetupInputPlanTier];
+
+
+export const UpdateVaultSetupInputPlanTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+/**
+ * @nullable
+ */
+export type UpdateVaultSetupInputRevealSchedule = typeof UpdateVaultSetupInputRevealSchedule[keyof typeof UpdateVaultSetupInputRevealSchedule] | null;
+
+
+export const UpdateVaultSetupInputRevealSchedule = {
+  weekly_sprint: 'weekly_sprint',
+  monthly_x3: 'monthly_x3',
+  monthly_year: 'monthly_year',
+  half_then_annual: 'half_then_annual',
+  annual_keepsake: 'annual_keepsake',
+} as const;
+
+export interface UpdateVaultSetupInput {
+  planTier: UpdateVaultSetupInputPlanTier;
+  /** @nullable */
+  revealSchedule?: UpdateVaultSetupInputRevealSchedule;
+  /** @nullable */
+  anchorDate?: string | null;
+  /** @nullable */
+  milestoneDate?: string | null;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  milestoneLabel?: string | null;
+}
+
+export type RevealSlotPreviewKind = typeof RevealSlotPreviewKind[keyof typeof RevealSlotPreviewKind];
+
+
+export const RevealSlotPreviewKind = {
+  scheduled: 'scheduled',
+  milestone: 'milestone',
+} as const;
+
+export interface RevealSlotPreview {
+  kind: RevealSlotPreviewKind;
+  label: string;
+  revealDate: string;
+}
+
+export type SchedulePreviewInputPlanTier = typeof SchedulePreviewInputPlanTier[keyof typeof SchedulePreviewInputPlanTier];
+
+
+export const SchedulePreviewInputPlanTier = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export type SchedulePreviewInputSchedule = typeof SchedulePreviewInputSchedule[keyof typeof SchedulePreviewInputSchedule];
+
+
+export const SchedulePreviewInputSchedule = {
+  weekly_sprint: 'weekly_sprint',
+  monthly_x3: 'monthly_x3',
+  monthly_year: 'monthly_year',
+  half_then_annual: 'half_then_annual',
+  annual_keepsake: 'annual_keepsake',
+} as const;
+
+export interface SchedulePreviewInput {
+  /** @nullable */
+  anchorDate?: string | null;
+  planTier: SchedulePreviewInputPlanTier;
+  schedule: SchedulePreviewInputSchedule;
+  /** @nullable */
+  milestoneDate?: string | null;
+  /**
+     * @maxLength 60
+     * @nullable
+     */
+  milestoneLabel?: string | null;
+}
+
+export interface SchedulePreviewResult {
+  revealSlots: RevealSlotPreview[];
+}
+
+export type VaultPromptAnswerType = typeof VaultPromptAnswerType[keyof typeof VaultPromptAnswerType];
+
+
+export const VaultPromptAnswerType = {
+  free_text: 'free_text',
+  number: 'number',
+  multiple_choice: 'multiple_choice',
+  name_pick: 'name_pick',
+} as const;
+
+/**
+ * @nullable
+ */
+export type VaultPromptFreeTextMode = typeof VaultPromptFreeTextMode[keyof typeof VaultPromptFreeTextMode] | null;
+
+
+export const VaultPromptFreeTextMode = {
+  scoreable: 'scoreable',
+  keepsake: 'keepsake',
+} as const;
+
+export interface VaultPrompt {
+  id: string;
+  /** @maxLength 140 */
+  prompt: string;
+  enabled: boolean;
+  displayOrder: number;
+  isCustom: boolean;
+  answerType: VaultPromptAnswerType;
+  /** @nullable */
+  freeTextMode: VaultPromptFreeTextMode;
+  /** @nullable */
+  subcategoryId: string | null;
+  /** @nullable */
+  subcategoryName: string | null;
+}
+
+export interface VaultPromptList {
+  prompts: VaultPrompt[];
+}
+
+export type AddCustomPromptInputFreeTextMode = typeof AddCustomPromptInputFreeTextMode[keyof typeof AddCustomPromptInputFreeTextMode];
+
+
+export const AddCustomPromptInputFreeTextMode = {
+  scoreable: 'scoreable',
+  keepsake: 'keepsake',
+} as const;
+
+export interface AddCustomPromptInput {
+  /**
+     * @minLength 1
+     * @maxLength 140
+     */
+  prompt: string;
+  freeTextMode: AddCustomPromptInputFreeTextMode;
+}
+
+export interface TogglePromptInput {
+  enabled: boolean;
+}
+
+export interface ReorderPromptsInput {
+  /** @minItems 1 */
+  orderedVaultQuestionIds: string[];
+}
+
+/**
+ * @nullable
+ */
+export type SealedVaultDateInfoRevealSchedule = typeof SealedVaultDateInfoRevealSchedule[keyof typeof SealedVaultDateInfoRevealSchedule] | null;
+
+
+export const SealedVaultDateInfoRevealSchedule = {
+  weekly_sprint: 'weekly_sprint',
+  monthly_x3: 'monthly_x3',
+  monthly_year: 'monthly_year',
+  half_then_annual: 'half_then_annual',
+  annual_keepsake: 'annual_keepsake',
+} as const;
+
+export interface SealedVaultDateInfo {
+  /** @nullable */
+  anchorDate: string | null;
+  /** @nullable */
+  revealSchedule: SealedVaultDateInfoRevealSchedule;
+  /** True once any reveal has opened; the date can no longer change. */
+  locked: boolean;
+}
+
+export interface SealedVaultDateChangeInput {
+  newAnchorDate: string;
+}
+
+export interface SealedVaultDateChangeResult {
+  anchorDate: string;
+  revealSlots: RevealSlotPreview[];
+}
+
 export interface OverageStatus {
   vaultId: string;
   heldSubmissionCount: number;

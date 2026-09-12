@@ -752,6 +752,132 @@ paths:
         "200": { description: Vault marked deleted, content: { application/json: { schema: { $ref: "#/components/schemas/OperatorVaultDeleteResult" } } } }
         "401": { description: Authentication required }
         "404": { description: "Vault not found, not owned by this host, or already deleted" }
+  /operator/vaults/{vaultId}/setup:
+    get:
+      operationId: getVaultSetupDetail
+      tags: [operator]
+      summary: Get a draft vault's current setup state
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Setup detail, content: { application/json: { schema: { $ref: "#/components/schemas/VaultSetupDetail" } } } }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
+    patch:
+      operationId: updateVaultSetup
+      tags: [operator]
+      summary: Autosave a draft vault's setup fields (event date, schedule, milestone)
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/UpdateVaultSetupInput" } } }
+      responses:
+        "200": { description: Setup saved, content: { application/json: { schema: { $ref: "#/components/schemas/VaultSetupDetail" } } } }
+        "400": { description: "Invalid schedule for this plan, or vault is not a draft" }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
+  /operator/vaults/{vaultId}/setup/schedule-preview:
+    post:
+      operationId: previewVaultSchedule
+      tags: [operator]
+      summary: Preview reveal dates for a chosen schedule before sealing
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SchedulePreviewInput" } } }
+      responses:
+        "200": { description: Reveal date preview, content: { application/json: { schema: { $ref: "#/components/schemas/SchedulePreviewResult" } } } }
+        "400": { description: "Invalid schedule, plan, or milestone date" }
+        "401": { description: Authentication required }
+  /operator/vaults/{vaultId}/prompts:
+    get:
+      operationId: listVaultPrompts
+      tags: [operator]
+      summary: List a vault's prompts, custom prompts first, in display order
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Prompt list, content: { application/json: { schema: { $ref: "#/components/schemas/VaultPromptList" } } } }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
+    post:
+      operationId: addCustomPrompt
+      tags: [operator]
+      summary: Add a custom free-text prompt to a draft vault
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AddCustomPromptInput" } } }
+      responses:
+        "201": { description: Prompt added, content: { application/json: { schema: { $ref: "#/components/schemas/VaultPrompt" } } } }
+        "400": { description: "Prompt is empty, too long, or vault is not a draft" }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
+  /operator/vaults/{vaultId}/prompts/order:
+    put:
+      operationId: reorderVaultPrompts
+      tags: [operator]
+      summary: Reorder a draft vault's prompts by drag-to-reorder
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/ReorderPromptsInput" } } }
+      responses:
+        "200": { description: New order saved, content: { application/json: { schema: { $ref: "#/components/schemas/VaultPromptList" } } } }
+        "400": { description: "List does not match this vault's prompts, or vault is not a draft" }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
+  /operator/vaults/{vaultId}/prompts/{vaultQuestionId}:
+    patch:
+      operationId: toggleVaultPrompt
+      tags: [operator]
+      summary: Turn a draft vault's prompt on or off
+      parameters:
+        - $ref: "#/components/parameters/VaultId"
+        - $ref: "#/components/parameters/VaultQuestionId"
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/TogglePromptInput" } } }
+      responses:
+        "200": { description: Prompt updated, content: { application/json: { schema: { $ref: "#/components/schemas/VaultPrompt" } } } }
+        "400": { description: Vault is not a draft }
+        "401": { description: Authentication required }
+        "404": { description: "Vault or prompt not found" }
+  /operator/vaults/{vaultId}/date-change:
+    get:
+      operationId: getSealedVaultDateInfo
+      tags: [operator]
+      summary: Get a sealed vault's current event date, schedule, and lock state
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Date info, content: { application/json: { schema: { $ref: "#/components/schemas/SealedVaultDateInfo" } } } }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found, not owned by this host, or not sealed" }
+    post:
+      operationId: changeSealedVaultEventDate
+      tags: [operator]
+      summary: Move a sealed vault's event date and recalculate its reveal schedule
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SealedVaultDateChangeInput" } } }
+      responses:
+        "200": { description: Date changed and reveals recalculated, content: { application/json: { schema: { $ref: "#/components/schemas/SealedVaultDateChangeResult" } } } }
+        "400": { description: "Date is locked, or would push a reveal into the past or today" }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found, not owned by this host, or not sealed" }
+  /operator/vaults/{vaultId}/date-change/preview:
+    post:
+      operationId: previewSealedVaultDateChange
+      tags: [operator]
+      summary: Preview a sealed vault's recalculated reveal dates before confirming
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/SealedVaultDateChangeInput" } } }
+      responses:
+        "200": { description: Recalculated preview, content: { application/json: { schema: { $ref: "#/components/schemas/SchedulePreviewResult" } } } }
+        "400": { description: "Date is locked, or would push a reveal into the past or today" }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found, not owned by this host, or not sealed" }
   /operator/vaults/{vaultId}/reveals/unlocked:
     get:
       operationId: listUnlockedRevealWork
@@ -1128,6 +1254,103 @@ components:
         slug: { type: string }
         name: { type: string }
         requiredSubjectTokens: { type: array, items: { type: string } }
+    VaultSetupDetail:
+      type: object
+      required: [id, name, status, planTier, entitledPlanTier, vaultTypeId, vaultTypeName, revealSchedule, anchorDate, milestoneDate, milestoneLabel]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        status: { type: string, enum: [draft, sealed, active, completed] }
+        planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        entitledPlanTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        vaultTypeId: { type: string, format: uuid }
+        vaultTypeName: { type: string }
+        revealSchedule: { type: ["string", "null"], enum: [weekly_sprint, monthly_x3, monthly_year, half_then_annual, annual_keepsake, null] }
+        anchorDate: { type: ["string", "null"], format: date }
+        milestoneDate: { type: ["string", "null"], format: date }
+        milestoneLabel: { type: ["string", "null"], maxLength: 60 }
+    UpdateVaultSetupInput:
+      type: object
+      required: [planTier]
+      properties:
+        planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        revealSchedule: { type: ["string", "null"], enum: [weekly_sprint, monthly_x3, monthly_year, half_then_annual, annual_keepsake, null] }
+        anchorDate: { type: ["string", "null"], format: date }
+        milestoneDate: { type: ["string", "null"], format: date }
+        milestoneLabel: { type: ["string", "null"], maxLength: 60 }
+    RevealSlotPreview:
+      type: object
+      required: [kind, label, revealDate]
+      properties:
+        kind: { type: string, enum: [scheduled, milestone] }
+        label: { type: string }
+        revealDate: { type: string, format: date }
+    SchedulePreviewInput:
+      type: object
+      required: [planTier, schedule]
+      properties:
+        anchorDate: { type: ["string", "null"], format: date }
+        planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        schedule: { type: string, enum: [weekly_sprint, monthly_x3, monthly_year, half_then_annual, annual_keepsake] }
+        milestoneDate: { type: ["string", "null"], format: date }
+        milestoneLabel: { type: ["string", "null"], maxLength: 60 }
+    SchedulePreviewResult:
+      type: object
+      required: [revealSlots]
+      properties:
+        revealSlots: { type: array, items: { $ref: "#/components/schemas/RevealSlotPreview" } }
+    VaultPrompt:
+      type: object
+      required: [id, prompt, enabled, displayOrder, isCustom, answerType, freeTextMode, subcategoryId, subcategoryName]
+      properties:
+        id: { type: string, format: uuid }
+        prompt: { type: string, maxLength: 140 }
+        enabled: { type: boolean }
+        displayOrder: { type: integer }
+        isCustom: { type: boolean }
+        answerType: { type: string, enum: [free_text, number, multiple_choice, name_pick] }
+        freeTextMode: { type: ["string", "null"], enum: [scoreable, keepsake, null] }
+        subcategoryId: { type: ["string", "null"], format: uuid }
+        subcategoryName: { type: ["string", "null"] }
+    VaultPromptList:
+      type: object
+      required: [prompts]
+      properties:
+        prompts: { type: array, items: { $ref: "#/components/schemas/VaultPrompt" } }
+    AddCustomPromptInput:
+      type: object
+      required: [prompt, freeTextMode]
+      properties:
+        prompt: { type: string, minLength: 1, maxLength: 140 }
+        freeTextMode: { type: string, enum: [scoreable, keepsake] }
+    TogglePromptInput:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+    ReorderPromptsInput:
+      type: object
+      required: [orderedVaultQuestionIds]
+      properties:
+        orderedVaultQuestionIds: { type: array, items: { type: string, format: uuid }, minItems: 1 }
+    SealedVaultDateInfo:
+      type: object
+      required: [anchorDate, revealSchedule, locked]
+      properties:
+        anchorDate: { type: ["string", "null"], format: date }
+        revealSchedule: { type: ["string", "null"], enum: [weekly_sprint, monthly_x3, monthly_year, half_then_annual, annual_keepsake, null] }
+        locked: { type: boolean, description: "True once any reveal has opened; the date can no longer change." }
+    SealedVaultDateChangeInput:
+      type: object
+      required: [newAnchorDate]
+      properties:
+        newAnchorDate: { type: string, format: date }
+    SealedVaultDateChangeResult:
+      type: object
+      required: [anchorDate, revealSlots]
+      properties:
+        anchorDate: { type: string, format: date }
+        revealSlots: { type: array, items: { $ref: "#/components/schemas/RevealSlotPreview" } }
     OverageStatus:
       type: object
       required: [vaultId, heldSubmissionCount, unresolved, nearestRevealDate]

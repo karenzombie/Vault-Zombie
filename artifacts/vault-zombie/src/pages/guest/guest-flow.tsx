@@ -315,6 +315,7 @@ function QuestionInput({ question, value, onChange }: { question: GuestQuestion,
       <Input 
         className="text-[18px] py-6 px-4 bg-background border-hairline focus:border-pop shadow-inner" 
         placeholder="Your answer" 
+        maxLength={140}
         value={value.textValue || ""} 
         onChange={e => onChange({ textValue: e.target.value })} 
       />

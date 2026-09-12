@@ -1,14 +1,52 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "./index";
 import { enqueueEmail } from "./email";
 import { buildRevealSlots, isPlanTierWithinEntitlement, PLAN_POLICY, type PlanTier, type RevealSchedule } from "./schedule";
 import { accountsTable } from "./schema/accounts";
 import { billingRecordsTable } from "./schema/billing";
-import { vaultTypesTable } from "./schema/content";
+import { questionsTable, subcategoriesTable, vaultTypesTable } from "./schema/content";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
 
 const tokenHash = (token: string) => createHash("sha256").update(token, "utf8").digest("hex");
+
+const STARTER_SET_SIZE = 20;
+
+/**
+ * The starter set for a vault type: walk its sub-categories in display order, taking
+ * one prompt from each in turn (in bank display order within the sub-category), cycling
+ * through the sub-categories until 20 prompts are picked or the bank runs out. Purely a
+ * function of the vault type's bank content and display orders, so it is deterministic
+ * and produces the same result every time for a given vault type (VaultZombie-Flow1-
+ * Build-Stages.md, 3.4, decision 5).
+ */
+async function pickStarterSet(dbClient: Pick<typeof db, "select">, vaultTypeId: string) {
+  const subcategories = await dbClient.select({ id: subcategoriesTable.id })
+    .from(subcategoriesTable)
+    .where(and(eq(subcategoriesTable.vaultTypeId, vaultTypeId), eq(subcategoriesTable.isRetired, false)))
+    .orderBy(asc(subcategoriesTable.displayOrder));
+  if (!subcategories.length) return [];
+  const questions = await dbClient.select({ id: questionsTable.id, prompt: questionsTable.prompt, subcategoryId: questionsTable.subcategoryId })
+    .from(questionsTable)
+    .where(and(inArray(questionsTable.subcategoryId, subcategories.map((row) => row.id)), eq(questionsTable.isRetired, false)))
+    .orderBy(asc(questionsTable.displayOrder));
+  const queueBySubcategory = new Map(subcategories.map((row) => [row.id, questions.filter((q) => q.subcategoryId === row.id)]));
+  const picked: { id: string; prompt: string }[] = [];
+  let exhausted = false;
+  while (picked.length < STARTER_SET_SIZE && !exhausted) {
+    exhausted = true;
+    for (const subcategory of subcategories) {
+      if (picked.length >= STARTER_SET_SIZE) break;
+      const queue = queueBySubcategory.get(subcategory.id)!;
+      const next = queue.shift();
+      if (next) {
+        picked.push({ id: next.id, prompt: next.prompt });
+        exhausted = false;
+      }
+    }
+  }
+  return picked;
+}
 
 /**
  * Creates the initial draft row for a new vault. This is the single insertion point for
@@ -44,6 +82,17 @@ export async function createDraftVault(input: {
     guestTokenHash: tokenHash(guestToken),
     referrerCode,
   }).returning();
+  const starterSet = await pickStarterSet(dbClient, input.vaultTypeId);
+  if (starterSet.length) {
+    await dbClient.insert(vaultQuestionsTable).values(starterSet.map((question, index) => ({
+      vaultId: vault.id,
+      questionId: question.id,
+      promptSnapshot: question.prompt,
+      enabled: true,
+      displayOrder: index,
+      isCustom: false,
+    })));
+  }
   const [operator] = await db.select({ email: accountsTable.email }).from(accountsTable).where(eq(accountsTable.id, input.operatorId)).limit(1);
   if (operator?.email) {
     // H2's copy and checklist are built from the vault's live setup state at render time
@@ -98,6 +147,27 @@ export async function spendEntitlementForNewVault(input: {
     }).where(eq(billingRecordsTable.id, billingRecord.id));
     return { kind: "ok" as const, vault, guestToken };
   });
+}
+
+export async function getVaultSetupDetail(vaultId: string, operatorId: string) {
+  const [row] = await db.select({
+    id: vaultsTable.id,
+    name: vaultsTable.name,
+    status: vaultsTable.status,
+    planTier: vaultsTable.planTier,
+    entitledPlanTier: vaultsTable.entitledPlanTier,
+    vaultTypeId: vaultsTable.vaultTypeId,
+    vaultTypeName: vaultTypesTable.name,
+    revealSchedule: vaultsTable.revealSchedule,
+    anchorDate: vaultsTable.anchorDate,
+    milestoneDate: vaultsTable.milestoneDate,
+    milestoneLabel: vaultsTable.milestoneLabel,
+  }).from(vaultsTable)
+    .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id))
+    .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId)))
+    .limit(1);
+  if (!row) throw new Error("Vault not found.");
+  return row;
 }
 
 export async function updateDraftVaultSetup(input: {
@@ -167,6 +237,9 @@ export async function sealVault(input: {
       throw new Error("Complete payment before sealing a vault configured above its current entitlement.");
     }
     if (!vault.revealSchedule) throw new Error("Choose a reveal schedule before sealing.");
+    if (vault.planTier === "deep_vault" && (!vault.milestoneDate || !vault.milestoneLabel)) {
+      throw new Error("Set a milestone date and label before sealing a Deep Vault.");
+    }
 
     const enabledPrompts = await transaction
       .select({ id: vaultQuestionsTable.id })
@@ -207,11 +280,221 @@ export async function listGuestTimingChoices(vaultId: string) {
     .orderBy(asc(revealSlotsTable.displayOrder));
 }
 
-export async function resolveAnswerUnlockAt(vaultId: string, revealSlotId: string) {
-  const [slot] = await db.select({ revealDate: revealSlotsTable.revealDate })
-    .from(revealSlotsTable)
-    .where(and(eq(revealSlotsTable.id, revealSlotId), eq(revealSlotsTable.vaultId, vaultId)))
-    .limit(1);
-  if (!slot) throw new Error("The selected reveal timing is not valid for this vault.");
-  return new Date(`${slot.revealDate}T00:00:00.000Z`);
+export async function listVaultPrompts(vaultId: string, operatorId: string) {
+  const [vault] = await db.select({ id: vaultsTable.id }).from(vaultsTable)
+    .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId))).limit(1);
+  if (!vault) throw new Error("Vault not found.");
+  return db.select({
+    id: vaultQuestionsTable.id,
+    prompt: vaultQuestionsTable.promptSnapshot,
+    enabled: vaultQuestionsTable.enabled,
+    displayOrder: vaultQuestionsTable.displayOrder,
+    isCustom: vaultQuestionsTable.isCustom,
+    customFreeTextMode: vaultQuestionsTable.customFreeTextMode,
+    answerType: sql<string>`coalesce(${questionsTable.answerType}, 'free_text')`,
+    freeTextMode: sql<string | null>`coalesce(${questionsTable.freeTextMode}, ${vaultQuestionsTable.customFreeTextMode})`,
+    subcategoryId: subcategoriesTable.id,
+    subcategoryName: subcategoriesTable.name,
+  }).from(vaultQuestionsTable)
+    .leftJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
+    .leftJoin(subcategoriesTable, eq(questionsTable.subcategoryId, subcategoriesTable.id))
+    .where(eq(vaultQuestionsTable.vaultId, vaultId))
+    .orderBy(asc(vaultQuestionsTable.displayOrder));
+}
+
+export async function addCustomPrompt(input: {
+  vaultId: string;
+  operatorId: string;
+  prompt: string;
+  freeTextMode: "scoreable" | "keepsake";
+}) {
+  const prompt = input.prompt.trim();
+  if (!prompt) throw new Error("A prompt is required.");
+  if (prompt.length > 140) throw new Error("A prompt must be 140 characters or fewer.");
+  return db.transaction(async (tx) => {
+    const [vault] = await tx.select({ id: vaultsTable.id, status: vaultsTable.status }).from(vaultsTable)
+      .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId))).limit(1).for("update");
+    if (!vault || vault.status !== "draft") throw new Error("Only a draft vault can add prompts.");
+    // Custom prompts sit in their own group at the top of the list, ahead of the
+    // bank groups (VaultZombie-Flow1-Build-Stages.md, 3.4). New ones insert right
+    // after any existing custom prompts and before the bank, shifting the bank's
+    // display order down to make room rather than appending at the end.
+    const [{ next }] = await tx.select({ next: sql<number>`coalesce(max(${vaultQuestionsTable.displayOrder}), -1) + 1` })
+      .from(vaultQuestionsTable).where(and(eq(vaultQuestionsTable.vaultId, input.vaultId), eq(vaultQuestionsTable.isCustom, true)));
+    const toShift = await tx.select({ id: vaultQuestionsTable.id, displayOrder: vaultQuestionsTable.displayOrder })
+      .from(vaultQuestionsTable)
+      .where(and(eq(vaultQuestionsTable.vaultId, input.vaultId), sql`${vaultQuestionsTable.displayOrder} >= ${next}`));
+    // Shift via a negative staging range first: the unique (vault_id, display_order)
+    // index is checked per row on a bulk update, so a direct +1 on an ascending range
+    // collides with the not-yet-updated neighbor. Same two-phase pattern as reorderVaultPrompts.
+    for (const row of toShift) {
+      await tx.update(vaultQuestionsTable).set({ displayOrder: -(row.displayOrder + 1) })
+        .where(eq(vaultQuestionsTable.id, row.id));
+    }
+    for (const row of toShift) {
+      await tx.update(vaultQuestionsTable).set({ displayOrder: row.displayOrder + 1 })
+        .where(eq(vaultQuestionsTable.id, row.id));
+    }
+    const [row] = await tx.insert(vaultQuestionsTable).values({
+      vaultId: input.vaultId,
+      questionId: null,
+      promptSnapshot: prompt,
+      customFreeTextMode: input.freeTextMode,
+      enabled: true,
+      displayOrder: next,
+      isCustom: true,
+    }).returning();
+    return row;
+  });
+}
+
+export async function toggleVaultPrompt(input: { vaultId: string; operatorId: string; vaultQuestionId: string; enabled: boolean }) {
+  return db.transaction(async (tx) => {
+    const [vault] = await tx.select({ id: vaultsTable.id, status: vaultsTable.status }).from(vaultsTable)
+      .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId))).limit(1).for("update");
+    if (!vault || vault.status !== "draft") throw new Error("Only a draft vault can change its prompts.");
+    const [row] = await tx.update(vaultQuestionsTable).set({ enabled: input.enabled })
+      .where(and(eq(vaultQuestionsTable.id, input.vaultQuestionId), eq(vaultQuestionsTable.vaultId, input.vaultId)))
+      .returning();
+    if (!row) throw new Error("Prompt not found.");
+    return row;
+  });
+}
+
+/**
+ * Reorders a vault's prompts to the exact sequence of vaultQuestionIds given. Identity
+ * (the row's id) never changes, only displayOrder, so answers stay attached correctly.
+ * Writes negative placeholders first to avoid colliding with the unique
+ * (vaultId, displayOrder) constraint mid-update.
+ */
+export async function reorderVaultPrompts(input: { vaultId: string; operatorId: string; orderedVaultQuestionIds: string[] }) {
+  return db.transaction(async (tx) => {
+    const [vault] = await tx.select({ id: vaultsTable.id, status: vaultsTable.status }).from(vaultsTable)
+      .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId))).limit(1).for("update");
+    if (!vault || vault.status !== "draft") throw new Error("Only a draft vault can reorder its prompts.");
+    const existing = await tx.select({ id: vaultQuestionsTable.id }).from(vaultQuestionsTable)
+      .where(eq(vaultQuestionsTable.vaultId, input.vaultId));
+    const existingIds = new Set(existing.map((row) => row.id));
+    if (input.orderedVaultQuestionIds.length !== existing.length || !input.orderedVaultQuestionIds.every((id) => existingIds.has(id))) {
+      throw new Error("The reorder list must contain exactly this vault's prompts.");
+    }
+    for (const [index, id] of input.orderedVaultQuestionIds.entries()) {
+      await tx.update(vaultQuestionsTable).set({ displayOrder: -(index + 1) })
+        .where(eq(vaultQuestionsTable.id, id));
+    }
+    for (const [index, id] of input.orderedVaultQuestionIds.entries()) {
+      await tx.update(vaultQuestionsTable).set({ displayOrder: index })
+        .where(eq(vaultQuestionsTable.id, id));
+    }
+    return listVaultPrompts(input.vaultId, input.operatorId);
+  });
+}
+
+/**
+ * Changes a sealed vault's event date (3.5). Rebuilds every reveal that has not
+ * happened yet from the new date. Refuses a date that would push any reveal into
+ * the past or today, naming the broken reveal. Once any reveal has opened, the
+ * date is locked for good; callers must check that before invoking this.
+ */
+export async function changeSealedVaultEventDate(input: {
+  vaultId: string;
+  operatorId: string;
+  newAnchorDate: string;
+}) {
+  return db.transaction(async (tx) => {
+    const [vault] = await tx.select().from(vaultsTable)
+      .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId)))
+      .limit(1).for("update");
+    if (!vault || vault.status === "draft" || vault.status === "deleted") throw new Error("Vault not found or not sealed.");
+    if (!vault.revealSchedule) throw new Error("This vault has no reveal schedule to recalculate.");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const existingSlots = await tx.select().from(revealSlotsTable)
+      .where(eq(revealSlotsTable.vaultId, vault.id)).orderBy(asc(revealSlotsTable.displayOrder));
+    const openedAlready = existingSlots.some((slot) => slot.revealDate <= today);
+    if (openedAlready) {
+      throw new Error("Your first reveal has opened, so the date is set from here on.");
+    }
+
+    const sealDate = vault.sealedAt ? vault.sealedAt.toISOString().slice(0, 10) : today;
+    const newSlots = buildRevealSlots({
+      anchorDate: input.newAnchorDate,
+      sealDate,
+      planTier: vault.planTier,
+      schedule: vault.revealSchedule,
+      milestoneDate: vault.milestoneDate,
+      milestoneLabel: vault.milestoneLabel,
+    });
+    const broken = newSlots.find((slot) => slot.revealDate <= today);
+    if (broken) {
+      throw new Error(`That date would push "${broken.label}" into the past or today. Choose a later date.`);
+    }
+
+    await tx.delete(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vault.id));
+    await tx.insert(revealSlotsTable).values(newSlots.map((slot, index) => ({
+      vaultId: vault.id,
+      kind: slot.kind,
+      label: slot.label,
+      revealDate: slot.revealDate,
+      displayOrder: index,
+    })));
+    const [updated] = await tx.update(vaultsTable).set({ anchorDate: input.newAnchorDate })
+      .where(eq(vaultsTable.id, vault.id)).returning();
+    return { vault: updated, revealSlots: newSlots };
+  });
+}
+
+/** Read-only status for the 3.5 sealed-vault date control: current date, schedule, and lock state. */
+export async function getSealedVaultDateInfo(vaultId: string, operatorId: string) {
+  const [vault] = await db.select({
+    anchorDate: vaultsTable.anchorDate,
+    revealSchedule: vaultsTable.revealSchedule,
+    status: vaultsTable.status,
+  }).from(vaultsTable)
+    .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId))).limit(1);
+  if (!vault || vault.status === "draft" || vault.status === "deleted") throw new Error("Vault not found or not sealed.");
+  const today = new Date().toISOString().slice(0, 10);
+  const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable)
+    .where(eq(revealSlotsTable.vaultId, vaultId));
+  const locked = slots.some((slot) => slot.revealDate <= today);
+  return { anchorDate: vault.anchorDate, revealSchedule: vault.revealSchedule, locked };
+}
+
+/**
+ * Previews the recalculated reveal dates for a sealed vault's event date change,
+ * without applying anything. The host must see and confirm this before
+ * changeSealedVaultEventDate is called.
+ */
+export async function previewSealedVaultEventDateChange(input: {
+  vaultId: string;
+  operatorId: string;
+  newAnchorDate: string;
+}) {
+  const [vault] = await db.select().from(vaultsTable)
+    .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId))).limit(1);
+  if (!vault || vault.status === "draft" || vault.status === "deleted") throw new Error("Vault not found or not sealed.");
+  if (!vault.revealSchedule) throw new Error("This vault has no reveal schedule to recalculate.");
+
+  const today = new Date().toISOString().slice(0, 10);
+  const existingSlots = await db.select().from(revealSlotsTable)
+    .where(eq(revealSlotsTable.vaultId, vault.id)).orderBy(asc(revealSlotsTable.displayOrder));
+  const openedAlready = existingSlots.some((slot) => slot.revealDate <= today);
+  if (openedAlready) {
+    throw new Error("Your first reveal has opened, so the date is set from here on.");
+  }
+
+  const sealDate = vault.sealedAt ? vault.sealedAt.toISOString().slice(0, 10) : today;
+  const newSlots = buildRevealSlots({
+    anchorDate: input.newAnchorDate,
+    sealDate,
+    planTier: vault.planTier,
+    schedule: vault.revealSchedule,
+    milestoneDate: vault.milestoneDate,
+    milestoneLabel: vault.milestoneLabel,
+  });
+  const broken = newSlots.find((slot) => slot.revealDate <= today);
+  if (broken) {
+    throw new Error(`That date would push "${broken.label}" into the past or today. Choose a later date.`);
+  }
+  return { revealSlots: newSlots, openedAlready: false };
 }

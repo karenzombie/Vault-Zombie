@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "./index";
 import { readUnlockedAnswers } from "./sealed-content";
 import { answerVerdictsTable, answersTable, guestsTable, questionOutcomesTable, submissionsTable } from "./schema/predictions";
@@ -12,8 +12,26 @@ export class ReportError extends Error {
   }
 }
 
+/**
+ * A custom prompt (vaultQuestionsTable.questionId null) has no bank question row and
+ * so no bank subcategory. It is always free_text; its scoreable/keepsake mark lives on
+ * vaultQuestionsTable.customFreeTextMode. For the by-area report, custom prompts are
+ * cosmetically grouped under a stable pseudo-area so the report never crashes on a
+ * missing subcategory. This label is not specified in the task document; it is a minor
+ * implementation necessity, not a product decision, and is called out in the build report.
+ */
+const CUSTOM_ANSWER_TYPE = "free_text" as const;
+const CUSTOM_AREA_ID = "custom";
+const CUSTOM_AREA_NAME = "Your own prompts";
+const CUSTOM_AREA_ICON = "sparkles";
+const answerTypeExpr = sql<string>`coalesce(${questionsTable.answerType}, ${CUSTOM_ANSWER_TYPE})`;
+const freeTextModeExpr = sql<"scoreable" | "keepsake" | null>`coalesce(${questionsTable.freeTextMode}, ${vaultQuestionsTable.customFreeTextMode})`;
+const subcategoryIdExpr = sql<string>`coalesce(${subcategoriesTable.id}::text, ${CUSTOM_AREA_ID})`;
+const subcategoryNameExpr = sql<string>`coalesce(${subcategoriesTable.name}, ${CUSTOM_AREA_NAME})`;
+const iconKeyExpr = sql<string>`coalesce(${subcategoriesTable.iconKey}, ${CUSTOM_AREA_ICON})`;
+
 type Unlocked = Awaited<ReturnType<typeof readUnlockedAnswers>>[number];
-type Context = { id: string; questionId: string; prompt: string; answerType: string; freeTextMode: "scoreable" | "keepsake" | null; numberUnit: string | null; subcategoryId: string; subcategoryName: string; iconKey: string };
+type Context = { id: string; questionId: string | null; prompt: string; answerType: string; freeTextMode: "scoreable" | "keepsake" | null; numberUnit: string | null; subcategoryId: string; subcategoryName: string; iconKey: string };
 
 async function owned(vaultId: string, operatorId: string) {
   const [vault] = await db.select().from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1);
@@ -39,15 +57,16 @@ async function reportData(vaultId: string, operatorId: string) {
   const answers = await readUnlockedAnswers({ vaultId });
   const ids = [...new Set(answers.map((a) => a.vaultQuestionId))];
   const contexts: Context[] = ids.length ? await db.select({
-    id: vaultQuestionsTable.id, questionId: questionsTable.id, prompt: vaultQuestionsTable.promptSnapshot, answerType: questionsTable.answerType, freeTextMode: questionsTable.freeTextMode,
-    numberUnit: questionsTable.numberUnit, subcategoryId: subcategoriesTable.id, subcategoryName: subcategoriesTable.name, iconKey: subcategoriesTable.iconKey,
-  }).from(vaultQuestionsTable).innerJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
-    .innerJoin(subcategoriesTable, eq(questionsTable.subcategoryId, subcategoriesTable.id))
+    id: vaultQuestionsTable.id, questionId: questionsTable.id, prompt: vaultQuestionsTable.promptSnapshot, answerType: answerTypeExpr, freeTextMode: freeTextModeExpr,
+    numberUnit: questionsTable.numberUnit, subcategoryId: subcategoryIdExpr, subcategoryName: subcategoryNameExpr, iconKey: iconKeyExpr,
+  }).from(vaultQuestionsTable).leftJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
+    .leftJoin(subcategoriesTable, eq(questionsTable.subcategoryId, subcategoriesTable.id))
     .where(inArray(vaultQuestionsTable.id, ids)) : [];
   // Option labels are metadata for the unlocked question contexts only. Answer
   // values themselves remain exclusively sourced by readUnlockedAnswers above.
-  const options = contexts.length ? await db.select({ id: questionOptionsTable.id, questionId: questionOptionsTable.questionId, label: questionOptionsTable.label })
-    .from(questionOptionsTable).where(inArray(questionOptionsTable.questionId, contexts.map((context) => context.questionId))) : [];
+  const bankQuestionIds = contexts.map((context) => context.questionId).filter((id): id is string => id != null);
+  const options = bankQuestionIds.length ? await db.select({ id: questionOptionsTable.id, questionId: questionOptionsTable.questionId, label: questionOptionsTable.label })
+    .from(questionOptionsTable).where(inArray(questionOptionsTable.questionId, bankQuestionIds)) : [];
   const outcomes = ids.length ? await db.select().from(questionOutcomesTable)
     .where(inArray(questionOutcomesTable.vaultQuestionId, ids)) : [];
   const verdicts = answers.length ? await db.select().from(answerVerdictsTable)

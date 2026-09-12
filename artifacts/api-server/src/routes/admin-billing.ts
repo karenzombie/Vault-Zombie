@@ -76,7 +76,7 @@ adminBillingRouter.get("/admin/dashboard", requireOperator, requireAdmin, async 
       db.select({ id: accountsTable.id }).from(accountsTable).where(eq(accountsTable.role, "operator")),
       db.select({ status: vaultsTable.status, tier: vaultsTable.entitledPlanTier, type: vaultTypesTable.name }).from(vaultsTable).innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id)),
       db.select({ id: guestsTable.id }).from(guestsTable), db.select({ id: submissionsTable.id }).from(submissionsTable),
-      db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable), db.select({ unlockAt: answersTable.unlockAt, unlockOverrideAt: answersTable.unlockOverrideAt }).from(answersTable),
+      db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable), db.select({ revealDate: revealSlotsTable.revealDate, unlockOverrideAt: answersTable.unlockOverrideAt }).from(answersTable).innerJoin(revealSlotsTable, eq(answersTable.revealSlotId, revealSlotsTable.id)),
       db.select({ id: overageEventsTable.id }).from(overageEventsTable).where(isNull(overageEventsTable.resolvedAt)),
       db.select({ id: overageEventsTable.id }).from(overageEventsTable),
       db.select({ id: emailDeliveriesTable.id }).from(emailDeliveriesTable).where(eq(emailDeliveriesTable.status, "failed")),
@@ -86,7 +86,7 @@ adminBillingRouter.get("/admin/dashboard", requireOperator, requireAdmin, async 
     return res.json(GetAdminDashboardResponse.parse({
       operatorCount: accounts.length, vaultCount: vaults.length, guestCount: guests.length, submissionCount: submissions.length,
       vaultsByState: buckets(vaults.map((row) => row.status)), vaultsByType: buckets(vaults.map((row) => row.type)), vaultsByTier: buckets(vaults.map((row) => row.tier)),
-      revealProgress: { slotsTotal: slots.length, slotsLanded: slots.filter((row) => row.revealDate <= now.toISOString().slice(0, 10)).length, answersTotal: answers.length, answersUnlocked: answers.filter((row) => (row.unlockOverrideAt ?? row.unlockAt) <= now).length },
+      revealProgress: { slotsTotal: slots.length, slotsLanded: slots.filter((row) => row.revealDate <= now.toISOString().slice(0, 10)).length, answersTotal: answers.length, answersUnlocked: answers.filter((row) => row.unlockOverrideAt ? row.unlockOverrideAt <= now : row.revealDate <= now.toISOString().slice(0, 10)).length },
       guestMetrics: { averageGuestsPerVault: vaults.length ? guests.length / vaults.length : 0, capExceededEventCount: allOverages.length },
       unresolvedOverageCount: overages.length, failedEmailCount: emails.length,
     }));

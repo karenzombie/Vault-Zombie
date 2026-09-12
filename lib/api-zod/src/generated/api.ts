@@ -1671,6 +1671,274 @@ export const DeleteOperatorVaultResponse = zod.object({
 
 
 /**
+ * @summary Get a draft vault's current setup state
+ */
+export const GetVaultSetupDetailParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const getVaultSetupDetailResponseMilestoneLabelMax = 60;
+
+
+
+export const GetVaultSetupDetailResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.enum(['draft', 'sealed', 'active', 'completed']),
+  "planTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "entitledPlanTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "vaultTypeId": zod.string().uuid(),
+  "vaultTypeName": zod.string(),
+  "revealSchedule": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullable(),
+  "anchorDate": zod.coerce.date().nullable(),
+  "milestoneDate": zod.coerce.date().nullable(),
+  "milestoneLabel": zod.string().max(getVaultSetupDetailResponseMilestoneLabelMax).nullable()
+})
+
+
+/**
+ * @summary Autosave a draft vault's setup fields (event date, schedule, milestone)
+ */
+export const UpdateVaultSetupParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const updateVaultSetupBodyMilestoneLabelMax = 60;
+
+
+
+export const UpdateVaultSetupBody = zod.object({
+  "planTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "revealSchedule": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullish(),
+  "anchorDate": zod.coerce.date().nullish(),
+  "milestoneDate": zod.coerce.date().nullish(),
+  "milestoneLabel": zod.string().max(updateVaultSetupBodyMilestoneLabelMax).nullish()
+})
+
+export const updateVaultSetupResponseMilestoneLabelMax = 60;
+
+
+
+export const UpdateVaultSetupResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.enum(['draft', 'sealed', 'active', 'completed']),
+  "planTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "entitledPlanTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "vaultTypeId": zod.string().uuid(),
+  "vaultTypeName": zod.string(),
+  "revealSchedule": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullable(),
+  "anchorDate": zod.coerce.date().nullable(),
+  "milestoneDate": zod.coerce.date().nullable(),
+  "milestoneLabel": zod.string().max(updateVaultSetupResponseMilestoneLabelMax).nullable()
+})
+
+
+/**
+ * @summary Preview reveal dates for a chosen schedule before sealing
+ */
+export const PreviewVaultScheduleParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const previewVaultScheduleBodyMilestoneLabelMax = 60;
+
+
+
+export const PreviewVaultScheduleBody = zod.object({
+  "anchorDate": zod.coerce.date().nullish(),
+  "planTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "schedule": zod.enum(['weekly_sprint', 'monthly_x3', 'monthly_year', 'half_then_annual', 'annual_keepsake']),
+  "milestoneDate": zod.coerce.date().nullish(),
+  "milestoneLabel": zod.string().max(previewVaultScheduleBodyMilestoneLabelMax).nullish()
+})
+
+export const PreviewVaultScheduleResponse = zod.object({
+  "revealSlots": zod.array(zod.object({
+  "kind": zod.enum(['scheduled', 'milestone']),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary List a vault's prompts, custom prompts first, in display order
+ */
+export const ListVaultPromptsParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const listVaultPromptsResponsePromptsItemPromptMax = 140;
+
+
+
+export const ListVaultPromptsResponse = zod.object({
+  "prompts": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "prompt": zod.string().max(listVaultPromptsResponsePromptsItemPromptMax),
+  "enabled": zod.boolean(),
+  "displayOrder": zod.number().int(),
+  "isCustom": zod.boolean(),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "subcategoryId": zod.string().uuid().nullable(),
+  "subcategoryName": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Add a custom free-text prompt to a draft vault
+ */
+export const AddCustomPromptParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const addCustomPromptBodyPromptMax = 140;
+
+
+
+export const AddCustomPromptBody = zod.object({
+  "prompt": zod.string().min(1).max(addCustomPromptBodyPromptMax),
+  "freeTextMode": zod.enum(['scoreable', 'keepsake'])
+})
+
+export const addCustomPromptResponsePromptMax = 140;
+
+
+
+export const AddCustomPromptResponse = zod.object({
+  "id": zod.string().uuid(),
+  "prompt": zod.string().max(addCustomPromptResponsePromptMax),
+  "enabled": zod.boolean(),
+  "displayOrder": zod.number().int(),
+  "isCustom": zod.boolean(),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "subcategoryId": zod.string().uuid().nullable(),
+  "subcategoryName": zod.string().nullable()
+})
+
+
+/**
+ * @summary Reorder a draft vault's prompts by drag-to-reorder
+ */
+export const ReorderVaultPromptsParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+
+
+
+export const ReorderVaultPromptsBody = zod.object({
+  "orderedVaultQuestionIds": zod.array(zod.string().uuid()).min(1)
+})
+
+export const reorderVaultPromptsResponsePromptsItemPromptMax = 140;
+
+
+
+export const ReorderVaultPromptsResponse = zod.object({
+  "prompts": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "prompt": zod.string().max(reorderVaultPromptsResponsePromptsItemPromptMax),
+  "enabled": zod.boolean(),
+  "displayOrder": zod.number().int(),
+  "isCustom": zod.boolean(),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "subcategoryId": zod.string().uuid().nullable(),
+  "subcategoryName": zod.string().nullable()
+}))
+})
+
+
+/**
+ * @summary Turn a draft vault's prompt on or off
+ */
+export const ToggleVaultPromptParams = zod.object({
+  "vaultId": zod.coerce.string().uuid(),
+  "vaultQuestionId": zod.coerce.string().uuid()
+})
+
+export const ToggleVaultPromptBody = zod.object({
+  "enabled": zod.boolean()
+})
+
+export const toggleVaultPromptResponsePromptMax = 140;
+
+
+
+export const ToggleVaultPromptResponse = zod.object({
+  "id": zod.string().uuid(),
+  "prompt": zod.string().max(toggleVaultPromptResponsePromptMax),
+  "enabled": zod.boolean(),
+  "displayOrder": zod.number().int(),
+  "isCustom": zod.boolean(),
+  "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "subcategoryId": zod.string().uuid().nullable(),
+  "subcategoryName": zod.string().nullable()
+})
+
+
+/**
+ * @summary Get a sealed vault's current event date, schedule, and lock state
+ */
+export const GetSealedVaultDateInfoParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetSealedVaultDateInfoResponse = zod.object({
+  "anchorDate": zod.coerce.date().nullable(),
+  "revealSchedule": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullable(),
+  "locked": zod.boolean().describe('True once any reveal has opened; the date can no longer change.')
+})
+
+
+/**
+ * @summary Move a sealed vault's event date and recalculate its reveal schedule
+ */
+export const ChangeSealedVaultEventDateParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const ChangeSealedVaultEventDateBody = zod.object({
+  "newAnchorDate": zod.coerce.date()
+})
+
+export const ChangeSealedVaultEventDateResponse = zod.object({
+  "anchorDate": zod.coerce.date(),
+  "revealSlots": zod.array(zod.object({
+  "kind": zod.enum(['scheduled', 'milestone']),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary Preview a sealed vault's recalculated reveal dates before confirming
+ */
+export const PreviewSealedVaultDateChangeParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const PreviewSealedVaultDateChangeBody = zod.object({
+  "newAnchorDate": zod.coerce.date()
+})
+
+export const PreviewSealedVaultDateChangeResponse = zod.object({
+  "revealSlots": zod.array(zod.object({
+  "kind": zod.enum(['scheduled', 'milestone']),
+  "label": zod.string(),
+  "revealDate": zod.coerce.date()
+}))
+})
+
+
+/**
  * @summary List unlocked reveal work for an owned vault
  */
 export const ListUnlockedRevealWorkParams = zod.object({

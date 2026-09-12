@@ -1,11 +1,18 @@
 import { createHash } from "node:crypto";
-import { and, asc, count, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "./index";
 import { PLAN_POLICY } from "./schedule";
 import { questionOptionsTable, questionsTable } from "./schema/content";
 import { overageEventsTable } from "./schema/billing";
 import { answersTable, guestsTable, submissionsTable } from "./schema/predictions";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
+
+/**
+ * A custom prompt (vaultQuestionsTable.questionId null) has no bank question row to
+ * join to. It is always a free-text prompt, so its effective answerType is coalesced
+ * to 'free_text' wherever a bank join would otherwise supply it.
+ */
+const CUSTOM_ANSWER_TYPE = "free_text" as const;
 
 export type GuestAnswerDraft = {
   vaultQuestionId: string;
@@ -35,11 +42,11 @@ export async function readGuestForm(token: string) {
     sourceQuestionId: vaultQuestionsTable.questionId,
     prompt: vaultQuestionsTable.promptSnapshot,
     displayOrder: vaultQuestionsTable.displayOrder,
-    answerType: questionsTable.answerType,
+    answerType: sql<string>`coalesce(${questionsTable.answerType}, ${CUSTOM_ANSWER_TYPE})`,
     numberUnit: questionsTable.numberUnit,
     numberMinimum: questionsTable.numberMinimum,
     numberMaximum: questionsTable.numberMaximum,
-  }).from(vaultQuestionsTable).innerJoin(
+  }).from(vaultQuestionsTable).leftJoin(
     questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id),
   ).where(and(eq(vaultQuestionsTable.vaultId, vault.id), eq(vaultQuestionsTable.enabled, true)))
     .orderBy(asc(vaultQuestionsTable.displayOrder));
@@ -99,10 +106,10 @@ export async function submitGuestAnswers(token: string, input: {
     const questionRows = await tx.select({
       id: vaultQuestionsTable.id,
       sourceQuestionId: vaultQuestionsTable.questionId,
-      answerType: questionsTable.answerType,
+      answerType: sql<string>`coalesce(${questionsTable.answerType}, ${CUSTOM_ANSWER_TYPE})`,
       numberMinimum: questionsTable.numberMinimum,
       numberMaximum: questionsTable.numberMaximum,
-    }).from(vaultQuestionsTable).innerJoin(
+    }).from(vaultQuestionsTable).leftJoin(
       questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id),
     ).where(and(
       eq(vaultQuestionsTable.vaultId, vault.id),
@@ -156,6 +163,8 @@ export async function submitGuestAnswers(token: string, input: {
         throw new Error("Select an answer option.");
       }
       if (answer.optionId) {
+        // Custom prompts are always free_text, so a choice answer always implies a bank question.
+        if (!question.sourceQuestionId) throw new Error("Select a valid answer option.");
         const [validOption] = await tx.select({ id: questionOptionsTable.id })
           .from(questionOptionsTable)
           .where(and(
@@ -173,7 +182,6 @@ export async function submitGuestAnswers(token: string, input: {
         textValue: answer.answerType === "free_text" ? answer.textValue : null,
         numberValue: answer.answerType === "number" ? answer.numberValue : null,
         optionId: answer.answerType === "multiple_choice" || answer.answerType === "name_pick" ? answer.optionId : null,
-        unlockAt: new Date(`${slot.revealDate}T00:00:00.000Z`),
       });
     }
     return { submissionId: submission.id, referrerCode: vault.referrerCode, vaultId: vault.id, vaultName: vault.name, guestId: guest.id, guestEmail: guest.email };

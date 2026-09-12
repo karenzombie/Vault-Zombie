@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { isNotNull, relations } from "drizzle-orm";
 import {
   boolean,
   date,
@@ -17,6 +17,7 @@ import { z } from "zod/v4";
 import { accountsTable } from "./accounts";
 import { questionsTable, vaultTypesTable } from "./content";
 import {
+  freeTextModeEnum,
   guestLayoutEnum,
   planTierEnum,
   revealScheduleEnum,
@@ -78,10 +79,13 @@ export const vaultQuestionsTable = pgTable(
     vaultId: uuid("vault_id")
       .notNull()
       .references(() => vaultsTable.id, { onDelete: "cascade" }),
-    questionId: uuid("question_id")
-      .notNull()
-      .references(() => questionsTable.id),
+    questionId: uuid("question_id").references(() => questionsTable.id),
     promptSnapshot: text("prompt_snapshot").notNull(),
+    /**
+     * Only set for a custom prompt (isCustom = true). A bank prompt's scoreable/keepsake
+     * mark lives on questionsTable.freeTextMode instead; null here for bank prompts.
+     */
+    customFreeTextMode: freeTextModeEnum("custom_free_text_mode"),
     enabled: boolean("enabled").notNull().default(true),
     displayOrder: integer("display_order").notNull(),
     isCustom: boolean("is_custom").notNull().default(false),
@@ -90,10 +94,12 @@ export const vaultQuestionsTable = pgTable(
       .defaultNow(),
   },
   (table) => [
-    unique("vault_questions_question_unique").on(
-      table.vaultId,
-      table.questionId,
-    ),
+    // Partial: only applies when questionId is set (a bank prompt), so a vault can
+    // never carry the same bank question twice, while many custom prompts (questionId
+    // null) are always allowed on one vault.
+    uniqueIndex("vault_questions_question_unique")
+      .on(table.vaultId, table.questionId)
+      .where(isNotNull(table.questionId)),
     unique("vault_questions_order_unique").on(
       table.vaultId,
       table.displayOrder,

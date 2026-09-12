@@ -84,7 +84,12 @@ export const answersTable = pgTable(
     textValue: varchar("text_value", { length: 140 }),
     numberValue: doublePrecision("number_value"),
     optionId: uuid("option_id").references(() => questionOptionsTable.id),
-    unlockAt: timestamp("unlock_at", { withTimezone: true }).notNull(),
+    /**
+     * An answer's unlock date is read from its reveal slot (revealSlotsTable.revealDate)
+     * at read time, never stored here, so there is one date in one place. See
+     * readUnlockedAnswers() in sealed-content.ts. unlockOverrideAt is the sole exception
+     * (admin manual unlock).
+     */
     unlockOverrideAt: timestamp("unlock_override_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -95,7 +100,6 @@ export const answersTable = pgTable(
       table.submissionId,
       table.vaultQuestionId,
     ),
-    index("answers_unlock_idx").on(table.unlockAt),
     index("answers_override_idx").on(table.unlockOverrideAt),
     index("answers_question_idx").on(table.vaultQuestionId),
     check(

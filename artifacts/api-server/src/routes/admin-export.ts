@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
-import { answersTable, db, guestsTable, runSensitiveAdminAction, submissionsTable, vaultsTable } from "@workspace/db";
+import { answersTable, db, guestsTable, revealSlotsTable, runSensitiveAdminAction, submissionsTable, vaultsTable } from "@workspace/db";
 import { sensitiveAdminGuards } from "../middlewares/auth";
 
 /** The only direct sealed-answer read in the application. Do not reuse outside this full export. */
@@ -13,9 +13,9 @@ router.post("/admin/full-export", ...sensitiveAdminGuards, async (req, res, next
     const { reason, confirmation } = req.body ?? {};
     if (typeof reason !== "string" || confirmation !== "EXPORT SEALED DATA") throw new Error("Type EXPORT SEALED DATA and provide a reason.");
     const result = await runSensitiveAdminAction({ actor: req.account!, action: "admin_full_export", targetType: "admin_export", targetId: req.account!.id, reason, details: { sealedAnswersIncluded: true } }, async (tx) => {
-      const rows = await tx.select({ vaultId: vaultsTable.id, vaultName: vaultsTable.name, guest: guestsTable.displayName, answerType: answersTable.answerType, textValue: answersTable.textValue, numberValue: answersTable.numberValue, optionId: answersTable.optionId, unlockAt: answersTable.unlockAt, unlockOverrideAt: answersTable.unlockOverrideAt, createdAt: answersTable.createdAt })
-        .from(answersTable).innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id)).innerJoin(guestsTable, eq(submissionsTable.guestId, guestsTable.id)).innerJoin(vaultsTable, eq(submissionsTable.vaultId, vaultsTable.id));
-      const body = ["vault_id,vault_name,guest,answer_type,text_value,number_value,option_id,unlock_at,unlock_override_at,created_at", ...rows.map((row) => csv([row.vaultId, row.vaultName, row.guest, row.answerType, row.textValue, row.numberValue, row.optionId, row.unlockAt.toISOString(), row.unlockOverrideAt?.toISOString(), row.createdAt.toISOString()]))].join("\n");
+      const rows = await tx.select({ vaultId: vaultsTable.id, vaultName: vaultsTable.name, guest: guestsTable.displayName, answerType: answersTable.answerType, textValue: answersTable.textValue, numberValue: answersTable.numberValue, optionId: answersTable.optionId, revealDate: revealSlotsTable.revealDate, unlockOverrideAt: answersTable.unlockOverrideAt, createdAt: answersTable.createdAt })
+        .from(answersTable).innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id)).innerJoin(guestsTable, eq(submissionsTable.guestId, guestsTable.id)).innerJoin(vaultsTable, eq(submissionsTable.vaultId, vaultsTable.id)).innerJoin(revealSlotsTable, eq(answersTable.revealSlotId, revealSlotsTable.id));
+      const body = ["vault_id,vault_name,guest,answer_type,text_value,number_value,option_id,unlock_at,unlock_override_at,created_at", ...rows.map((row) => csv([row.vaultId, row.vaultName, row.guest, row.answerType, row.textValue, row.numberValue, row.optionId, row.revealDate, row.unlockOverrideAt?.toISOString(), row.createdAt.toISOString()]))].join("\n");
       return { body, count: rows.length };
     });
     res.attachment("vault-zombie-full-sealed-export.csv").type("text/csv").send(result.body);

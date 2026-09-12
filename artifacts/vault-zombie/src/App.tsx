@@ -16,6 +16,7 @@ import GiftSuccessPage from '@/pages/public/gift-success';
 import GiftCancelPage from '@/pages/public/gift-cancel';
 import GiftRedeemPage from '@/pages/operator/gift-redeem';
 import VaultNewPage from '@/pages/operator/vault-new';
+import VaultSetupPage from '@/pages/operator/vault-setup';
 import OperatorPage, { OperatorReveal } from '@/pages/operator/operator-page';
 import { useParams } from 'wouter';
 import AdminPage from '@/pages/admin/admin';
@@ -57,8 +58,15 @@ function OperatorRevealRoute() {
   return <OperatorReveal vaultId={vaultId} />;
 }
 
+function VaultSetupRoute() {
+  const { vaultId } = useParams<{ vaultId: string }>();
+  if (!vaultId) return <NotFound />;
+  return <VaultSetupPage vaultId={vaultId} />;
+}
+
 const AuthenticatedOperator = requireOperator(OperatorPage);
 const AuthenticatedOperatorReveal = requireOperator(OperatorRevealRoute);
+const AuthenticatedVaultSetup = requireOperator(VaultSetupRoute);
 const AuthenticatedHealthReport = requireOperator(HealthReportPage);
 const AuthenticatedSummaryReport = requireOperator(SummaryReportPage);
 const AuthenticatedScoreboardReport = requireOperator(ScoreboardReportPage);
@@ -123,6 +131,7 @@ function Router() {
         {/* Main Operator Route */}
         <Route path="/operator" component={AuthenticatedOperator} />
         <Route path="/operator/vaults/new" component={AuthenticatedVaultNew} />
+        <Route path="/operator/vaults/:vaultId/setup" component={AuthenticatedVaultSetup} />
         <Route path="/operator/vaults/:vaultId" component={AuthenticatedOperatorReveal} />
         <Route path="/operator/gifts/redeem" component={AuthenticatedGiftRedeem} />
 

@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AddCustomPromptInput,
   AdminAuditList,
   AdminBackupInput,
   AdminBackupResult,
@@ -105,18 +106,29 @@ import type {
   RedeemGiftInput,
   RedeemGiftResult,
   RefundRequestInput,
+  ReorderPromptsInput,
   ResolvedOutcome,
   RevealReport,
+  SchedulePreviewInput,
+  SchedulePreviewResult,
   Scoreboard,
+  SealedVaultDateChangeInput,
+  SealedVaultDateChangeResult,
+  SealedVaultDateInfo,
   SensitiveReasonInput,
   TimelineReport,
+  TogglePromptInput,
   UnlockedRevealWork,
   UnsubscribeGuestEmailParams,
+  UpdateVaultSetupInput,
   VaultBillingStatus,
   VaultCheckoutInput,
   VaultCheckoutSession,
   VaultHealthReport,
-  VaultResultsSummary
+  VaultPrompt,
+  VaultPromptList,
+  VaultResultsSummary,
+  VaultSetupDetail
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -4916,6 +4928,743 @@ export const useDeleteOperatorVault = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getDeleteOperatorVaultMutationOptions(options));
+    }
+
+export const getGetVaultSetupDetailUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/setup`
+}
+
+/**
+ * @summary Get a draft vault's current setup state
+ */
+export const getVaultSetupDetail = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<VaultSetupDetail> => {
+
+  return customFetch<VaultSetupDetail>(getGetVaultSetupDetailUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVaultSetupDetailQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/setup`
+    ] as const;
+    }
+
+
+export const getGetVaultSetupDetailQueryOptions = <TData = Awaited<ReturnType<typeof getVaultSetupDetail>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVaultSetupDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVaultSetupDetailQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVaultSetupDetail>>> = ({ signal }) => getVaultSetupDetail(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVaultSetupDetail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVaultSetupDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getVaultSetupDetail>>>
+export type GetVaultSetupDetailQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a draft vault's current setup state
+ */
+
+export function useGetVaultSetupDetail<TData = Awaited<ReturnType<typeof getVaultSetupDetail>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVaultSetupDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVaultSetupDetailQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUpdateVaultSetupUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/setup`
+}
+
+/**
+ * @summary Autosave a draft vault's setup fields (event date, schedule, milestone)
+ */
+export const updateVaultSetup = async (vaultId: string,
+    updateVaultSetupInput: UpdateVaultSetupInput, options?: Parameters<typeof customFetch>[1]): Promise<VaultSetupDetail> => {
+
+  return customFetch<VaultSetupDetail>(getUpdateVaultSetupUrl(vaultId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateVaultSetupInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateVaultSetupMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVaultSetup>>, TError,{vaultId: string;data: BodyType<UpdateVaultSetupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVaultSetup>>, TError,{vaultId: string;data: BodyType<UpdateVaultSetupInput>}, TContext> => {
+
+const mutationKey = ['updateVaultSetup'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVaultSetup>>, {vaultId: string;data: BodyType<UpdateVaultSetupInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  updateVaultSetup(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVaultSetupMutationResult = NonNullable<Awaited<ReturnType<typeof updateVaultSetup>>>
+    export type UpdateVaultSetupMutationBody = BodyType<UpdateVaultSetupInput>
+    export type UpdateVaultSetupMutationError = ErrorType<void>
+
+    /**
+ * @summary Autosave a draft vault's setup fields (event date, schedule, milestone)
+ */
+export const useUpdateVaultSetup = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVaultSetup>>, TError,{vaultId: string;data: BodyType<UpdateVaultSetupInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVaultSetup>>,
+        TError,
+        {vaultId: string;data: BodyType<UpdateVaultSetupInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateVaultSetupMutationOptions(options));
+    }
+
+export const getPreviewVaultScheduleUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/setup/schedule-preview`
+}
+
+/**
+ * @summary Preview reveal dates for a chosen schedule before sealing
+ */
+export const previewVaultSchedule = async (vaultId: string,
+    schedulePreviewInput: SchedulePreviewInput, options?: Parameters<typeof customFetch>[1]): Promise<SchedulePreviewResult> => {
+
+  return customFetch<SchedulePreviewResult>(getPreviewVaultScheduleUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(schedulePreviewInput)
+  }
+);}
+
+
+
+
+
+export const getPreviewVaultScheduleMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewVaultSchedule>>, TError,{vaultId: string;data: BodyType<SchedulePreviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewVaultSchedule>>, TError,{vaultId: string;data: BodyType<SchedulePreviewInput>}, TContext> => {
+
+const mutationKey = ['previewVaultSchedule'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewVaultSchedule>>, {vaultId: string;data: BodyType<SchedulePreviewInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  previewVaultSchedule(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewVaultScheduleMutationResult = NonNullable<Awaited<ReturnType<typeof previewVaultSchedule>>>
+    export type PreviewVaultScheduleMutationBody = BodyType<SchedulePreviewInput>
+    export type PreviewVaultScheduleMutationError = ErrorType<void>
+
+    /**
+ * @summary Preview reveal dates for a chosen schedule before sealing
+ */
+export const usePreviewVaultSchedule = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewVaultSchedule>>, TError,{vaultId: string;data: BodyType<SchedulePreviewInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewVaultSchedule>>,
+        TError,
+        {vaultId: string;data: BodyType<SchedulePreviewInput>},
+        TContext
+      > => {
+      return useMutation(getPreviewVaultScheduleMutationOptions(options));
+    }
+
+export const getListVaultPromptsUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/prompts`
+}
+
+/**
+ * @summary List a vault's prompts, custom prompts first, in display order
+ */
+export const listVaultPrompts = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<VaultPromptList> => {
+
+  return customFetch<VaultPromptList>(getListVaultPromptsUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListVaultPromptsQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/prompts`
+    ] as const;
+    }
+
+
+export const getListVaultPromptsQueryOptions = <TData = Awaited<ReturnType<typeof listVaultPrompts>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVaultPrompts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListVaultPromptsQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listVaultPrompts>>> = ({ signal }) => listVaultPrompts(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listVaultPrompts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListVaultPromptsQueryResult = NonNullable<Awaited<ReturnType<typeof listVaultPrompts>>>
+export type ListVaultPromptsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List a vault's prompts, custom prompts first, in display order
+ */
+
+export function useListVaultPrompts<TData = Awaited<ReturnType<typeof listVaultPrompts>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listVaultPrompts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListVaultPromptsQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAddCustomPromptUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/prompts`
+}
+
+/**
+ * @summary Add a custom free-text prompt to a draft vault
+ */
+export const addCustomPrompt = async (vaultId: string,
+    addCustomPromptInput: AddCustomPromptInput, options?: Parameters<typeof customFetch>[1]): Promise<VaultPrompt> => {
+
+  return customFetch<VaultPrompt>(getAddCustomPromptUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(addCustomPromptInput)
+  }
+);}
+
+
+
+
+
+export const getAddCustomPromptMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomPrompt>>, TError,{vaultId: string;data: BodyType<AddCustomPromptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addCustomPrompt>>, TError,{vaultId: string;data: BodyType<AddCustomPromptInput>}, TContext> => {
+
+const mutationKey = ['addCustomPrompt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCustomPrompt>>, {vaultId: string;data: BodyType<AddCustomPromptInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  addCustomPrompt(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCustomPromptMutationResult = NonNullable<Awaited<ReturnType<typeof addCustomPrompt>>>
+    export type AddCustomPromptMutationBody = BodyType<AddCustomPromptInput>
+    export type AddCustomPromptMutationError = ErrorType<void>
+
+    /**
+ * @summary Add a custom free-text prompt to a draft vault
+ */
+export const useAddCustomPrompt = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCustomPrompt>>, TError,{vaultId: string;data: BodyType<AddCustomPromptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addCustomPrompt>>,
+        TError,
+        {vaultId: string;data: BodyType<AddCustomPromptInput>},
+        TContext
+      > => {
+      return useMutation(getAddCustomPromptMutationOptions(options));
+    }
+
+export const getReorderVaultPromptsUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/prompts/order`
+}
+
+/**
+ * @summary Reorder a draft vault's prompts by drag-to-reorder
+ */
+export const reorderVaultPrompts = async (vaultId: string,
+    reorderPromptsInput: ReorderPromptsInput, options?: Parameters<typeof customFetch>[1]): Promise<VaultPromptList> => {
+
+  return customFetch<VaultPromptList>(getReorderVaultPromptsUrl(vaultId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(reorderPromptsInput)
+  }
+);}
+
+
+
+
+
+export const getReorderVaultPromptsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderVaultPrompts>>, TError,{vaultId: string;data: BodyType<ReorderPromptsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reorderVaultPrompts>>, TError,{vaultId: string;data: BodyType<ReorderPromptsInput>}, TContext> => {
+
+const mutationKey = ['reorderVaultPrompts'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reorderVaultPrompts>>, {vaultId: string;data: BodyType<ReorderPromptsInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  reorderVaultPrompts(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReorderVaultPromptsMutationResult = NonNullable<Awaited<ReturnType<typeof reorderVaultPrompts>>>
+    export type ReorderVaultPromptsMutationBody = BodyType<ReorderPromptsInput>
+    export type ReorderVaultPromptsMutationError = ErrorType<void>
+
+    /**
+ * @summary Reorder a draft vault's prompts by drag-to-reorder
+ */
+export const useReorderVaultPrompts = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderVaultPrompts>>, TError,{vaultId: string;data: BodyType<ReorderPromptsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reorderVaultPrompts>>,
+        TError,
+        {vaultId: string;data: BodyType<ReorderPromptsInput>},
+        TContext
+      > => {
+      return useMutation(getReorderVaultPromptsMutationOptions(options));
+    }
+
+export const getToggleVaultPromptUrl = (vaultId: string,
+    vaultQuestionId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/prompts/${vaultQuestionId}`
+}
+
+/**
+ * @summary Turn a draft vault's prompt on or off
+ */
+export const toggleVaultPrompt = async (vaultId: string,
+    vaultQuestionId: string,
+    togglePromptInput: TogglePromptInput, options?: Parameters<typeof customFetch>[1]): Promise<VaultPrompt> => {
+
+  return customFetch<VaultPrompt>(getToggleVaultPromptUrl(vaultId,vaultQuestionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(togglePromptInput)
+  }
+);}
+
+
+
+
+
+export const getToggleVaultPromptMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleVaultPrompt>>, TError,{vaultId: string;vaultQuestionId: string;data: BodyType<TogglePromptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof toggleVaultPrompt>>, TError,{vaultId: string;vaultQuestionId: string;data: BodyType<TogglePromptInput>}, TContext> => {
+
+const mutationKey = ['toggleVaultPrompt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleVaultPrompt>>, {vaultId: string;vaultQuestionId: string;data: BodyType<TogglePromptInput>}> = (props) => {
+          const {vaultId,vaultQuestionId,data} = props ?? {};
+
+          return  toggleVaultPrompt(vaultId,vaultQuestionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleVaultPromptMutationResult = NonNullable<Awaited<ReturnType<typeof toggleVaultPrompt>>>
+    export type ToggleVaultPromptMutationBody = BodyType<TogglePromptInput>
+    export type ToggleVaultPromptMutationError = ErrorType<void>
+
+    /**
+ * @summary Turn a draft vault's prompt on or off
+ */
+export const useToggleVaultPrompt = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleVaultPrompt>>, TError,{vaultId: string;vaultQuestionId: string;data: BodyType<TogglePromptInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof toggleVaultPrompt>>,
+        TError,
+        {vaultId: string;vaultQuestionId: string;data: BodyType<TogglePromptInput>},
+        TContext
+      > => {
+      return useMutation(getToggleVaultPromptMutationOptions(options));
+    }
+
+export const getGetSealedVaultDateInfoUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/date-change`
+}
+
+/**
+ * @summary Get a sealed vault's current event date, schedule, and lock state
+ */
+export const getSealedVaultDateInfo = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<SealedVaultDateInfo> => {
+
+  return customFetch<SealedVaultDateInfo>(getGetSealedVaultDateInfoUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSealedVaultDateInfoQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/date-change`
+    ] as const;
+    }
+
+
+export const getGetSealedVaultDateInfoQueryOptions = <TData = Awaited<ReturnType<typeof getSealedVaultDateInfo>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSealedVaultDateInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSealedVaultDateInfoQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSealedVaultDateInfo>>> = ({ signal }) => getSealedVaultDateInfo(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSealedVaultDateInfo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSealedVaultDateInfoQueryResult = NonNullable<Awaited<ReturnType<typeof getSealedVaultDateInfo>>>
+export type GetSealedVaultDateInfoQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a sealed vault's current event date, schedule, and lock state
+ */
+
+export function useGetSealedVaultDateInfo<TData = Awaited<ReturnType<typeof getSealedVaultDateInfo>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSealedVaultDateInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSealedVaultDateInfoQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getChangeSealedVaultEventDateUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/date-change`
+}
+
+/**
+ * @summary Move a sealed vault's event date and recalculate its reveal schedule
+ */
+export const changeSealedVaultEventDate = async (vaultId: string,
+    sealedVaultDateChangeInput: SealedVaultDateChangeInput, options?: Parameters<typeof customFetch>[1]): Promise<SealedVaultDateChangeResult> => {
+
+  return customFetch<SealedVaultDateChangeResult>(getChangeSealedVaultEventDateUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sealedVaultDateChangeInput)
+  }
+);}
+
+
+
+
+
+export const getChangeSealedVaultEventDateMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeSealedVaultEventDate>>, TError,{vaultId: string;data: BodyType<SealedVaultDateChangeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeSealedVaultEventDate>>, TError,{vaultId: string;data: BodyType<SealedVaultDateChangeInput>}, TContext> => {
+
+const mutationKey = ['changeSealedVaultEventDate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeSealedVaultEventDate>>, {vaultId: string;data: BodyType<SealedVaultDateChangeInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  changeSealedVaultEventDate(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeSealedVaultEventDateMutationResult = NonNullable<Awaited<ReturnType<typeof changeSealedVaultEventDate>>>
+    export type ChangeSealedVaultEventDateMutationBody = BodyType<SealedVaultDateChangeInput>
+    export type ChangeSealedVaultEventDateMutationError = ErrorType<void>
+
+    /**
+ * @summary Move a sealed vault's event date and recalculate its reveal schedule
+ */
+export const useChangeSealedVaultEventDate = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeSealedVaultEventDate>>, TError,{vaultId: string;data: BodyType<SealedVaultDateChangeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof changeSealedVaultEventDate>>,
+        TError,
+        {vaultId: string;data: BodyType<SealedVaultDateChangeInput>},
+        TContext
+      > => {
+      return useMutation(getChangeSealedVaultEventDateMutationOptions(options));
+    }
+
+export const getPreviewSealedVaultDateChangeUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/date-change/preview`
+}
+
+/**
+ * @summary Preview a sealed vault's recalculated reveal dates before confirming
+ */
+export const previewSealedVaultDateChange = async (vaultId: string,
+    sealedVaultDateChangeInput: SealedVaultDateChangeInput, options?: Parameters<typeof customFetch>[1]): Promise<SchedulePreviewResult> => {
+
+  return customFetch<SchedulePreviewResult>(getPreviewSealedVaultDateChangeUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sealedVaultDateChangeInput)
+  }
+);}
+
+
+
+
+
+export const getPreviewSealedVaultDateChangeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewSealedVaultDateChange>>, TError,{vaultId: string;data: BodyType<SealedVaultDateChangeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof previewSealedVaultDateChange>>, TError,{vaultId: string;data: BodyType<SealedVaultDateChangeInput>}, TContext> => {
+
+const mutationKey = ['previewSealedVaultDateChange'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof previewSealedVaultDateChange>>, {vaultId: string;data: BodyType<SealedVaultDateChangeInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  previewSealedVaultDateChange(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PreviewSealedVaultDateChangeMutationResult = NonNullable<Awaited<ReturnType<typeof previewSealedVaultDateChange>>>
+    export type PreviewSealedVaultDateChangeMutationBody = BodyType<SealedVaultDateChangeInput>
+    export type PreviewSealedVaultDateChangeMutationError = ErrorType<void>
+
+    /**
+ * @summary Preview a sealed vault's recalculated reveal dates before confirming
+ */
+export const usePreviewSealedVaultDateChange = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof previewSealedVaultDateChange>>, TError,{vaultId: string;data: BodyType<SealedVaultDateChangeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof previewSealedVaultDateChange>>,
+        TError,
+        {vaultId: string;data: BodyType<SealedVaultDateChangeInput>},
+        TContext
+      > => {
+      return useMutation(getPreviewSealedVaultDateChangeMutationOptions(options));
     }
 
 export const getListUnlockedRevealWorkUrl = (vaultId: string,) => {
