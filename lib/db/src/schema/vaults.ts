@@ -52,6 +52,7 @@ export const vaultsTable = pgTable(
     milestoneLabel: text("milestone_label"),
     sealedAt: timestamp("sealed_at", { withTimezone: true }),
     coverObjectKey: text("cover_object_key"),
+    guestToken: text("guest_token").notNull(),
     guestTokenHash: text("guest_token_hash").notNull(),
     referrerCode: text("referrer_code").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })

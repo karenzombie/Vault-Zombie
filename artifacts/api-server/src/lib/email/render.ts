@@ -5,7 +5,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, count, eq } from "drizzle-orm";
 import {
-  answersTable, db, getGuestPersonalReport,
+  answersTable, db, getGuestPersonalReport, guestLinkUrl,
   guestsTable, overageEventsTable, PLAN_POLICY, revealSlotsTable, submissionsTable,
   vaultQuestionsTable, vaultsTable, vaultTypesTable, type EmailDelivery, type PlanTier,
 } from "@workspace/db";
@@ -40,6 +40,7 @@ const SCHEDULE_NAME: Record<string, string> = {
 };
 
 function operatorVaultUrl(vaultId: string) { return `${appUrl()}/operator/vaults/${vaultId}`; }
+function operatorVaultShareUrl(vaultId: string) { return `${appUrl()}/operator/vaults/${vaultId}/share`; }
 // Stage 2 has not built the vault-creation screen yet; the spec still calls for a
 // direct link, so this points at the eventual route rather than falling back to
 // the site root (per explicit instruction: point there anyway, expected to 404 today).
@@ -298,7 +299,7 @@ function h4VaultSealed(p: Record<string, unknown>): Doc {
         { kind: "linkBox", url: String(p.guestLink) },
         { kind: "paragraph", text: "Guests can use this link or scan your QR code. They answer in about a minute and never need an account." },
       ] },
-      { kind: "button", url: operatorVaultUrl(String(p.vaultId)), label: "Get your QR code and printable cards" },
+      { kind: "button", url: operatorVaultShareUrl(String(p.vaultId)), label: "Get your QR code and printable cards" },
       { kind: "sectionHeading", icon: "lock", text: "What sealing means" },
       { kind: "paragraph", text: "Your prompts, reveal schedule, and reveal dates are now locked in. Every prediction seals the moment a guest submits it. No one can read one before its reveal date, not even you." },
       { kind: "darkBand", children: [
@@ -539,19 +540,16 @@ async function buildH2(row: EmailDelivery): Promise<Doc> {
 
 async function buildH4(row: EmailDelivery, p: Record<string, unknown>): Promise<Doc> {
   if (!row.vaultId) throw new Error("Vault sealed email is missing its vault.");
-  const [vault] = await db.select({ entitledPlanTier: vaultsTable.entitledPlanTier, revealSchedule: vaultsTable.revealSchedule })
-    .from(vaultsTable).where(eq(vaultsTable.id, row.vaultId)).limit(1);
+  const [vault] = await db.select({
+    entitledPlanTier: vaultsTable.entitledPlanTier, revealSchedule: vaultsTable.revealSchedule, guestToken: vaultsTable.guestToken,
+  }).from(vaultsTable).where(eq(vaultsTable.id, row.vaultId)).limit(1);
   if (!vault) throw new Error("Vault no longer exists.");
+  if (!vault.guestToken) throw new Error("Sealed vault is missing its guest token.");
   const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, row.vaultId));
   const firstRevealDate = slots.map((s) => s.revealDate).sort()[0] ?? null;
   if (!firstRevealDate) throw new Error("Sealed vault is missing its reveal schedule.");
-  // NOTE: the guest-facing link needs the raw guest token, but only its hash is ever
-  // persisted (minted once at vault creation and returned to the caller, never stored).
-  // There is no way to recover it here without a schema change, which is out of scope
-  // for an email-template fix. Falling back to the operator's vault page, which is the
-  // only accurate destination available today; see final report.
   return h4VaultSealed({
-    vaultName: p.vaultName, vaultId: row.vaultId, guestLink: operatorVaultUrl(row.vaultId),
+    vaultName: p.vaultName, vaultId: row.vaultId, guestLink: guestLinkUrl(vault.guestToken),
     guestLimit: PLAN_POLICY[vault.entitledPlanTier].guestCap,
     revealScheduleName: SCHEDULE_NAME[vault.revealSchedule] ?? vault.revealSchedule,
     firstRevealDate,

@@ -39,6 +39,7 @@ export async function createDraftVault(input: {
     subjectValues: input.subjectValues ?? {},
     planTier: input.planTier,
     revealSchedule: input.revealSchedule,
+    guestToken,
     guestTokenHash: tokenHash(guestToken),
     referrerCode,
   }).returning();
