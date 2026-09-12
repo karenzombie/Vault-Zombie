@@ -15,7 +15,8 @@ import GiftPurchasePage from '@/pages/public/gift-purchase';
 import GiftSuccessPage from '@/pages/public/gift-success';
 import GiftCancelPage from '@/pages/public/gift-cancel';
 import GiftRedeemPage from '@/pages/operator/gift-redeem';
-import OperatorPage from '@/pages/operator/operator-page';
+import OperatorPage, { OperatorReveal } from '@/pages/operator/operator-page';
+import { useParams } from 'wouter';
 import AdminPage from '@/pages/admin/admin';
 import SignInPage from '@/pages/auth/sign-in';
 import SignUpPage from '@/pages/auth/sign-up';
@@ -49,7 +50,14 @@ function requireOperator<T extends object>(Component: ComponentType<T>) {
   };
 }
 
+function OperatorRevealRoute() {
+  const { vaultId } = useParams<{ vaultId: string }>();
+  if (!vaultId) return <NotFound />;
+  return <OperatorReveal vaultId={vaultId} />;
+}
+
 const AuthenticatedOperator = requireOperator(OperatorPage);
+const AuthenticatedOperatorReveal = requireOperator(OperatorRevealRoute);
 const AuthenticatedHealthReport = requireOperator(HealthReportPage);
 const AuthenticatedSummaryReport = requireOperator(SummaryReportPage);
 const AuthenticatedScoreboardReport = requireOperator(ScoreboardReportPage);
@@ -112,6 +120,7 @@ function Router() {
 
         {/* Main Operator Route */}
         <Route path="/operator" component={AuthenticatedOperator} />
+        <Route path="/operator/vaults/:vaultId" component={AuthenticatedOperatorReveal} />
         <Route path="/operator/gifts/redeem" component={AuthenticatedGiftRedeem} />
 
         {/* Admin Routes */}

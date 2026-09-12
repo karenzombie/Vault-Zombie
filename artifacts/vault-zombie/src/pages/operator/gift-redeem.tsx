@@ -35,7 +35,7 @@ export default function GiftRedeemPage() {
             title: "Gift Redeemed!",
             description: `Successfully applied ${res.tier} tier to vault ${res.vaultId}.`,
           });
-          setLocation(`/operator?vaultId=${res.vaultId}`);
+          setLocation(`/operator/vaults/${res.vaultId}`);
         },
         onError: (err: any) => {
           toast({

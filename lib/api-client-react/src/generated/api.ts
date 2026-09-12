@@ -76,6 +76,7 @@ import type {
   GuestSubmissionInput,
   GuestVault,
   HealthStatus,
+  Items,
   LegalConfiguration,
   LegalConsentInput,
   LegalSignupIntent,
@@ -83,11 +84,14 @@ import type {
   LegalStatus,
   ListAdminAuditEventsParams,
   ListAdminContentParams,
+  ListAdminDeletedVaultsParams,
   ListAdminEmailDeliveriesParams,
   ListAdminOperatorsParams,
   ListAdminVaultsParams,
   ManualVaultActionInput,
   ManualVaultActionResult,
+  OperatorVaultDeleteResult,
+  OperatorVaultList,
   OutcomeInput,
   OverageDeclineResult,
   OverageStatus,
@@ -2665,6 +2669,162 @@ export function useListAdminVaults<TData = Awaited<ReturnType<typeof listAdminVa
 
 
 
+export const getListAdminDeletedVaultsUrl = (params?: ListAdminDeletedVaultsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/vaults/archive?${stringifiedParams}` : `/api/admin/vaults/archive`
+}
+
+/**
+ * @summary List soft-deleted vaults, separate from the live vault list
+ */
+export const listAdminDeletedVaults = async (params?: ListAdminDeletedVaultsParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminVaultList> => {
+
+  return customFetch<AdminVaultList>(getListAdminDeletedVaultsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminDeletedVaultsQueryKey = (params?: ListAdminDeletedVaultsParams,) => {
+    return [
+    `/api/admin/vaults/archive`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListAdminDeletedVaultsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminDeletedVaults>>, TError = ErrorType<void>>(params?: ListAdminDeletedVaultsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDeletedVaults>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminDeletedVaultsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminDeletedVaults>>> = ({ signal }) => listAdminDeletedVaults(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminDeletedVaults>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminDeletedVaultsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminDeletedVaults>>>
+export type ListAdminDeletedVaultsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List soft-deleted vaults, separate from the live vault list
+ */
+
+export function useListAdminDeletedVaults<TData = Awaited<ReturnType<typeof listAdminDeletedVaults>>, TError = ErrorType<void>>(
+ params?: ListAdminDeletedVaultsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminDeletedVaults>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminDeletedVaultsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getRestoreAdminVaultUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/restore`
+}
+
+/**
+ * @summary Fresh-MFA audited restoration of a soft-deleted vault to its prior status
+ */
+export const restoreAdminVault = async (vaultId: string,
+    sensitiveReasonInput: SensitiveReasonInput, options?: Parameters<typeof customFetch>[1]): Promise<Items> => {
+
+  return customFetch<Items>(getRestoreAdminVaultUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(sensitiveReasonInput)
+  }
+);}
+
+
+
+
+
+export const getRestoreAdminVaultMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreAdminVault>>, TError,{vaultId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreAdminVault>>, TError,{vaultId: string;data: BodyType<SensitiveReasonInput>}, TContext> => {
+
+const mutationKey = ['restoreAdminVault'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreAdminVault>>, {vaultId: string;data: BodyType<SensitiveReasonInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  restoreAdminVault(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreAdminVaultMutationResult = NonNullable<Awaited<ReturnType<typeof restoreAdminVault>>>
+    export type RestoreAdminVaultMutationBody = BodyType<SensitiveReasonInput>
+    export type RestoreAdminVaultMutationError = ErrorType<void>
+
+    /**
+ * @summary Fresh-MFA audited restoration of a soft-deleted vault to its prior status
+ */
+export const useRestoreAdminVault = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreAdminVault>>, TError,{vaultId: string;data: BodyType<SensitiveReasonInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreAdminVault>>,
+        TError,
+        {vaultId: string;data: BodyType<SensitiveReasonInput>},
+        TContext
+      > => {
+      return useMutation(getRestoreAdminVaultMutationOptions(options));
+    }
+
 export const getListAdminContentUrl = (params?: ListAdminContentParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -4306,6 +4466,154 @@ export const useDeleteAdminAccount = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteAdminAccountMutationOptions(options));
+    }
+
+export const getListOperatorVaultsUrl = () => {
+
+
+
+
+  return `/api/operator/vaults`
+}
+
+/**
+ * @summary List the signed-in host's own vaults for the dashboard; never prediction content
+ */
+export const listOperatorVaults = async ( options?: Parameters<typeof customFetch>[1]): Promise<OperatorVaultList> => {
+
+  return customFetch<OperatorVaultList>(getListOperatorVaultsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListOperatorVaultsQueryKey = () => {
+    return [
+    `/api/operator/vaults`
+    ] as const;
+    }
+
+
+export const getListOperatorVaultsQueryOptions = <TData = Awaited<ReturnType<typeof listOperatorVaults>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOperatorVaults>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOperatorVaultsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOperatorVaults>>> = ({ signal }) => listOperatorVaults({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOperatorVaults>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListOperatorVaultsQueryResult = NonNullable<Awaited<ReturnType<typeof listOperatorVaults>>>
+export type ListOperatorVaultsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List the signed-in host's own vaults for the dashboard; never prediction content
+ */
+
+export function useListOperatorVaults<TData = Awaited<ReturnType<typeof listOperatorVaults>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listOperatorVaults>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListOperatorVaultsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getDeleteOperatorVaultUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/delete`
+}
+
+/**
+ * @summary Host-initiated soft delete; the vault and its data are retained but hidden
+ */
+export const deleteOperatorVault = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<OperatorVaultDeleteResult> => {
+
+  return customFetch<OperatorVaultDeleteResult>(getDeleteOperatorVaultUrl(vaultId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteOperatorVaultMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOperatorVault>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteOperatorVault>>, TError,{vaultId: string}, TContext> => {
+
+const mutationKey = ['deleteOperatorVault'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteOperatorVault>>, {vaultId: string}> = (props) => {
+          const {vaultId} = props ?? {};
+
+          return  deleteOperatorVault(vaultId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteOperatorVaultMutationResult = NonNullable<Awaited<ReturnType<typeof deleteOperatorVault>>>
+
+    export type DeleteOperatorVaultMutationError = ErrorType<void>
+
+    /**
+ * @summary Host-initiated soft delete; the vault and its data are retained but hidden
+ */
+export const useDeleteOperatorVault = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOperatorVault>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteOperatorVault>>,
+        TError,
+        {vaultId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteOperatorVaultMutationOptions(options));
     }
 
 export const getListUnlockedRevealWorkUrl = (vaultId: string,) => {

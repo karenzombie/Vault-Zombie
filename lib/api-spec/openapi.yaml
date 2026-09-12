@@ -447,6 +447,30 @@ paths:
         "200": { description: "Vault metadata only, never prediction content", content: { application/json: { schema: { $ref: "#/components/schemas/AdminVaultList" } } } }
         "401": { description: Authentication required }
         "403": { description: Administrator access required }
+  /admin/vaults/archive:
+    get:
+      operationId: listAdminDeletedVaults
+      tags: [admin]
+      summary: List soft-deleted vaults, separate from the live vault list
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string, maxLength: 100 }
+      responses:
+        "200": { description: "Deleted vault metadata only", content: { application/json: { schema: { $ref: "#/components/schemas/AdminVaultList" } } } }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/vaults/{vaultId}/restore:
+    post:
+      operationId: restoreAdminVault
+      tags: [admin]
+      summary: Fresh-MFA audited restoration of a soft-deleted vault to its prior status
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/SensitiveReasonInput" } } } }
+      responses:
+        "200": { description: "Vault restored", content: { application/json: { schema: { $ref: "#/components/schemas/AdminVaultList/properties/vaults/items" } } } }
+        "400": { description: Vault is not deleted }
+        "404": { description: Vault not found }
   /admin/content:
     get:
       operationId: listAdminContent
@@ -665,6 +689,28 @@ paths:
           schema: { type: string, format: uuid }
       requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/AdminDeletionInput" } } } }
       responses: { "200": { description: "Account deleted", content: { application/json: { schema: { type: object } } } } }
+  /operator/vaults:
+    get:
+      operationId: listOperatorVaults
+      tags: [operator]
+      summary: List the signed-in host's own vaults for the dashboard; never prediction content
+      responses:
+        "200":
+          description: Vault cards only, deleted vaults excluded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OperatorVaultList" }
+        "401": { description: Authentication required }
+  /operator/vaults/{vaultId}/delete:
+    post:
+      operationId: deleteOperatorVault
+      tags: [operator]
+      summary: Host-initiated soft delete; the vault and its data are retained but hidden
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Vault marked deleted, content: { application/json: { schema: { $ref: "#/components/schemas/OperatorVaultDeleteResult" } } } }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found, not owned by this host, or already deleted" }
   /operator/vaults/{vaultId}/reveals/unlocked:
     get:
       operationId: listUnlockedRevealWork
@@ -1260,6 +1306,29 @@ components:
         billingRecords: { type: array, items: { $ref: "#/components/schemas/AdminBillingList/properties/records/items" } }
         overageEvents: { type: array, items: { $ref: "#/components/schemas/AdminOverageList/properties/events/items" } }
         emailDeliveries: { type: array, items: { $ref: "#/components/schemas/AdminEmailDeliveryList/properties/deliveries/items" } }
+    OperatorVaultList:
+      type: object
+      required: [vaults]
+      properties:
+        vaults:
+          type: array
+          items:
+            type: object
+            required: [id, name, status, cardStatus, createdAt, vaultTypeName, vaultTypeSlug]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              status: { type: string, enum: [draft, sealed, active, completed] }
+              cardStatus: { type: string, enum: [draft, sealed, partially_unlocked, fully_unlocked, completed], description: "Display status; active splits into partially_unlocked or fully_unlocked." }
+              createdAt: { type: string, format: date-time }
+              vaultTypeName: { type: string }
+              vaultTypeSlug: { type: string }
+    OperatorVaultDeleteResult:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string, enum: [deleted] }
     AdminVaultList:
       type: object
       required: [vaults]

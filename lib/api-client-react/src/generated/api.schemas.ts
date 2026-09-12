@@ -814,6 +814,57 @@ export interface AdminVaultSupportDetail {
   emailDeliveries: AdminVaultSupportDetailEmailDeliveriesItem[];
 }
 
+export type OperatorVaultListVaultsItemStatus = typeof OperatorVaultListVaultsItemStatus[keyof typeof OperatorVaultListVaultsItemStatus];
+
+
+export const OperatorVaultListVaultsItemStatus = {
+  draft: 'draft',
+  sealed: 'sealed',
+  active: 'active',
+  completed: 'completed',
+} as const;
+
+/**
+ * Display status; active splits into partially_unlocked or fully_unlocked.
+ */
+export type OperatorVaultListVaultsItemCardStatus = typeof OperatorVaultListVaultsItemCardStatus[keyof typeof OperatorVaultListVaultsItemCardStatus];
+
+
+export const OperatorVaultListVaultsItemCardStatus = {
+  draft: 'draft',
+  sealed: 'sealed',
+  partially_unlocked: 'partially_unlocked',
+  fully_unlocked: 'fully_unlocked',
+  completed: 'completed',
+} as const;
+
+export type OperatorVaultListVaultsItem = {
+  id: string;
+  name: string;
+  status: OperatorVaultListVaultsItemStatus;
+  /** Display status; active splits into partially_unlocked or fully_unlocked. */
+  cardStatus: OperatorVaultListVaultsItemCardStatus;
+  createdAt: string;
+  vaultTypeName: string;
+  vaultTypeSlug: string;
+};
+
+export interface OperatorVaultList {
+  vaults: OperatorVaultListVaultsItem[];
+}
+
+export type OperatorVaultDeleteResultStatus = typeof OperatorVaultDeleteResultStatus[keyof typeof OperatorVaultDeleteResultStatus];
+
+
+export const OperatorVaultDeleteResultStatus = {
+  deleted: 'deleted',
+} as const;
+
+export interface OperatorVaultDeleteResult {
+  id: string;
+  status: OperatorVaultDeleteResultStatus;
+}
+
 export type AdminVaultListVaultsItem = {
   id: string;
   name: string;
@@ -1957,6 +2008,27 @@ export type ListAdminVaultsParams = {
  * @maxLength 100
  */
 q?: string;
+};
+
+export type ListAdminDeletedVaultsParams = {
+/**
+ * @maxLength 100
+ */
+q?: string;
+};
+
+export type Items = {
+  id: string;
+  name: string;
+  status: string;
+  planTier: string;
+  createdAt: string;
+  /** @nullable */
+  sealedAt: string | null;
+  operatorName: string;
+  vaultTypeName: string;
+  /** Accounts whose signup carried this vault's referrer code. */
+  referralCount: number;
 };
 
 export type ListAdminContentParams = {

@@ -25,7 +25,7 @@ export function ReportLayout({
   backLabel?: string;
   printMode?: boolean;
 }) {
-  const finalBackUrl = backUrl || `/operator?vaultId=${encodeURIComponent(vaultId)}`;
+  const finalBackUrl = backUrl || `/operator/vaults/${encodeURIComponent(vaultId)}`;
 
   return (
     <>

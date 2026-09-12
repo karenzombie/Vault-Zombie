@@ -28,15 +28,17 @@ router.post("/admin/vaults/:vaultId/delete", ...sensitiveAdminGuards, async (req
     const vaultId = id(req.params.vaultId, "vault ID"); const { reason, confirmation } = req.body ?? {};
     if (typeof reason !== "string" || typeof confirmation !== "string") throw new Error("Reason and typed confirmation are required.");
     const result = await runSensitiveAdminAction({ actor: req.account!, action: "vault_deletion", targetType: "vault", targetId: vaultId, reason }, async (tx) => {
-      await tx.select({ id: vaultsTable.id }).from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1).for("update");
+      const [locked] = await tx.select({ status: vaultsTable.status }).from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1).for("update");
+      if (!locked) throw new Error("Vault not found.");
+      if (locked.status === "deleted") throw new Error("Vault is already deleted.");
       const preview = await vaultPreview(tx, vaultId);
       if (confirmation !== preview.vault.id && confirmation !== preview.vault.name) throw new Error("Type the exact vault name or ID to confirm deletion.");
       if (preview.refundBlocked) throw new Error(`Vault deletion conflicts with unresolved refund ${preview.refundRequestId}.`);
-      // These references intentionally survive, but cannot point at a deleted vault.
-      await tx.update(billingRecordsTable).set({ vaultId: null }).where(eq(billingRecordsTable.vaultId, vaultId));
-      await tx.update(giftsTable).set({ redeemedVaultId: null }).where(eq(giftsTable.redeemedVaultId, vaultId));
-      await tx.delete(vaultsTable).where(eq(vaultsTable.id, vaultId));
-      return { vaultId, removedSubmissions: preview.submissions, removedAnswers: preview.answers, retainedBillingRecords: preview.billingRecordsRetained };
+      // Soft delete only (Flow1 Addendum 1, A2): the vault, its predictions, and its
+      // billing/gift references are retained, never erased. Hidden from the host, and
+      // shown in the admin archive view; an admin can restore it later.
+      await tx.update(vaultsTable).set({ status: "deleted" }).where(eq(vaultsTable.id, vaultId));
+      return { vaultId, status: "deleted" as const, retainedSubmissions: preview.submissions, retainedAnswers: preview.answers, retainedBillingRecords: preview.billingRecordsRetained };
     });
     return res.json(result);
   } catch (error) {

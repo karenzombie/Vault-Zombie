@@ -66,6 +66,7 @@ export const auditActionEnum = pgEnum("audit_action", [
   "refund",
   "comp_grant",
   "vault_deletion",
+  "vault_restoration",
   "account_deletion",
   "backup_push",
   "admin_full_export",

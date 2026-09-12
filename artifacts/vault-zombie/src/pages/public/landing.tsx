@@ -4,6 +4,7 @@ import { cn, getTierLabel } from "@/lib/utils";
 import { useGetBillingPrices } from "@workspace/api-client-react";
 import { Shield, Clock, Users, Unlock, Gift, Check, Calendar, ArrowRight, Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { SiteHeader } from "@/components/site-header";
 
 const fadeUp: any = {
   hidden: { opacity: 0, y: 20 },
@@ -40,30 +41,6 @@ const VAULT_TYPES = [
   { name: "New Business", desc: "Whether the idea takes off.", icon: "new-business.svg" },
   { name: "New Year", desc: "What the year ahead holds.", icon: "new-year.svg" }
 ];
-
-function Header() {
-  return (
-    <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-hairline">
-      <div className="mx-auto flex h-24 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
-        <Link href="/" aria-label="Vault Zombie home" className="flex min-w-0 items-center gap-2">
-          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-16 w-auto shrink-0" />
-          <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-16 w-auto shrink-0" />
-        </Link>
-        <div className="flex shrink-0 items-center gap-3 md:gap-6">
-          <Link href="/gifts/purchase" className="text-sm font-bold text-ink hover:text-bronze transition-colors hidden sm:block">
-            Gift a Vault
-          </Link>
-          <Link href="/sign-in" className="text-sm font-bold text-ink hover:text-bronze transition-colors">
-            Sign in
-          </Link>
-          <Link href="/sign-up" className={cn(buttonVariants({ size: "sm" }), "hidden sm:inline-flex")}>
-            Sign up
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
 
 function Hero() {
   const reduceMotion = useReducedMotion();
@@ -327,7 +304,8 @@ function Footer() {
           <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-12 w-auto shrink-0" />
         </Link>
         <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-ink">
-          <Link href="/gifts/purchase" className="transition-colors hover:text-bronze">Gift a Vault</Link>
+          <Link href="/gifts/redeem" className="transition-colors hover:text-bronze">Redeem a gift code</Link>
+          <Link href="/gifts/purchase" className="transition-colors hover:text-bronze">Gift a vault</Link>
           <Link href="/sign-in" className="transition-colors hover:text-bronze">Sign in</Link>
           <Link href="/sign-up" className="transition-colors hover:text-bronze">Sign up</Link>
         </div>
@@ -342,7 +320,7 @@ function Footer() {
 export default function Landing() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col font-sans">
-      <Header />
+      <SiteHeader />
       <main className="flex-1">
         <Hero />
         <HowItWorks />

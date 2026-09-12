@@ -1,5 +1,5 @@
-import { and, count, countDistinct, desc, eq, inArray, isNotNull, isNull } from "drizzle-orm";
-import { Router, type IRouter } from "express";
+import { and, count, countDistinct, desc, eq, inArray, isNotNull, isNull, ne } from "drizzle-orm";
+import { Router, type IRouter, type Request } from "express";
 import {
   accountsTable,
   answersTable,
@@ -8,6 +8,7 @@ import {
   guestsTable,
   revealSlotsTable,
   readUnlockedAnswers,
+  restoreDeletedVault,
   runSensitiveAdminAction,
   setGuestEmailSubscription,
   submissionsTable,
@@ -82,20 +83,47 @@ async function scopePreviews(executor: Pick<typeof db, "select">, id: string, sl
   }));
 }
 
+async function listVaultsByDeletionState(req: Request, excludeDeleted: boolean) {
+  const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100).toLowerCase() : "";
+  const rows = await db.select({
+    id: vaultsTable.id, name: vaultsTable.name, status: vaultsTable.status, planTier: vaultsTable.entitledPlanTier,
+    createdAt: vaultsTable.createdAt, sealedAt: vaultsTable.sealedAt, operatorName: accountsTable.displayName,
+    vaultTypeName: vaultTypesTable.name,
+  }).from(vaultsTable).innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id))
+    .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id))
+    .where(excludeDeleted ? ne(vaultsTable.status, "deleted") : eq(vaultsTable.status, "deleted"));
+  const filtered = rows.filter((row) => !query || [row.id, row.name, row.operatorName, row.vaultTypeName].some((value) => value.toLowerCase().includes(query)));
+  return Promise.all(filtered.map(async (row) => ({ ...row, referralCount: await referralCount(row.id) })));
+}
+
 adminVaultsRouter.get("/admin/vaults", requireOperator, requireAdmin, async (req, res, next) => {
   try {
-    const query = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 100).toLowerCase() : "";
-    const rows = await db.select({
-      id: vaultsTable.id, name: vaultsTable.name, status: vaultsTable.status, planTier: vaultsTable.entitledPlanTier,
-      createdAt: vaultsTable.createdAt, sealedAt: vaultsTable.sealedAt, operatorName: accountsTable.displayName,
-      vaultTypeName: vaultTypesTable.name,
-    }).from(vaultsTable).innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id))
-      .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id));
-    const filtered = rows.filter((row) => !query || [row.id, row.name, row.operatorName, row.vaultTypeName].some((value) => value.toLowerCase().includes(query)));
-    const withReferrals = await Promise.all(filtered.map(async (row) => ({ ...row, referralCount: await referralCount(row.id) })));
-    // Search only non-sensitive metadata.
-    return res.json({ vaults: withReferrals });
+    // Search only non-sensitive metadata. Deleted vaults live in the separate archive view.
+    return res.json({ vaults: await listVaultsByDeletionState(req, true) });
   } catch (error) { return next(error); }
+});
+
+adminVaultsRouter.get("/admin/vaults/archive", requireOperator, requireAdmin, async (req, res, next) => {
+  try {
+    return res.json({ vaults: await listVaultsByDeletionState(req, false) });
+  } catch (error) { return next(error); }
+});
+
+adminVaultsRouter.post("/admin/vaults/:vaultId/restore", ...sensitiveAdminGuards, async (req, res, next) => {
+  try {
+    const id = vaultId(req.params.vaultId);
+    const { reason } = req.body ?? {};
+    if (typeof reason !== "string") throw new Error("A reason is required.");
+    const result = await runSensitiveAdminAction({ actor: req.account!, action: "vault_restoration", targetType: "vault", targetId: id, reason }, async (tx) => {
+      return restoreDeletedVault(id, tx);
+    });
+    return res.json(result);
+  } catch (error) {
+    if (error instanceof Error && (error.message === "Vault not found." || error.message === "Vault is not deleted.")) {
+      return res.status(error.message === "Vault not found." ? 404 : 400).json({ error: error.message });
+    }
+    return next(error);
+  }
 });
 
 adminVaultsRouter.get("/admin/vaults/:vaultId", requireOperator, requireAdmin, async (req, res, next) => {

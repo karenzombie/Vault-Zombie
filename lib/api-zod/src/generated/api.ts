@@ -858,6 +858,60 @@ export const ListAdminVaultsResponse = zod.object({
 
 
 /**
+ * @summary List soft-deleted vaults, separate from the live vault list
+ */
+export const listAdminDeletedVaultsQueryQMax = 100;
+
+
+
+export const ListAdminDeletedVaultsQueryParams = zod.object({
+  "q": zod.coerce.string().max(listAdminDeletedVaultsQueryQMax).optional()
+})
+
+export const ListAdminDeletedVaultsResponse = zod.object({
+  "vaults": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "planTier": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sealedAt": zod.coerce.date().nullable(),
+  "operatorName": zod.string(),
+  "vaultTypeName": zod.string(),
+  "referralCount": zod.number().int().describe('Accounts whose signup carried this vault\'s referrer code.')
+}))
+})
+
+
+/**
+ * @summary Fresh-MFA audited restoration of a soft-deleted vault to its prior status
+ */
+export const RestoreAdminVaultParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const restoreAdminVaultBodyReasonMax = 1000;
+
+
+
+export const RestoreAdminVaultBody = zod.object({
+  "reason": zod.string().min(1).max(restoreAdminVaultBodyReasonMax)
+})
+
+export const RestoreAdminVaultResponse = zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.string(),
+  "planTier": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sealedAt": zod.coerce.date().nullable(),
+  "operatorName": zod.string(),
+  "vaultTypeName": zod.string(),
+  "referralCount": zod.number().int().describe('Accounts whose signup carried this vault\'s referrer code.')
+})
+
+
+/**
  * @summary List searchable content-management metadata
  */
 export const listAdminContentQueryQMax = 100;
@@ -1520,6 +1574,35 @@ export const DeleteAdminAccountBody = zod.object({
 export const DeleteAdminAccountResponse = zod.object({
 
 }).passthrough()
+
+
+/**
+ * @summary List the signed-in host's own vaults for the dashboard; never prediction content
+ */
+export const ListOperatorVaultsResponse = zod.object({
+  "vaults": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "name": zod.string(),
+  "status": zod.enum(['draft', 'sealed', 'active', 'completed']),
+  "cardStatus": zod.enum(['draft', 'sealed', 'partially_unlocked', 'fully_unlocked', 'completed']).describe('Display status; active splits into partially_unlocked or fully_unlocked.'),
+  "createdAt": zod.coerce.date(),
+  "vaultTypeName": zod.string(),
+  "vaultTypeSlug": zod.string()
+}))
+})
+
+
+/**
+ * @summary Host-initiated soft delete; the vault and its data are retained but hidden
+ */
+export const DeleteOperatorVaultParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const DeleteOperatorVaultResponse = zod.object({
+  "id": zod.string().uuid(),
+  "status": zod.enum(['deleted'])
+})
 
 
 /**
