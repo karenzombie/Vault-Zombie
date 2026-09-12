@@ -339,15 +339,64 @@ function SortablePromptRow({ prompt, onToggle }: { prompt: VaultPrompt; onToggle
       </button>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-ink truncate">{prompt.prompt}</p>
-        <p className="text-xs text-gray">
-          {prompt.isCustom ? `Your prompt · ${prompt.freeTextMode === "scoreable" ? "Scoreable" : "Keepsake"}` : prompt.subcategoryName ?? ""}
-        </p>
+        {prompt.isCustom && (
+          <p className="text-xs text-gray">{prompt.freeTextMode === "scoreable" ? "Scoreable" : "Keepsake"}</p>
+        )}
       </div>
       <Switch
         data-testid={`switch-prompt-${prompt.id}`}
         checked={prompt.enabled}
         onCheckedChange={(checked) => onToggle(prompt.id, checked)}
       />
+    </div>
+  );
+}
+
+/**
+ * A group in the prompts list: the host's own prompts, or one bank
+ * sub-category. Groups are a fixed data property (isCustom, or the bank
+ * question's subcategoryId), never a position, so dragging cannot move a
+ * prompt between groups. handleDragEnd below ignores any drop whose target
+ * lands in a different group instead of silently collapsing back to a flat
+ * list.
+ */
+type PromptGroup = { key: string; title: string; prompts: VaultPrompt[] };
+
+function buildPromptGroups(prompts: VaultPrompt[]): PromptGroup[] {
+  const custom = prompts.filter((p) => p.isCustom).sort((a, b) => a.displayOrder - b.displayOrder);
+  const bankBySubcategory = new Map<string, VaultPrompt[]>();
+  for (const p of prompts) {
+    if (p.isCustom) continue;
+    const key = p.subcategoryId ?? "uncategorized";
+    if (!bankBySubcategory.has(key)) bankBySubcategory.set(key, []);
+    bankBySubcategory.get(key)!.push(p);
+  }
+  const bankGroups = Array.from(bankBySubcategory.entries())
+    .map(([key, items]) => ({
+      key,
+      title: items[0]?.subcategoryName ?? "Other",
+      order: items[0]?.subcategoryDisplayOrder ?? Number.MAX_SAFE_INTEGER,
+      prompts: [...items].sort((a, b) => a.displayOrder - b.displayOrder),
+    }))
+    .sort((a, b) => a.order - b.order);
+
+  const groups: PromptGroup[] = [];
+  if (custom.length) groups.push({ key: "custom", title: "Your prompts", prompts: custom });
+  for (const g of bankGroups) groups.push({ key: g.key, title: g.title, prompts: g.prompts });
+  return groups;
+}
+
+function PromptGroupBlock({ group, onToggle }: { group: PromptGroup; onToggle: (id: string, enabled: boolean) => void }) {
+  return (
+    <div className="mb-5" data-testid={`group-prompts-${group.key}`}>
+      <h3 className="text-xs font-bold uppercase tracking-wide text-gray mb-2">{group.title}</h3>
+      <SortableContext items={group.prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2">
+          {group.prompts.map((p) => (
+            <SortablePromptRow key={p.id} prompt={p} onToggle={onToggle} />
+          ))}
+        </div>
+      </SortableContext>
     </div>
   );
 }
@@ -366,6 +415,12 @@ function PromptsSection({ vaultId }: { vaultId: string }) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   const prompts = useMemo(() => [...(list.data?.prompts ?? [])].sort((a, b) => a.displayOrder - b.displayOrder), [list.data]);
+  const groups = useMemo(() => buildPromptGroups(prompts), [prompts]);
+  const idToGroupKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of groups) for (const p of g.prompts) map.set(p.id, g.key);
+    return map;
+  }, [groups]);
   const onCount = prompts.filter((p) => p.enabled).length;
 
   function invalidate() {
@@ -379,12 +434,22 @@ function PromptsSection({ vaultId }: { vaultId: string }) {
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = prompts.findIndex((p) => p.id === active.id);
-    const newIndex = prompts.findIndex((p) => p.id === over.id);
+    const activeGroupKey = idToGroupKey.get(active.id as string);
+    const overGroupKey = idToGroupKey.get(over.id as string);
+    // A prompt's group comes from its own data (custom, or its bank
+    // sub-category), never from where it sits, so a drop that lands in a
+    // different group has no meaning. Ignore it rather than moving the
+    // prompt or falling back to a flat order.
+    if (!activeGroupKey || activeGroupKey !== overGroupKey) return;
+    const group = groups.find((g) => g.key === activeGroupKey);
+    if (!group) return;
+    const oldIndex = group.prompts.findIndex((p) => p.id === active.id);
+    const newIndex = group.prompts.findIndex((p) => p.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const next = arrayMove(prompts, oldIndex, newIndex);
+    const reorderedGroupPrompts = arrayMove(group.prompts, oldIndex, newIndex);
+    const orderedIds = groups.flatMap((g) => (g.key === activeGroupKey ? reorderedGroupPrompts : g.prompts).map((p) => p.id));
     reorder.mutate(
-      { vaultId, data: { orderedVaultQuestionIds: next.map((p) => p.id) } },
+      { vaultId, data: { orderedVaultQuestionIds: orderedIds } },
       { onSuccess: invalidate },
     );
   }
@@ -461,13 +526,9 @@ function PromptsSection({ vaultId }: { vaultId: string }) {
         <p className="text-sm text-text-2">Loading prompts…</p>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-2">
-              {prompts.map((p) => (
-                <SortablePromptRow key={p.id} prompt={p} onToggle={handleToggle} />
-              ))}
-            </div>
-          </SortableContext>
+          {groups.map((group) => (
+            <PromptGroupBlock key={group.key} group={group} onToggle={handleToggle} />
+          ))}
         </DndContext>
       )}
     </SectionCard>

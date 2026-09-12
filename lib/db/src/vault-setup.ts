@@ -295,6 +295,7 @@ export async function listVaultPrompts(vaultId: string, operatorId: string) {
     freeTextMode: sql<string | null>`coalesce(${questionsTable.freeTextMode}, ${vaultQuestionsTable.customFreeTextMode})`,
     subcategoryId: subcategoriesTable.id,
     subcategoryName: subcategoriesTable.name,
+    subcategoryDisplayOrder: subcategoriesTable.displayOrder,
   }).from(vaultQuestionsTable)
     .leftJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
     .leftJoin(subcategoriesTable, eq(questionsTable.subcategoryId, subcategoriesTable.id))

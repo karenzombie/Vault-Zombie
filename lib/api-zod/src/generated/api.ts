@@ -1783,7 +1783,8 @@ export const ListVaultPromptsResponse = zod.object({
   "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
   "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
   "subcategoryId": zod.string().uuid().nullable(),
-  "subcategoryName": zod.string().nullable()
+  "subcategoryName": zod.string().nullable(),
+  "subcategoryDisplayOrder": zod.number().int().nullable()
 }))
 })
 
@@ -1817,7 +1818,8 @@ export const AddCustomPromptResponse = zod.object({
   "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
   "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
   "subcategoryId": zod.string().uuid().nullable(),
-  "subcategoryName": zod.string().nullable()
+  "subcategoryName": zod.string().nullable(),
+  "subcategoryDisplayOrder": zod.number().int().nullable()
 })
 
 
@@ -1849,7 +1851,8 @@ export const ReorderVaultPromptsResponse = zod.object({
   "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
   "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
   "subcategoryId": zod.string().uuid().nullable(),
-  "subcategoryName": zod.string().nullable()
+  "subcategoryName": zod.string().nullable(),
+  "subcategoryDisplayOrder": zod.number().int().nullable()
 }))
 })
 
@@ -1879,7 +1882,8 @@ export const ToggleVaultPromptResponse = zod.object({
   "answerType": zod.enum(['free_text', 'number', 'multiple_choice', 'name_pick']),
   "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
   "subcategoryId": zod.string().uuid().nullable(),
-  "subcategoryName": zod.string().nullable()
+  "subcategoryName": zod.string().nullable(),
+  "subcategoryDisplayOrder": zod.number().int().nullable()
 })
 
 

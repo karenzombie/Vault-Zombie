@@ -1301,7 +1301,7 @@ components:
         revealSlots: { type: array, items: { $ref: "#/components/schemas/RevealSlotPreview" } }
     VaultPrompt:
       type: object
-      required: [id, prompt, enabled, displayOrder, isCustom, answerType, freeTextMode, subcategoryId, subcategoryName]
+      required: [id, prompt, enabled, displayOrder, isCustom, answerType, freeTextMode, subcategoryId, subcategoryName, subcategoryDisplayOrder]
       properties:
         id: { type: string, format: uuid }
         prompt: { type: string, maxLength: 140 }
@@ -1312,6 +1312,7 @@ components:
         freeTextMode: { type: ["string", "null"], enum: [scoreable, keepsake, null] }
         subcategoryId: { type: ["string", "null"], format: uuid }
         subcategoryName: { type: ["string", "null"] }
+        subcategoryDisplayOrder: { type: ["integer", "null"] }
     VaultPromptList:
       type: object
       required: [prompts]

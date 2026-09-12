@@ -441,6 +441,8 @@ export interface VaultPrompt {
   subcategoryId: string | null;
   /** @nullable */
   subcategoryName: string | null;
+  /** @nullable */
+  subcategoryDisplayOrder: number | null;
 }
 
 export interface VaultPromptList {
