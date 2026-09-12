@@ -38,7 +38,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { GripVertical, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, GripVertical, Plus } from "lucide-react";
 import { getTierLabel } from "@/lib/utils";
 
 /**
@@ -386,17 +386,56 @@ function buildPromptGroups(prompts: VaultPrompt[]): PromptGroup[] {
   return groups;
 }
 
-function PromptGroupBlock({ group, onToggle }: { group: PromptGroup; onToggle: (id: string, enabled: boolean) => void }) {
+/**
+ * The host's own prompts group is never collapsible, so it can never end up
+ * buried the way a bank sub-category group can. Only bank groups take
+ * onToggleOpen; passing null marks a group as always open.
+ */
+function PromptGroupBlock({
+  group,
+  onToggle,
+  isOpen,
+  onToggleOpen,
+}: {
+  group: PromptGroup;
+  onToggle: (id: string, enabled: boolean) => void;
+  isOpen: boolean;
+  onToggleOpen: (() => void) | null;
+}) {
+  const enabledCount = group.prompts.filter((p) => p.enabled).length;
+
   return (
     <div className="mb-5" data-testid={`group-prompts-${group.key}`}>
-      <h3 className="text-xs font-bold uppercase tracking-wide text-gray mb-2">{group.title}</h3>
-      <SortableContext items={group.prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-        <div className="space-y-2">
-          {group.prompts.map((p) => (
-            <SortablePromptRow key={p.id} prompt={p} onToggle={onToggle} />
-          ))}
-        </div>
-      </SortableContext>
+      {onToggleOpen ? (
+        <button
+          type="button"
+          onClick={onToggleOpen}
+          aria-expanded={isOpen}
+          data-testid={`button-group-toggle-${group.key}`}
+          className="flex items-center gap-1.5 w-full text-left mb-2"
+        >
+          {isOpen ? (
+            <ChevronDown className="w-3.5 h-3.5 text-gray shrink-0" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 text-gray shrink-0" />
+          )}
+          <h3 className="text-xs font-bold uppercase tracking-wide text-gray">{group.title}</h3>
+          <span className="text-xs text-gray" data-testid={`text-group-count-${group.key}`}>
+            · {enabledCount} on
+          </span>
+        </button>
+      ) : (
+        <h3 className="text-xs font-bold uppercase tracking-wide text-gray mb-2">{group.title}</h3>
+      )}
+      {isOpen && (
+        <SortableContext items={group.prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {group.prompts.map((p) => (
+              <SortablePromptRow key={p.id} prompt={p} onToggle={onToggle} />
+            ))}
+          </div>
+        </SortableContext>
+      )}
     </div>
   );
 }
@@ -413,6 +452,20 @@ function PromptsSection({ vaultId }: { vaultId: string }) {
   const [customMode, setCustomMode] = useState<"scoreable" | "keepsake">("scoreable");
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  // Bank sub-category groups start collapsed; a group the host opens stays
+  // open for the rest of this visit. This is display state only and does
+  // not need to survive leaving and coming back to the screen.
+  const [openGroupKeys, setOpenGroupKeys] = useState<Set<string>>(new Set());
+
+  function toggleGroupOpen(key: string) {
+    setOpenGroupKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   const prompts = useMemo(() => [...(list.data?.prompts ?? [])].sort((a, b) => a.displayOrder - b.displayOrder), [list.data]);
   const groups = useMemo(() => buildPromptGroups(prompts), [prompts]);
@@ -527,7 +580,13 @@ function PromptsSection({ vaultId }: { vaultId: string }) {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           {groups.map((group) => (
-            <PromptGroupBlock key={group.key} group={group} onToggle={handleToggle} />
+            <PromptGroupBlock
+              key={group.key}
+              group={group}
+              onToggle={handleToggle}
+              isOpen={group.key === "custom" ? true : openGroupKeys.has(group.key)}
+              onToggleOpen={group.key === "custom" ? null : () => toggleGroupOpen(group.key)}
+            />
           ))}
         </DndContext>
       )}
