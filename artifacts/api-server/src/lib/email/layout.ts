@@ -86,7 +86,7 @@ function blockHtml(block: Block, ctx: { dark?: boolean } = {}): string {
       return `<h2 style="font-family:${FONT};font-size:17px;font-weight:600;color:${color};margin:0 0 12px">${iconHtml}${block.text}</h2>`;
     }
     case "highlightBand":
-      // Spans the full card width, like the header band (spec 3.3) — bleeds out of the
+      // Spans the full card width, like the header band (spec 3.3). It bleeds out of the
       // body's 32px side padding via negative margins instead of sitting inset.
       return `<div style="background:${COLOR.bronzeWash};padding:20px 32px;margin:0 -32px 20px">${block.children.map((child) => blockHtml(child, ctx)).join("")}</div>`;
     case "codeBox":

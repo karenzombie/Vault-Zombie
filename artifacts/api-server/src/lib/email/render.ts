@@ -117,7 +117,9 @@ function f1GiftDelivery(p: Record<string, unknown>): Doc {
     { label: "Date", value: formatEmailDate(String(p.purchasedAt)) },
     { label: "Payment ID", value: String(p.stripePaymentIntentId) },
   ];
-  if (toLine || fromLine) receiptRows.push({ label: "To and from", value: `${toLine ?? ""}, from ${fromLine ?? ""}` });
+  if (toLine && fromLine) receiptRows.push({ label: "To and from", value: `${toLine}, from ${fromLine}` });
+  else if (toLine) receiptRows.push({ label: "To", value: toLine });
+  else if (fromLine) receiptRows.push({ label: "From", value: fromLine });
   blocks.push(
     { kind: "receiptTable", rows: receiptRows, total: { label: "Total", value: formatEmailMoney(Number(p.amountCents)) } },
     { kind: "paragraph", text: "Changed your mind? You can get a refund within 90 days of purchase, as long as the gift hasn't been redeemed. Contact info@zombieplatforms.com." },
