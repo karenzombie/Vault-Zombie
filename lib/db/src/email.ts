@@ -5,9 +5,11 @@ import { emailDeliveriesTable } from "./schema/email";
 import { guestsTable } from "./schema/predictions";
 
 export type EmailEventType =
-  | "guest_submission_confirmation" | "reveal_operator" | "reveal_guest"
+  | "guest_submission_confirmation" | "reveal_operator"
   | "guest_personal_report" | "operator_vault_sealed"
-  | "operator_overage_initial" | "operator_overage_escalation" | "gift_delivery";
+  | "operator_overage_initial" | "operator_overage_escalation" | "gift_delivery"
+  | "host_welcome" | "vault_created" | "host_receipt" | "unmarked_reveal_nudge"
+  | "gift_recipient_delivery" | "gift_redeemed";
 
 export async function enqueueEmail(input: {
   dedupeKey: string; eventType: EmailEventType; recipientEmail: string;
@@ -59,8 +61,19 @@ export async function requeueEmail(id: string) {
 }
 export async function optOutGuestEmail(guestId: string) {
   await db.transaction(async (tx) => {
-    await tx.update(guestsTable).set({ emailOptedOut: true, email: null }).where(eq(guestsTable.id, guestId));
+    await tx.update(guestsTable).set({ emailOptedOut: true }).where(eq(guestsTable.id, guestId));
     await tx.update(emailDeliveriesTable).set({ status: "suppressed", lastError: "Guest opted out", claimedAt: null, claimToken: null })
       .where(and(eq(emailDeliveriesTable.recipientGuestId, guestId), inArray(emailDeliveriesTable.status, ["queued", "sending"])));
   });
+}
+
+/** Re-subscribes a guest to vault email. Does not resurrect already-suppressed deliveries. */
+export async function resubscribeGuestEmail(guestId: string) {
+  await db.update(guestsTable).set({ emailOptedOut: false }).where(eq(guestsTable.id, guestId));
+}
+
+/** Admin/operator toggle: sets a guest's subscription status directly, either direction. */
+export async function setGuestEmailSubscription(guestId: string, subscribed: boolean) {
+  if (subscribed) return resubscribeGuestEmail(guestId);
+  return optOutGuestEmail(guestId);
 }

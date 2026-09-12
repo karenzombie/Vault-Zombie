@@ -122,20 +122,20 @@ A small set of flat silhouette icons that sit to the left of the heading or line
 | Pencil | Setup and adding prompts |
 | Receipt | Receipts |
 
-### 4.2 Sourcing
+### 4.2 Source files: already provided
 
-- Flat single-color silhouettes released under CC0, from the same three sources listed in `VaultZombie-Art-Assets.md`: Openclipart, freesvg.org, and publicdomainvectors.org.
-- Add an "Email icons" section to `VaultZombie-Art-Assets.md` listing each icon with its source page URL and license.
-- Each icon is produced in two colors: Bronze `#8A6D3B` for light backgrounds and Brass `#C9A96A` for the dark band.
+**Do not search the web for icons. Do not download, generate, or draw any icon.** All 22 files already exist in the repository at `artifacts/vault-zombie/public/email-icons/`, named `<icon>-bronze.png` and `<icon>-brass.png`, using these names: `lock`, `open-lock`, `hourglass`, `calendar`, `gift-box`, `key`, `qr-code`, `group`, `trophy`, `pencil`, `receipt`.
 
-### 4.3 Format and size
+If any file is missing, stop and report which ones. Do not substitute anything for a missing file.
 
-- **PNG only.** Gmail does not display SVG images.
-- Generate the PNGs once and commit them as static files in the web app's public folder under `email-icons/`. Export at 2x resolution for sharp display.
-- Do not add an npm package to the app to generate them. If producing the PNGs requires a new dependency or tool, stop and report before proceeding.
-- **Display size: 18px tall, never larger than 20px.** Icons must never overwhelm the text.
+### 4.3 Use
+
+- Each icon is already a 40px PNG with a transparent background, in the correct color: Bronze `#8A6D3B` for light backgrounds, Brass `#C9A96A` for the dark band.
+- Reference them as absolute URLs built from `VAULT_ZOMBIE_APP_URL`, the same way the logo images are referenced.
+- **Display size: 18px tall.** Set the height explicitly in the HTML so email apps render them at 18px, never larger than 20px.
 - Place each icon immediately to the left of its heading or line, vertically centered, with about 8px of space before the text.
 - Icons are decorative: `alt=""`.
+- Do not recolor, resize, crop, or regenerate the files.
 
 ---
 

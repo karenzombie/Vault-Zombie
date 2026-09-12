@@ -33,6 +33,7 @@ import type {
   AdminFullExportInput,
   AdminGiftDetail,
   AdminGiftList,
+  AdminGuestList,
   AdminOperatorDetail,
   AdminOperatorList,
   AdminOverageList,
@@ -68,6 +69,8 @@ import type {
   GiftRefundResult,
   GiftResendInput,
   GiftResendResult,
+  GuestEmailSubscriptionInput,
+  GuestEmailSubscriptionResult,
   GuestPersonalReport,
   GuestSubmissionConfirmation,
   GuestSubmissionInput,
@@ -3406,6 +3409,157 @@ export function useGetAdminVaultSupportDetail<TData = Awaited<ReturnType<typeof 
 
 
 
+
+export const getListAdminVaultGuestsUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/guests`
+}
+
+/**
+ * @summary List guests' email subscription status for a vault; never includes answers
+ */
+export const listAdminVaultGuests = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminGuestList> => {
+
+  return customFetch<AdminGuestList>(getListAdminVaultGuestsUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminVaultGuestsQueryKey = (vaultId: string,) => {
+    return [
+    `/api/admin/vaults/${vaultId}/guests`
+    ] as const;
+    }
+
+
+export const getListAdminVaultGuestsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminVaultGuests>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminVaultGuests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminVaultGuestsQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminVaultGuests>>> = ({ signal }) => listAdminVaultGuests(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminVaultGuests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminVaultGuestsQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminVaultGuests>>>
+export type ListAdminVaultGuestsQueryError = ErrorType<void>
+
+
+/**
+ * @summary List guests' email subscription status for a vault; never includes answers
+ */
+
+export function useListAdminVaultGuests<TData = Awaited<ReturnType<typeof listAdminVaultGuests>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminVaultGuests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminVaultGuestsQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSetAdminGuestEmailSubscriptionUrl = (vaultId: string,
+    guestId: string,) => {
+
+
+
+
+  return `/api/admin/vaults/${vaultId}/guests/${guestId}/email-subscription`
+}
+
+/**
+ * @summary Subscribe or unsubscribe one guest from vault email; changes subscription status only
+ */
+export const setAdminGuestEmailSubscription = async (vaultId: string,
+    guestId: string,
+    guestEmailSubscriptionInput: GuestEmailSubscriptionInput, options?: Parameters<typeof customFetch>[1]): Promise<GuestEmailSubscriptionResult> => {
+
+  return customFetch<GuestEmailSubscriptionResult>(getSetAdminGuestEmailSubscriptionUrl(vaultId,guestId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(guestEmailSubscriptionInput)
+  }
+);}
+
+
+
+
+
+export const getSetAdminGuestEmailSubscriptionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdminGuestEmailSubscription>>, TError,{vaultId: string;guestId: string;data: BodyType<GuestEmailSubscriptionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setAdminGuestEmailSubscription>>, TError,{vaultId: string;guestId: string;data: BodyType<GuestEmailSubscriptionInput>}, TContext> => {
+
+const mutationKey = ['setAdminGuestEmailSubscription'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setAdminGuestEmailSubscription>>, {vaultId: string;guestId: string;data: BodyType<GuestEmailSubscriptionInput>}> = (props) => {
+          const {vaultId,guestId,data} = props ?? {};
+
+          return  setAdminGuestEmailSubscription(vaultId,guestId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetAdminGuestEmailSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof setAdminGuestEmailSubscription>>>
+    export type SetAdminGuestEmailSubscriptionMutationBody = BodyType<GuestEmailSubscriptionInput>
+    export type SetAdminGuestEmailSubscriptionMutationError = ErrorType<void>
+
+    /**
+ * @summary Subscribe or unsubscribe one guest from vault email; changes subscription status only
+ */
+export const useSetAdminGuestEmailSubscription = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAdminGuestEmailSubscription>>, TError,{vaultId: string;guestId: string;data: BodyType<GuestEmailSubscriptionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setAdminGuestEmailSubscription>>,
+        TError,
+        {vaultId: string;guestId: string;data: BodyType<GuestEmailSubscriptionInput>},
+        TContext
+      > => {
+      return useMutation(getSetAdminGuestEmailSubscriptionMutationOptions(options));
+    }
 
 export const getManualUnlockVaultUrl = (vaultId: string,) => {
 

@@ -111,6 +111,14 @@ export const revealSlotsTable = pgTable(
     label: text("label").notNull(),
     revealDate: date("reveal_date", { mode: "string" }).notNull(),
     displayOrder: integer("display_order").notNull(),
+    /**
+     * Null = never manually opened early (normal schedule). Set to true/false when an
+     * admin manual-unlock opens this reveal before its natural date, per the admin's
+     * "send emails" checkbox (spec 5.1). Governs H5/G2/H6 eligibility for this reveal
+     * only while it is still ahead of its natural revealDate; once revealDate arrives
+     * naturally, the reveal is eligible regardless of this flag.
+     */
+    manualUnlockEmailsEnabled: boolean("manual_unlock_emails_enabled"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

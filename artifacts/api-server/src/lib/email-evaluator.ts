@@ -1,5 +1,6 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
-import { accountsTable, answersTable, db, enqueueEmail, getGuestRevealReportEligibility, giftsTable, guestsTable, overageEventsTable, revealSlotsTable, submissionsTable, vaultsTable } from "@workspace/db";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, min, or } from "drizzle-orm";
+import { accountsTable, answerVerdictsTable, answersTable, db, enqueueEmail, getGuestRevealReportEligibility, guestsTable, overageEventsTable, questionsTable, revealSlotsTable, submissionsTable, vaultQuestionsTable, vaultsTable } from "@workspace/db";
+import { daysBetween } from "./format";
 import { logger } from "./logger";
 
 /** DB-derived recurring work. Dedupe keys make this safe after downtime/restarts. */
@@ -7,11 +8,14 @@ export async function evaluateEmailWork(now = new Date()) {
   const today = now.toISOString().slice(0, 10);
   // This reads only identity/metadata to recover authorized early unlocks; it
   // deliberately never reads answer values.
-  const overridden = await db.select({ revealSlotId: answersTable.revealSlotId }).from(answersTable)
+  const overridden = await db.select({ revealSlotId: answersTable.revealSlotId, earliestOverrideAt: min(answersTable.unlockOverrideAt) })
+    .from(answersTable)
     .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
     .innerJoin(vaultsTable, eq(submissionsTable.vaultId, vaultsTable.id))
-    .where(and(eq(vaultsTable.status, "sealed"), lte(answersTable.unlockOverrideAt, now), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
-  const overrideSlotIds = [...new Set(overridden.map((row) => row.revealSlotId))];
+    .where(and(eq(vaultsTable.status, "sealed"), lte(answersTable.unlockOverrideAt, now), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)))
+    .groupBy(answersTable.revealSlotId);
+  const overrideOpenedAt = new Map(overridden.map((row) => [row.revealSlotId, row.earliestOverrideAt as Date]));
+  const overrideSlotIds = [...overrideOpenedAt.keys()];
   const sealed = await db.select({ id: vaultsTable.id, name: vaultsTable.name, email: accountsTable.email })
     .from(vaultsTable).innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id))
     .where(eq(vaultsTable.status, "sealed"));
@@ -19,31 +23,55 @@ export async function evaluateEmailWork(now = new Date()) {
   for (const vault of sealed) {
     if (await enqueueEmail({ dedupeKey: `vault-sealed:${vault.id}`, eventType: "operator_vault_sealed", recipientEmail: vault.email, vaultId: vault.id, payload: { vaultName: vault.name } })) queued++;
   }
-  const purchasedGifts = await db.select({ id: giftsTable.id, email: giftsTable.gifterEmail, code: giftsTable.code }).from(giftsTable)
-    .where(and(eq(giftsTable.status, "purchased"), isNotNull(giftsTable.gifterEmail)));
-  for (const gift of purchasedGifts) {
-    if (await enqueueEmail({ dedupeKey: `gift-delivery:${gift.id}`, eventType: "gift_delivery", recipientEmail: gift.email!, giftId: gift.id, payload: { giftCode: gift.code } })) queued++;
-  }
+  // F1/F2 (gift purchase delivery) and H3 (host receipt) are enqueued directly by the
+  // verified Stripe webhook handler at the moment payment is confirmed (spec 5.2); this
+  // evaluator does not duplicate them.
   const slots = await db.select({
     id: revealSlotsTable.id, vaultId: vaultsTable.id, vaultName: vaultsTable.name, label: revealSlotsTable.label,
+    revealDate: revealSlotsTable.revealDate, manualUnlockEmailsEnabled: revealSlotsTable.manualUnlockEmailsEnabled,
     operatorId: vaultsTable.operatorId, operatorEmail: accountsTable.email,
   }).from(revealSlotsTable).innerJoin(vaultsTable, eq(revealSlotsTable.vaultId, vaultsTable.id))
     .innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id))
     .where(and(eq(vaultsTable.status, "sealed"), overrideSlotIds.length
       ? or(lte(revealSlotsTable.revealDate, today), inArray(revealSlotsTable.id, overrideSlotIds))
       : lte(revealSlotsTable.revealDate, today)));
-  for (const slot of slots) {
-    if (await enqueueEmail({ dedupeKey: `reveal-operator:${slot.id}`, eventType: "reveal_operator", recipientEmail: slot.operatorEmail, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName, revealLabel: slot.label } })) queued++;
+  // A reveal opened early by an admin is eligible only when the admin opted in; once its
+  // natural reveal date arrives it becomes eligible regardless (spec 5.1).
+  const eligibleSlots = slots.filter((slot) => slot.revealDate <= today || slot.manualUnlockEmailsEnabled === true);
+  for (const slot of eligibleSlots) {
     const guests = await db.select({ id: guestsTable.id, email: guestsTable.email }).from(guestsTable)
       .innerJoin(submissionsTable, eq(submissionsTable.guestId, guestsTable.id))
       .innerJoin(answersTable, eq(answersTable.submissionId, submissionsTable.id))
       .where(and(eq(submissionsTable.vaultId, slot.vaultId), eq(answersTable.revealSlotId, slot.id), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt), isNotNull(guestsTable.email), eq(guestsTable.emailOptedOut, false)));
-    for (const guest of new Map(guests.map((g) => [g.id, g])).values()) {
-      if (await enqueueEmail({ dedupeKey: `reveal-guest:${slot.id}:${guest.id}`, eventType: "reveal_guest", recipientEmail: guest.email!, recipientGuestId: guest.id, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName, revealLabel: slot.label } })) queued++;
+    const uniqueGuests = [...new Map(guests.map((g) => [g.id, g])).values()];
+    const predictionRows = await db.selectDistinct({ submissionId: answersTable.submissionId }).from(answersTable)
+      .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
+      .where(and(eq(submissionsTable.vaultId, slot.vaultId), eq(answersTable.revealSlotId, slot.id), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
+    if (await enqueueEmail({ dedupeKey: `reveal-operator:${slot.id}`, eventType: "reveal_operator", recipientEmail: slot.operatorEmail, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName, revealLabel: slot.label, revealDate: slot.revealDate, guestCount: uniqueGuests.length, predictionCount: predictionRows.length } })) queued++;
+    for (const guest of uniqueGuests) {
       try {
         const eligibility = await getGuestRevealReportEligibility(slot.vaultId, slot.operatorId, guest.id, slot.id);
         if (eligibility.eligible && await enqueueEmail({ dedupeKey: `guest-report:${slot.id}:${guest.id}`, eventType: "guest_personal_report", recipientEmail: guest.email!, recipientGuestId: guest.id, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName } })) queued++;
       } catch (error) { logger.warn({ err: error, guestId: guest.id, revealSlotId: slot.id }, "Guest report email was not yet eligible"); }
+    }
+    // H6: nudge the host once a reveal has sat unmarked for 3+ days with scoreable
+    // predictions still lacking a verdict. "Unmarked prediction" is approximated at
+    // submission granularity (one guest's full answer bundle for this reveal), matching
+    // the app's existing prediction-count convention elsewhere.
+    const openedAt = slot.revealDate <= today ? new Date(`${slot.revealDate}T00:00:00.000Z`) : overrideOpenedAt.get(slot.id) ?? null;
+    if (openedAt && daysBetween(openedAt, now) >= 3) {
+      const unscored = await db.selectDistinct({ submissionId: answersTable.submissionId }).from(answersTable)
+        .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
+        .innerJoin(vaultQuestionsTable, eq(answersTable.vaultQuestionId, vaultQuestionsTable.id))
+        .innerJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
+        .leftJoin(answerVerdictsTable, eq(answerVerdictsTable.answerId, answersTable.id))
+        .where(and(
+          eq(submissionsTable.vaultId, slot.vaultId), eq(answersTable.revealSlotId, slot.id),
+          isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt),
+          isNull(answerVerdictsTable.id),
+          or(eq(questionsTable.answerType, "number"), eq(questionsTable.answerType, "name_pick"), eq(questionsTable.answerType, "multiple_choice"), eq(questionsTable.freeTextMode, "scoreable")),
+        ));
+      if (unscored.length && await enqueueEmail({ dedupeKey: `reveal-nudge:${slot.id}`, eventType: "unmarked_reveal_nudge", recipientEmail: slot.operatorEmail, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName, daysSinceOpened: daysBetween(openedAt, now), guestCount: uniqueGuests.length, unmarkedPredictionCount: unscored.length } })) queued++;
     }
   }
   const events = await db.select({ id: overageEventsTable.id, vaultId: vaultsTable.id, vaultName: vaultsTable.name, email: accountsTable.email })

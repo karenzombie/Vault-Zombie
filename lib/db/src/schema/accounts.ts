@@ -20,6 +20,8 @@ export const accountsTable = pgTable(
     displayName: text("display_name").notNull(),
     email: text("email").notNull(),
     status: accountStatusEnum("status").notNull().default("active"),
+    /** The vault whose referrer code brought this account in, if any. Set once at creation, never changed. No FK to avoid a schema-file import cycle with vaults.ts. */
+    referredByVaultId: uuid("referred_by_vault_id"),
     anonymizedAt: timestamp("anonymized_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -32,6 +34,7 @@ export const accountsTable = pgTable(
   (table) => [
     uniqueIndex("accounts_clerk_subject_unique").on(table.clerkSubject),
     index("accounts_email_idx").on(table.email),
+    index("accounts_referred_by_vault_idx").on(table.referredByVaultId),
   ],
 );
 

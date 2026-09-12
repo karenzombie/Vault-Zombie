@@ -1,8 +1,23 @@
 import { clerkClient, getAuth } from "@clerk/express";
-import { accountsTable, db, legalConsentsTable, legalSignupIntentsTable, type Account } from "@workspace/db";
+import { accountsTable, db, enqueueEmail, legalConsentsTable, legalSignupIntentsTable, vaultsTable, type Account } from "@workspace/db";
 import { and, eq, sql } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
 import { currentLegalConfiguration, legalSignupIntentHash, verifyLegalSignupIntent } from "../lib/legal";
+
+/** Looks up the vault a referral code points to. Never throws on a stale/invalid code. */
+async function resolveReferrerVaultId(referrerCode: unknown): Promise<string | null> {
+  if (typeof referrerCode !== "string" || !referrerCode.trim()) return null;
+  const [vault] = await db.select({ id: vaultsTable.id }).from(vaultsTable).where(eq(vaultsTable.referrerCode, referrerCode.trim())).limit(1);
+  return vault?.id ?? null;
+}
+
+async function sendWelcomeEmail(account: Account) {
+  if (!account.email) return;
+  await enqueueEmail({
+    dedupeKey: `host-welcome:${account.id}`, eventType: "host_welcome", recipientEmail: account.email,
+    payload: { displayName: account.displayName },
+  });
+}
 
 const ADMIN_IDLE_LIMIT_MS = 30 * 60 * 1000;
 const ADMIN_ABSOLUTE_LIMIT_MS = 12 * 60 * 60 * 1000;
@@ -77,8 +92,9 @@ async function findOrCreateAccount(userId: string): Promise<Account> {
       || intent.expiresAt.getTime() !== intentPayload.e || clerkDate.getTime() + 5000 < intent.acceptedAt.getTime()) {
       throw Object.assign(new Error("The legal signup intent is invalid or already used."), { code: "CONSENT_REQUIRED" });
     }
+    const referredByVaultId = await resolveReferrerVaultId(metadata.referrerCode);
     const [inserted] = await tx.insert(accountsTable).values({
-      clerkSubject: userId, role: "operator", displayName, email: primaryEmail,
+      clerkSubject: userId, role: "operator", displayName, email: primaryEmail, referredByVaultId,
     }).onConflictDoNothing({ target: accountsTable.clerkSubject }).returning();
     if (!inserted) return undefined;
     await tx.insert(legalConsentsTable).values({
@@ -92,7 +108,10 @@ async function findOrCreateAccount(userId: string): Promise<Account> {
     await tx.update(legalSignupIntentsTable).set({ consumedAt: new Date(), consumedClerkSubject: userId }).where(eq(legalSignupIntentsTable.id, intent.id));
     return inserted;
   });
-  if (created) return created;
+  if (created) {
+    await sendWelcomeEmail(created);
+    return created;
+  }
 
   const [raced] = await db
     .select()
@@ -110,13 +129,18 @@ export async function provisionCurrentConsentAccount(userId: string, config: Ret
   const email = user.emailAddresses.find((item) => item.id === user.primaryEmailAddressId)?.emailAddress ?? user.emailAddresses[0]?.emailAddress;
   if (!email) throw new Error("Authenticated Clerk user has no verified email address.");
   const displayName = [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || email.split("@")[0] || "Vault Zombie operator";
+  const metadata = user.unsafeMetadata && typeof user.unsafeMetadata === "object" ? user.unsafeMetadata as Record<string, unknown> : {};
+  const referredByVaultId = await resolveReferrerVaultId(metadata.referrerCode);
   const [created] = await db.transaction(async (tx) => {
-    const [account] = await tx.insert(accountsTable).values({ clerkSubject: userId, role: "operator", displayName, email }).onConflictDoNothing({ target: accountsTable.clerkSubject }).returning();
+    const [account] = await tx.insert(accountsTable).values({ clerkSubject: userId, role: "operator", displayName, email, referredByVaultId }).onConflictDoNothing({ target: accountsTable.clerkSubject }).returning();
     if (!account) return [];
     await tx.insert(legalConsentsTable).values({ accountId: account.id, termsVersion: config.termsVersion, privacyVersion: config.privacyVersion, clerkAcceptanceSource: "operator_reconsent" });
     return [account];
   });
-  if (created) return created;
+  if (created) {
+    await sendWelcomeEmail(created);
+    return created;
+  }
   const [raced] = await db.select().from(accountsTable).where(eq(accountsTable.clerkSubject, userId)).limit(1);
   if (!raced) throw new Error("Unable to create the local operator account.");
   return raced;

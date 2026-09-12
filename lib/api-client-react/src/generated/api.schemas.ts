@@ -72,6 +72,7 @@ export interface GiftCheckoutInput {
   /** @maxLength 80 */
   toLine?: string;
   gifterEmail?: string;
+  recipientEmail?: string;
 }
 
 export type BillingPriceFromTier = typeof BillingPriceFromTier[keyof typeof BillingPriceFromTier];
@@ -394,6 +395,8 @@ export type AdminOperatorDetailVaultsItem = {
   sealedAt: string | null;
   operatorName: string;
   vaultTypeName: string;
+  /** Accounts whose signup carried this vault's referrer code. */
+  referralCount: number;
 };
 
 export type AdminOperatorDetailBillingRecordsItemTargetTier = typeof AdminOperatorDetailBillingRecordsItemTargetTier[keyof typeof AdminOperatorDetailBillingRecordsItemTargetTier];
@@ -607,6 +610,26 @@ export interface AdminEmailDeliveryDetail {
   delivery: AdminEmailDeliveryDetailDelivery;
 }
 
+export type AdminGuestListGuestsItem = {
+  id: string;
+  displayName: string;
+  hasEmail: boolean;
+  emailOptedOut: boolean;
+};
+
+export interface AdminGuestList {
+  guests: AdminGuestListGuestsItem[];
+}
+
+export interface GuestEmailSubscriptionInput {
+  subscribed: boolean;
+}
+
+export interface GuestEmailSubscriptionResult {
+  id: string;
+  emailOptedOut: boolean;
+}
+
 export type AdminVaultSupportDetailBillingRecordsItemTargetTier = typeof AdminVaultSupportDetailBillingRecordsItemTargetTier[keyof typeof AdminVaultSupportDetailBillingRecordsItemTargetTier];
 
 
@@ -744,6 +767,8 @@ export type AdminVaultDetailVault = {
   sealedAt: string | null;
   operatorName: string;
   vaultTypeName: string;
+  /** Accounts whose signup carried this vault's referrer code. */
+  referralCount: number;
 };
 
 export type AdminVaultDetailTotals = {
@@ -773,6 +798,7 @@ export type AdminVaultDetailScopePreviewsItem = {
 
 export interface AdminVaultDetail {
   vault: AdminVaultDetailVault;
+  referralCount: number;
   totals: AdminVaultDetailTotals;
   /** Count of answers currently readable through the canonical unlocked-answer policy. */
   unlockedAnswerCount: number;
@@ -798,6 +824,8 @@ export type AdminVaultListVaultsItem = {
   sealedAt: string | null;
   operatorName: string;
   vaultTypeName: string;
+  /** Accounts whose signup carried this vault's referrer code. */
+  referralCount: number;
 };
 
 export interface AdminVaultList {
@@ -1575,6 +1603,11 @@ export interface VaultHealthReport {
   completedRevealCount: number;
   /** @nullable */
   nextRevealDate: string | null;
+  /**
+     * Accounts referred by this vault's link; null for Lockbox, which never sees referral counts.
+     * @nullable
+     */
+  referralCount: number | null;
 }
 
 /**

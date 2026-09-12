@@ -12,6 +12,7 @@ import type { AdminVaultDetailVault } from './adminVaultDetailVault';
 
 export interface AdminVaultDetail {
   vault: AdminVaultDetailVault;
+  referralCount: number;
   totals: AdminVaultDetailTotals;
   /** Count of answers currently readable through the canonical unlocked-answer policy. */
   unlockedAnswerCount: number;

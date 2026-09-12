@@ -260,7 +260,8 @@ export const CreateGiftCheckoutBody = zod.object({
   "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
   "fromLine": zod.string().max(createGiftCheckoutBodyFromLineMax).optional(),
   "toLine": zod.string().max(createGiftCheckoutBodyToLineMax).optional(),
-  "gifterEmail": zod.string().email().optional()
+  "gifterEmail": zod.string().email().optional(),
+  "recipientEmail": zod.string().email().optional()
 })
 
 export const CreateGiftCheckoutResponse = zod.object({
@@ -525,7 +526,8 @@ export const GetAdminOperatorResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "sealedAt": zod.coerce.date().nullable(),
   "operatorName": zod.string(),
-  "vaultTypeName": zod.string()
+  "vaultTypeName": zod.string(),
+  "referralCount": zod.number().int().describe('Accounts whose signup carried this vault\'s referrer code.')
 })),
   "billingRecords": zod.array(zod.object({
   "id": zod.string().uuid(),
@@ -849,7 +851,8 @@ export const ListAdminVaultsResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "sealedAt": zod.coerce.date().nullable(),
   "operatorName": zod.string(),
-  "vaultTypeName": zod.string()
+  "vaultTypeName": zod.string(),
+  "referralCount": zod.number().int().describe('Accounts whose signup carried this vault\'s referrer code.')
 }))
 })
 
@@ -1156,8 +1159,10 @@ export const GetAdminVaultResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "sealedAt": zod.coerce.date().nullable(),
   "operatorName": zod.string(),
-  "vaultTypeName": zod.string()
+  "vaultTypeName": zod.string(),
+  "referralCount": zod.number().int().describe('Accounts whose signup carried this vault\'s referrer code.')
 }),
+  "referralCount": zod.number().int(),
   "totals": zod.object({
   "guestCount": zod.number().int(),
   "predictionCount": zod.number().int(),
@@ -1200,8 +1205,10 @@ export const GetAdminVaultSupportDetailResponse = zod.object({
   "createdAt": zod.coerce.date(),
   "sealedAt": zod.coerce.date().nullable(),
   "operatorName": zod.string(),
-  "vaultTypeName": zod.string()
+  "vaultTypeName": zod.string(),
+  "referralCount": zod.number().int().describe('Accounts whose signup carried this vault\'s referrer code.')
 }),
+  "referralCount": zod.number().int(),
   "totals": zod.object({
   "guestCount": zod.number().int(),
   "predictionCount": zod.number().int(),
@@ -1261,6 +1268,41 @@ export const GetAdminVaultSupportDetailResponse = zod.object({
   "updatedAt": zod.coerce.date(),
   "sentAt": zod.coerce.date().nullable()
 }))
+})
+
+
+/**
+ * @summary List guests' email subscription status for a vault; never includes answers
+ */
+export const ListAdminVaultGuestsParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const ListAdminVaultGuestsResponse = zod.object({
+  "guests": zod.array(zod.object({
+  "id": zod.string().uuid(),
+  "displayName": zod.string(),
+  "hasEmail": zod.boolean(),
+  "emailOptedOut": zod.boolean()
+}))
+})
+
+
+/**
+ * @summary Subscribe or unsubscribe one guest from vault email; changes subscription status only
+ */
+export const SetAdminGuestEmailSubscriptionParams = zod.object({
+  "vaultId": zod.coerce.string().uuid(),
+  "guestId": zod.coerce.string().uuid()
+})
+
+export const SetAdminGuestEmailSubscriptionBody = zod.object({
+  "subscribed": zod.boolean()
+})
+
+export const SetAdminGuestEmailSubscriptionResponse = zod.object({
+  "id": zod.string().uuid(),
+  "emailOptedOut": zod.boolean()
 })
 
 
@@ -1623,7 +1665,8 @@ export const GetVaultHealthReportResponse = zod.object({
   "revealDate": zod.coerce.date()
 })),
   "completedRevealCount": zod.number().int(),
-  "nextRevealDate": zod.coerce.date().nullable()
+  "nextRevealDate": zod.coerce.date().nullable(),
+  "referralCount": zod.number().int().nullable().describe('Accounts referred by this vault\'s link; null for Lockbox, which never sees referral counts.')
 })
 
 

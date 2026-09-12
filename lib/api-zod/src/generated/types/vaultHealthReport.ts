@@ -18,4 +18,9 @@ export interface VaultHealthReport {
   completedRevealCount: number;
   /** @nullable */
   nextRevealDate: Date | null;
+  /**
+     * Accounts referred by this vault's link; null for Lockbox, which never sees referral counts.
+     * @nullable
+     */
+  referralCount: number | null;
 }

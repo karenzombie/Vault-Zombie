@@ -117,6 +117,11 @@ export const giftsTable = pgTable("gifts", {
   fromLine: text("from_line"),
   toLine: text("to_line"),
   gifterEmail: text("gifter_email"),
+  recipientEmail: text("recipient_email"),
+  // Fallback recipient for F1/F3 when gifterEmail was left blank on the gift page
+  // (spec 5.1: "send to the email the buyer entered on the Stripe payment page").
+  // Captured from the Checkout Session's customer_details.email once payment succeeds.
+  stripeBuyerEmail: text("stripe_buyer_email"),
   stripeCheckoutSessionId: text("stripe_checkout_session_id"),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   stripeChargeId: text("stripe_charge_id"),

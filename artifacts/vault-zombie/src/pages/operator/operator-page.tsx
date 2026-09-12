@@ -79,6 +79,12 @@ function OperatorReveal({ vaultId }: { vaultId: string }) {
 
       <main className="flex-1 w-full max-w-lg mx-auto p-3 sm:p-4 flex flex-col pt-6">
         <OperatorOverageWarning vaultId={vaultId} />
+        {hasPaidAccess && healthData?.referralCount != null && (
+          <div className="mb-4 rounded-lg border border-border bg-white px-4 py-3 flex items-center justify-between">
+            <span className="text-sm text-text-2">Referrals from your vault link</span>
+            <span className="font-display text-xl text-ink">{healthData.referralCount}</span>
+          </div>
+        )}
 
         <Tabs defaultValue="reveal" className="w-full">
           <TabsList className={`w-full grid mb-8 bg-muted p-1 border border-border/50 ${!hasPaidAccess ? 'grid-cols-3' : 'grid-cols-4'}`}>

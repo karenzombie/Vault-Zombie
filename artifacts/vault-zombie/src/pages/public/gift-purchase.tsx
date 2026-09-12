@@ -13,6 +13,8 @@ export default function GiftPurchasePage() {
   const [fromLine, setFromLine] = useState("");
   const [toLine, setToLine] = useState("");
   const [gifterEmail, setGifterEmail] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientEmailError, setRecipientEmailError] = useState<string | null>(null);
 
   const { toast } = useToast();
   const createCheckout = useCreateGiftCheckout();
@@ -29,8 +31,16 @@ export default function GiftPurchasePage() {
       }).format(price.amountCents / 100),
     }));
 
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedRecipientEmail = recipientEmail.trim();
+    if (trimmedRecipientEmail && !EMAIL_PATTERN.test(trimmedRecipientEmail)) {
+      setRecipientEmailError("Enter a valid email address.");
+      return;
+    }
+    setRecipientEmailError(null);
     createCheckout.mutate(
       {
         data: {
@@ -38,6 +48,7 @@ export default function GiftPurchasePage() {
           fromLine: fromLine || undefined,
           toLine: toLine || undefined,
           gifterEmail: gifterEmail || undefined,
+          recipientEmail: trimmedRecipientEmail || undefined,
         },
       },
       {
@@ -114,7 +125,24 @@ export default function GiftPurchasePage() {
           <div className="space-y-2">
             <Label htmlFor="gifterEmail" className="text-lg font-bold text-ink">Your Receipt Email</Label>
             <Input id="gifterEmail" type="email" placeholder="email@example.com" value={gifterEmail} onChange={(e) => setGifterEmail(e.target.value)} />
-            <p className="text-xs text-text-2">We will not email the recipient. You will receive a printable card after purchase.</p>
+            <p className="text-xs text-text-2">You'll get a receipt with the gift code, plus a printable gift card right after purchase.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="recipientEmail" className="text-lg font-bold text-ink">Their email (optional)</Label>
+            <Input
+              id="recipientEmail"
+              type="email"
+              placeholder="their@email.com"
+              value={recipientEmail}
+              onChange={(e) => { setRecipientEmail(e.target.value); if (recipientEmailError) setRecipientEmailError(null); }}
+              aria-invalid={recipientEmailError ? true : undefined}
+            />
+            {recipientEmailError ? (
+              <p className="text-xs text-destructive">{recipientEmailError}</p>
+            ) : (
+              <p className="text-xs text-text-2">Want us to send the code straight to them? We'll email it the moment your payment goes through.</p>
+            )}
           </div>
 
           <Button type="submit" disabled={createCheckout.isPending || pricesLoading || pricesError || !giftTiers?.length} className="w-full py-6 text-lg font-bold bg-ink text-[hsl(var(--brass-lt))] hover:bg-ink-2">

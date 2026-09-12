@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListAdminVaults, useGetAdminVaultSupportDetail, useManualUnlockVault, useResealAdminVault, useDownloadAdminVaultUnlockedExport, useGetAdminVaultDeletionPreview, useDeleteAdminVault, getListAdminVaultsQueryKey, getGetAdminVaultSupportDetailQueryKey, getGetAdminVaultDeletionPreviewQueryKey, getDownloadAdminVaultUnlockedExportQueryKey } from "@workspace/api-client-react";
+import { useListAdminVaults, useGetAdminVaultSupportDetail, useManualUnlockVault, useResealAdminVault, useDownloadAdminVaultUnlockedExport, useGetAdminVaultDeletionPreview, useDeleteAdminVault, useListAdminVaultGuests, useSetAdminGuestEmailSubscription, getListAdminVaultsQueryKey, getGetAdminVaultSupportDetailQueryKey, getGetAdminVaultDeletionPreviewQueryKey, getDownloadAdminVaultUnlockedExportQueryKey, getListAdminVaultGuestsQueryKey } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ function VaultListView() {
                 <th className="px-6 py-4 border-b">Host</th>
                 <th className="px-6 py-4 border-b">Tier / Type</th>
                 <th className="px-6 py-4 border-b">Status</th>
+                <th className="px-6 py-4 border-b">Referrals</th>
                 <th className="px-6 py-4 border-b text-right">Actions</th>
               </tr>
             </thead>
@@ -75,6 +76,7 @@ function VaultListView() {
                       {vault.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4">{vault.referralCount}</td>
                   <td className="px-6 py-4 text-right">
                     <Link href={`/admin/vaults/${vault.id}`}>
                       <Button variant="ghost" size="sm" className="hover:bg-muted"><ChevronRight className="w-4 h-4" /></Button>
@@ -88,6 +90,39 @@ function VaultListView() {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GuestEmailList({ vaultId }: { vaultId: string }) {
+  const { data, isLoading } = useListAdminVaultGuests(vaultId);
+  const queryClient = useQueryClient();
+  const toggle = useSetAdminGuestEmailSubscription({
+    mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListAdminVaultGuestsQueryKey(vaultId) }) },
+  });
+  return (
+    <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-muted px-6 py-3 font-bold text-ink text-sm border-b border-border flex items-center gap-2"><Mail className="w-4 h-4" /> Guest Email Subscriptions</div>
+      <div className="divide-y divide-hairline">
+        {isLoading && <div className="p-4 text-sm text-text-2">Loading guests...</div>}
+        {data?.guests.map((guest) => (
+          <div key={guest.id} className="flex items-center justify-between px-6 py-3 text-sm">
+            <span className="text-ink">{guest.displayName}</span>
+            {!guest.hasEmail ? (
+              <span className="text-xs uppercase tracking-wider text-text-2 font-bold">No email</span>
+            ) : (
+              <Button
+                variant="outline" size="sm"
+                disabled={toggle.isPending}
+                onClick={() => toggle.mutate({ vaultId, guestId: guest.id, data: { subscribed: guest.emailOptedOut } })}
+              >
+                {guest.emailOptedOut ? "Unsubscribed — Resubscribe" : "Subscribed — Unsubscribe"}
+              </Button>
+            )}
+          </div>
+        ))}
+        {data?.guests.length === 0 && <div className="p-4 text-sm text-text-2 text-center">No guests yet.</div>}
       </div>
     </div>
   );
@@ -165,8 +200,14 @@ function VaultDetailView({ vaultId }: { vaultId: string }) {
                 <div className="text-xs text-text-2 uppercase tracking-wider font-bold mb-1">Answers</div>
                 <div className="text-xl font-display">{vault.totals.answerCount}</div>
               </div>
+              <div>
+                <div className="text-xs text-text-2 uppercase tracking-wider font-bold mb-1">Referrals</div>
+                <div className="text-xl font-display">{vault.referralCount}</div>
+              </div>
             </div>
           </div>
+
+          <GuestEmailList vaultId={v.id} />
 
           <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
             <div className="bg-muted px-6 py-3 font-bold text-ink text-sm border-b border-border">Reveal Slots</div>

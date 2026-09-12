@@ -14,4 +14,5 @@ export interface GiftCheckoutInput {
   /** @maxLength 80 */
   toLine?: string;
   gifterEmail?: string;
+  recipientEmail?: string;
 }

@@ -5,16 +5,22 @@ import {
   answersTable,
   auditEventsTable,
   db,
-  emailDeliveriesTable,
   guestsTable,
   revealSlotsTable,
   readUnlockedAnswers,
   runSensitiveAdminAction,
+  setGuestEmailSubscription,
   submissionsTable,
   vaultTypesTable,
   vaultsTable,
 } from "@workspace/db";
 import { requireAdmin, requireOperator, sensitiveAdminGuards } from "../middlewares/auth";
+
+async function referralCount(vaultRowId: string) {
+  const [row] = await db.select({ count: count(accountsTable.id) }).from(accountsTable)
+    .where(eq(accountsTable.referredByVaultId, vaultRowId));
+  return Number(row?.count ?? 0);
+}
 
 const adminVaultsRouter: IRouter = Router();
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -85,8 +91,10 @@ adminVaultsRouter.get("/admin/vaults", requireOperator, requireAdmin, async (req
       vaultTypeName: vaultTypesTable.name,
     }).from(vaultsTable).innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id))
       .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id));
+    const filtered = rows.filter((row) => !query || [row.id, row.name, row.operatorName, row.vaultTypeName].some((value) => value.toLowerCase().includes(query)));
+    const withReferrals = await Promise.all(filtered.map(async (row) => ({ ...row, referralCount: await referralCount(row.id) })));
     // Search only non-sensitive metadata.
-    return res.json({ vaults: rows.filter((row) => !query || [row.id, row.name, row.operatorName, row.vaultTypeName].some((value) => value.toLowerCase().includes(query))) });
+    return res.json({ vaults: withReferrals });
   } catch (error) { return next(error); }
 });
 
@@ -106,7 +114,32 @@ adminVaultsRouter.get("/admin/vaults/:vaultId", requireOperator, requireAdmin, a
     const slots = await db.select({ id: revealSlotsTable.id, kind: revealSlotsTable.kind, label: revealSlotsTable.label, revealDate: revealSlotsTable.revealDate })
       .from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, id));
     const unlockedAnswerCount = (await readUnlockedAnswers({ vaultId: id })).length;
-    return res.json({ vault, totals: { guestCount: Number(totals?.guestCount ?? 0), predictionCount: Number(totals?.predictionCount ?? 0), answerCount: Number(totals?.answerCount ?? 0) }, unlockedAnswerCount, revealSlots: slots, scopePreviews: await scopePreviews(db, id, slots) });
+    return res.json({ vault, totals: { guestCount: Number(totals?.guestCount ?? 0), predictionCount: Number(totals?.predictionCount ?? 0), answerCount: Number(totals?.answerCount ?? 0) }, unlockedAnswerCount, revealSlots: slots, scopePreviews: await scopePreviews(db, id, slots), referralCount: await referralCount(id) });
+  } catch (error) { return next(error); }
+});
+
+/** Per-guest email subscription status for a vault (spec 7.3). Never exposes a guest's answers. */
+adminVaultsRouter.get("/admin/vaults/:vaultId/guests", requireOperator, requireAdmin, async (req, res, next) => {
+  try {
+    const id = vaultId(req.params.vaultId);
+    const rows = await db.select({ id: guestsTable.id, displayName: guestsTable.displayName, hasEmail: isNotNull(guestsTable.email), emailOptedOut: guestsTable.emailOptedOut })
+      .from(guestsTable).where(eq(guestsTable.vaultId, id)).orderBy(guestsTable.createdAt);
+    return res.json({ guests: rows.map((row) => ({ id: row.id, displayName: row.displayName, hasEmail: Boolean(row.hasEmail), emailOptedOut: row.emailOptedOut })) });
+  } catch (error) { return next(error); }
+});
+
+adminVaultsRouter.post("/admin/vaults/:vaultId/guests/:guestId/email-subscription", requireOperator, requireAdmin, async (req, res, next) => {
+  try {
+    const id = vaultId(req.params.vaultId);
+    const guestIdParam = vaultId(req.params.guestId);
+    const { subscribed } = req.body ?? {};
+    if (typeof subscribed !== "boolean") throw new Error("A boolean subscribed value is required.");
+    const [guest] = await db.select({ id: guestsTable.id, email: guestsTable.email }).from(guestsTable)
+      .where(and(eq(guestsTable.id, guestIdParam), eq(guestsTable.vaultId, id))).limit(1);
+    if (!guest) return res.status(404).json({ error: "Guest not found." });
+    if (!guest.email) return res.status(400).json({ error: "This guest has no email on file." });
+    await setGuestEmailSubscription(guest.id, subscribed);
+    return res.json({ id: guest.id, emailOptedOut: !subscribed });
   } catch (error) { return next(error); }
 });
 
@@ -125,16 +158,13 @@ adminVaultsRouter.post("/admin/vaults/:vaultId/unlock", ...sensitiveAdminGuards,
       if (slot) answerConditions.push(eq(answersTable.revealSlotId, slot.id));
       const ids = await tx.select({ id: answersTable.id }).from(answersTable).innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id)).where(and(...answerConditions));
       if (ids.length) await tx.update(answersTable).set({ unlockOverrideAt: new Date() }).where(inArray(answersTable.id, ids.map((row) => row.id)));
-      // Emails are intentionally opt-in and contain no prediction content.
-      if (sendEmails) {
-        const notificationSlots = slot ? [slot] : await tx.select({ id: revealSlotsTable.id, label: revealSlotsTable.label }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, id));
-        const recipients = await tx.select({ id: guestsTable.id, email: guestsTable.email }).from(guestsTable).where(and(eq(guestsTable.vaultId, id), eq(guestsTable.emailOptedOut, false)));
-        for (const notificationSlot of notificationSlots) {
-          await tx.insert(emailDeliveriesTable).values({ dedupeKey: `manual-unlock:operator:${id}:${notificationSlot.id}`, eventType: "reveal_operator", recipientEmail: vault.operatorEmail, vaultId: id, revealSlotId: notificationSlot.id, payload: { manual: true } }).onConflictDoNothing({ target: emailDeliveriesTable.dedupeKey });
-          for (const recipient of recipients) if (recipient.email) await tx.insert(emailDeliveriesTable).values({ dedupeKey: `manual-unlock:guest:${id}:${notificationSlot.id}:${recipient.id}`, eventType: "reveal_guest", recipientEmail: recipient.email, recipientGuestId: recipient.id, vaultId: id, revealSlotId: notificationSlot.id, payload: { manual: true } }).onConflictDoNothing({ target: emailDeliveriesTable.dedupeKey });
-        }
-      }
-      return { scope, revealSlotId: slot?.id ?? null, ...counts, emailsQueued: sendEmails && Boolean(slot) };
+      // No guest unlock email exists (spec 9). The admin's checkbox governs whether the
+      // recurring email-evaluator later sends the host reveal email (H5), the guest
+      // results email (G2), and the unmarked-reveal nudge (H6) for this early reveal;
+      // it never sends anything itself.
+      const affectedSlotIds = slot ? [slot.id] : (await tx.select({ id: revealSlotsTable.id }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, id))).map((row) => row.id);
+      if (affectedSlotIds.length) await tx.update(revealSlotsTable).set({ manualUnlockEmailsEnabled: sendEmails }).where(inArray(revealSlotsTable.id, affectedSlotIds));
+      return { scope, revealSlotId: slot?.id ?? null, ...counts, emailsEnabled: sendEmails };
     });
     res.json(result);
   } catch (error) { next(error); }

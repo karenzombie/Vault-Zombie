@@ -219,3 +219,23 @@ document changes or clarifies an earlier document, this document wins.
 - Do not default or infer any missing content metadata.
 - Remaining master-brief open items stay open except report tier mapping, which
   is now closed.
+
+## Email rebuild (2026-09-11)
+
+- Guest email retention: unsubscribing (by link or by declining email while
+  answering) no longer nulls the guest's stored email address. It sets
+  `emailOptedOut` only, and that flag alone suppresses sending. Guests whose
+  address was already nulled under the old behavior cannot be restored.
+- Vault-created email (H2): wired to fire at the point a vault row is first
+  inserted. No vault-creation flow exists yet anywhere in the app, so the
+  enqueue call was attached directly at that insert statement so it fires the
+  moment a creation flow is built.
+- Referral tracking: the sign-up page reads a `ref` query parameter, carries it
+  through the full Clerk sign-up flow including email verification, and
+  records it once on the new account as the referring vault, never changed
+  afterward. The G1 and G2 "sign up for your own vault" links carry that
+  vault's `referrerCode` as `ref`. Hosts see their vault's referral count only
+  on paid tiers (Safe, Vault, Deep Vault); Lockbox hosts see nothing, no
+  upsell. Admins see referral counts for every vault, including Lockbox.
+  Referral views show counts only, never who signed up or any personal detail
+  about them.

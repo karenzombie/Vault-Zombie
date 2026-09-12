@@ -533,6 +533,31 @@ paths:
       responses:
         "200": { description: Vault support metadata only; never sealed answer values, content: { application/json: { schema: { $ref: "#/components/schemas/AdminVaultSupportDetail" } } } }
         "404": { description: Vault not found }
+  /admin/vaults/{vaultId}/guests:
+    get:
+      operationId: listAdminVaultGuests
+      tags: [admin]
+      summary: List guests' email subscription status for a vault; never includes answers
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Guest email status only, content: { application/json: { schema: { $ref: "#/components/schemas/AdminGuestList" } } } }
+        "404": { description: Vault not found }
+  /admin/vaults/{vaultId}/guests/{guestId}/email-subscription:
+    post:
+      operationId: setAdminGuestEmailSubscription
+      tags: [admin]
+      summary: Subscribe or unsubscribe one guest from vault email; changes subscription status only
+      parameters:
+        - { $ref: "#/components/parameters/VaultId" }
+        - name: guestId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody: { required: true, content: { application/json: { schema: { $ref: "#/components/schemas/GuestEmailSubscriptionInput" } } } }
+      responses:
+        "200": { description: Updated subscription status, content: { application/json: { schema: { $ref: "#/components/schemas/GuestEmailSubscriptionResult" } } } }
+        "400": { description: Guest has no email on file }
+        "404": { description: Guest not found }
   /admin/vaults/{vaultId}/unlock:
     post:
       operationId: manualUnlockVault
@@ -936,6 +961,7 @@ components:
         fromLine: { type: string, maxLength: 80 }
         toLine: { type: string, maxLength: 80 }
         gifterEmail: { type: string, format: email }
+        recipientEmail: { type: string, format: email }
     BillingPrice:
       type: object
       required: [fromTier, targetTier, amountCents, currency]
@@ -1201,6 +1227,31 @@ components:
       required: [delivery]
       properties:
         delivery: { $ref: "#/components/schemas/AdminEmailDeliveryList/properties/deliveries/items" }
+    AdminGuestList:
+      type: object
+      required: [guests]
+      properties:
+        guests:
+          type: array
+          items:
+            type: object
+            required: [id, displayName, hasEmail, emailOptedOut]
+            properties:
+              id: { type: string, format: uuid }
+              displayName: { type: string }
+              hasEmail: { type: boolean }
+              emailOptedOut: { type: boolean }
+    GuestEmailSubscriptionInput:
+      type: object
+      required: [subscribed]
+      properties:
+        subscribed: { type: boolean }
+    GuestEmailSubscriptionResult:
+      type: object
+      required: [id, emailOptedOut]
+      properties:
+        id: { type: string, format: uuid }
+        emailOptedOut: { type: boolean }
     AdminVaultSupportDetail:
       type: object
       required: [vault, billingRecords, overageEvents, emailDeliveries]
@@ -1217,7 +1268,7 @@ components:
           type: array
           items:
             type: object
-            required: [id, name, status, planTier, createdAt, sealedAt, operatorName, vaultTypeName]
+            required: [id, name, status, planTier, createdAt, sealedAt, operatorName, vaultTypeName, referralCount]
             properties:
               id: { type: string, format: uuid }
               name: { type: string }
@@ -1227,11 +1278,13 @@ components:
               sealedAt: { type: [string, "null"], format: date-time }
               operatorName: { type: string }
               vaultTypeName: { type: string }
+              referralCount: { type: integer, description: "Accounts whose signup carried this vault's referrer code." }
     AdminVaultDetail:
       type: object
-      required: [vault, totals, unlockedAnswerCount, revealSlots, scopePreviews]
+      required: [vault, totals, unlockedAnswerCount, revealSlots, scopePreviews, referralCount]
       properties:
         vault: { $ref: "#/components/schemas/AdminVaultList/properties/vaults/items" }
+        referralCount: { type: integer }
         totals:
           type: object
           required: [guestCount, predictionCount, answerCount]
@@ -1673,7 +1726,7 @@ components:
         scored: { type: integer }
     VaultHealthReport:
       type: object
-      required: [vaultId, planTier, status, predictionCount, guestCount, revealSlots, completedRevealCount, nextRevealDate]
+      required: [vaultId, planTier, status, predictionCount, guestCount, revealSlots, completedRevealCount, nextRevealDate, referralCount]
       properties:
         vaultId: { type: string, format: uuid }
         planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
@@ -1683,6 +1736,7 @@ components:
         revealSlots: { type: array, items: { $ref: "#/components/schemas/GuestTiming" } }
         completedRevealCount: { type: integer }
         nextRevealDate: { type: ["string", "null"], format: date }
+        referralCount: { type: ["integer", "null"], description: "Accounts referred by this vault's link; null for Lockbox, which never sees referral counts." }
     ReportAnswer:
       allOf:
         - $ref: "#/components/schemas/AnswerValue"

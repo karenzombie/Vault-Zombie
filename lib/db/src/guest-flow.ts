@@ -120,7 +120,7 @@ export async function submitGuestAnswers(token: string, input: {
     const [guest] = await tx.insert(guestsTable).values({
       vaultId: vault.id,
       displayName: input.displayName.trim(),
-      email: input.emailOptedOut ? null : input.email,
+      email: input.email ?? null,
       emailOptedOut: input.emailOptedOut,
     }).returning();
     const held = existingCount >= cap;

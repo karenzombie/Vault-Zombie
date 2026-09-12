@@ -1,7 +1,53 @@
+import { createHash, randomBytes } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "./index";
+import { enqueueEmail } from "./email";
 import { buildRevealSlots, isPlanTierWithinEntitlement, PLAN_POLICY, type PlanTier, type RevealSchedule } from "./schedule";
+import { accountsTable } from "./schema/accounts";
+import { vaultTypesTable } from "./schema/content";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
+
+const tokenHash = (token: string) => createHash("sha256").update(token, "utf8").digest("hex");
+
+/**
+ * Creates the initial draft row for a new vault. This is the single insertion point for
+ * `vaultsTable`, so it is where the H2 "vault created" email (spec section 6) fires.
+ *
+ * Placeholder defaults (interpretive choice, no vault-creation UI/flow exists yet to source
+ * real values from): name falls back to the vault type's display name, subjectValues starts
+ * empty (hosts fill it in via updateDraftVaultSetup / the setup wizard), planTier defaults to
+ * "lockbox" (the free tier, safest default before payment), and revealSchedule defaults to
+ * "weekly_sprint" (the only schedule available on every plan tier, including lockbox).
+ */
+export async function createDraftVault(input: {
+  operatorId: string;
+  vaultTypeId: string;
+  name?: string;
+  subjectValues?: Record<string, string>;
+}) {
+  const [vaultType] = await db.select({ name: vaultTypesTable.name }).from(vaultTypesTable).where(eq(vaultTypesTable.id, input.vaultTypeId)).limit(1);
+  if (!vaultType) throw new Error("Unknown vault type.");
+  const guestToken = randomBytes(24).toString("base64url");
+  const referrerCode = randomBytes(6).toString("base64url");
+  const [vault] = await db.insert(vaultsTable).values({
+    operatorId: input.operatorId,
+    vaultTypeId: input.vaultTypeId,
+    name: input.name?.trim() || vaultType.name,
+    subjectValues: input.subjectValues ?? {},
+    planTier: "lockbox",
+    revealSchedule: "weekly_sprint",
+    guestTokenHash: tokenHash(guestToken),
+    referrerCode,
+  }).returning();
+  const [operator] = await db.select({ email: accountsTable.email, displayName: accountsTable.displayName }).from(accountsTable).where(eq(accountsTable.id, input.operatorId)).limit(1);
+  if (operator?.email) {
+    await enqueueEmail({
+      dedupeKey: `vault-created:${vault.id}`, eventType: "vault_created", recipientEmail: operator.email,
+      payload: { displayName: operator.displayName, vaultId: vault.id, vaultName: vault.name },
+    });
+  }
+  return { vault, guestToken };
+}
 
 export async function updateDraftVaultSetup(input: {
   vaultId: string;

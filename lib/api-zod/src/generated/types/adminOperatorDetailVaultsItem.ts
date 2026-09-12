@@ -16,4 +16,6 @@ export type AdminOperatorDetailVaultsItem = {
   sealedAt: Date | null;
   operatorName: string;
   vaultTypeName: string;
+  /** Accounts whose signup carried this vault's referrer code. */
+  referralCount: number;
 };

@@ -5,7 +5,7 @@ import {
   CreateGiftCheckoutBody, CreateGiftCheckoutResponse, GetGiftCardParams,
   GetGiftCardResponse, GetGiftCardByCheckoutSessionParams, RedeemGiftBody, RedeemGiftResponse,
 } from "@workspace/api-zod";
-import { billingRecordsTable, db, findUnresolvedRefundReservation, giftsTable, vaultsTable } from "@workspace/db";
+import { billingRecordsTable, db, enqueueEmail, findUnresolvedRefundReservation, giftsTable, vaultsTable } from "@workspace/db";
 import { findStripePrice, getStripeClient, TIER_ORDER, type PaidTier } from "../lib/stripe";
 import { requireOperator } from "../middlewares/auth";
 import { getTrustedAppUrl } from "../lib/app-url";
@@ -49,6 +49,7 @@ giftRouter.post("/gifts/checkout", async (req, res, next) => {
           code: code(), targetTier, amountCents: price.unit_amount, currency: price.currency,
           fromLine: input.fromLine?.trim() || null, toLine: input.toLine?.trim() || null,
           gifterEmail: input.gifterEmail?.trim().toLowerCase() || null,
+          recipientEmail: input.recipientEmail?.trim().toLowerCase() || null,
         }).returning();
         break;
       } catch (error) { if (i === 2) throw error; }
@@ -126,11 +127,22 @@ giftRouter.post("/operator/gifts/redeem", requireOperator, async (req, res, next
       }).returning();
       await tx.update(vaultsTable).set({ entitledPlanTier: gift.targetTier }).where(eq(vaultsTable.id, vault.id));
       await tx.update(giftsTable).set({ status: "redeemed", redeemedAt: new Date(), redeemedVaultId: vault.id, redeemedBillingRecordId: billing.id }).where(eq(giftsTable.id, gift.id));
-      return { kind: "ok" as const, billing };
+      return { kind: "ok" as const, billing, gift };
     });
     if (result.kind === "missing" || result.kind === "vault-missing") return res.status(404).json({ error: "Gift or vault not found." });
     if (result.kind === "unavailable" || result.kind === "refund-reserved") return res.status(409).json({ error: result.kind === "refund-reserved" ? "This gift has a refund in progress." : "This gift is no longer redeemable." });
     if (result.kind === "invalid-vault") return res.status(400).json({ error: "Choose an owned draft vault below the gift tier." });
+    // F3: gift redeemed, to the gifter. Same fallback email precedence as F1 (see stripe-webhook.ts).
+    const f3Email = result.gift.gifterEmail ?? result.gift.stripeBuyerEmail;
+    if (f3Email) {
+      try {
+        await enqueueEmail({
+          dedupeKey: `gift-redeemed:${result.gift.id}`, eventType: "gift_redeemed", recipientEmail: f3Email,
+          giftId: result.gift.id,
+          payload: { giftCode: result.gift.code, targetTier: result.gift.targetTier, toLine: result.gift.toLine, purchasedAt: result.gift.createdAt?.toISOString?.() ?? null, redeemedAt: new Date().toISOString() },
+        });
+      } catch (error) { req.log.error({ err: error, giftId: result.gift.id }, "Gift redeemed email enqueue failed"); }
+    }
     return res.json(RedeemGiftResponse.parse({ vaultId: input.vaultId, billingRecordId: result.billing.id, tier: result.billing.targetTier }));
   } catch (error) { return next(error); }
 });

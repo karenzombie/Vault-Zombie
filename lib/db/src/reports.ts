@@ -4,6 +4,7 @@ import { readUnlockedAnswers } from "./sealed-content";
 import { answerVerdictsTable, answersTable, guestsTable, questionOutcomesTable, submissionsTable } from "./schema/predictions";
 import { questionOptionsTable, questionsTable, subcategoriesTable } from "./schema/content";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
+import { accountsTable } from "./schema/accounts";
 
 export class ReportError extends Error {
   constructor(message: string, public readonly status: 403 | 404 = 404) {
@@ -12,7 +13,7 @@ export class ReportError extends Error {
 }
 
 type Unlocked = Awaited<ReturnType<typeof readUnlockedAnswers>>[number];
-type Context = { id: string; questionId: string; prompt: string; answerType: string; freeTextMode: "scoreable" | "keepsake" | null; subcategoryId: string; subcategoryName: string; iconKey: string };
+type Context = { id: string; questionId: string; prompt: string; answerType: string; freeTextMode: "scoreable" | "keepsake" | null; numberUnit: string | null; subcategoryId: string; subcategoryName: string; iconKey: string };
 
 async function owned(vaultId: string, operatorId: string) {
   const [vault] = await db.select().from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1);
@@ -39,7 +40,7 @@ async function reportData(vaultId: string, operatorId: string) {
   const ids = [...new Set(answers.map((a) => a.vaultQuestionId))];
   const contexts: Context[] = ids.length ? await db.select({
     id: vaultQuestionsTable.id, questionId: questionsTable.id, prompt: vaultQuestionsTable.promptSnapshot, answerType: questionsTable.answerType, freeTextMode: questionsTable.freeTextMode,
-    subcategoryId: subcategoriesTable.id, subcategoryName: subcategoriesTable.name, iconKey: subcategoriesTable.iconKey,
+    numberUnit: questionsTable.numberUnit, subcategoryId: subcategoriesTable.id, subcategoryName: subcategoriesTable.name, iconKey: subcategoriesTable.iconKey,
   }).from(vaultQuestionsTable).innerJoin(questionsTable, eq(vaultQuestionsTable.questionId, questionsTable.id))
     .innerJoin(subcategoriesTable, eq(questionsTable.subcategoryId, subcategoriesTable.id))
     .where(inArray(vaultQuestionsTable.id, ids)) : [];
@@ -114,9 +115,10 @@ export async function getVaultHealthReport(vaultId: string, operatorId: string) 
   const slots = await db.select({ id: revealSlotsTable.id, label: revealSlotsTable.label, revealDate: revealSlotsTable.revealDate })
     .from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vaultId)).orderBy(revealSlotsTable.displayOrder);
   const today = new Date().toISOString().slice(0, 10);
+  const referralCount = vault.entitledPlanTier === "lockbox" ? null : Number((await db.select({ value: count() }).from(accountsTable).where(eq(accountsTable.referredByVaultId, vaultId)))[0]?.value ?? 0);
   return { vaultId, planTier: vault.entitledPlanTier, status: vault.status, predictionCount: Number(predictions.value),
     guestCount: Number(guests.value), revealSlots: slots, completedRevealCount: slots.filter((s) => s.revealDate <= today).length,
-    nextRevealDate: slots.find((s) => s.revealDate > today)?.revealDate ?? null };
+    nextRevealDate: slots.find((s) => s.revealDate > today)?.revealDate ?? null, referralCount };
 }
 export async function getQuestionReport(vaultId: string, operatorId: string, questionId: string) {
   const data = await reportData(vaultId, operatorId);
@@ -162,9 +164,10 @@ export async function getGuestPersonalReport(vaultId: string, operatorId: string
     scores.set(answer.guestId, (scores.get(answer.guestId) ?? 0) + ({ full: 1, half: .5, zero: 0 }[verdict.tier]));
   }
   const rank = score.scored ? [...scores.entries()].sort((a, b) => b[1] - a[1]).findIndex(([id]) => id === guestId) + 1 : null;
-  return { guestId, displayName: guest.displayName, rank, score, answers: own.map((a) => ({ answerId: a.id, guestId: a.guestId,
+  return { guestId, displayName: guest.displayName, rank, guestCount: scores.size, score, answers: own.map((a) => ({ answerId: a.id, guestId: a.guestId,
     guestDisplayName: a.guestDisplayName, textValue: a.textValue, numberValue: a.numberValue, optionId: a.optionId,
     optionLabel: a.optionId ? data.options.find((option) => option.id === a.optionId)?.label ?? null : null,
+    numberUnit: data.contexts.find((question) => question.id === a.vaultQuestionId)!.numberUnit,
     revealSlotId: a.revealSlotId, outcomeTier: data.contexts.find((question) => question.id === a.vaultQuestionId)!.freeTextMode === "keepsake" ? null : (outcomeForPair(data.outcomes, a.vaultQuestionId, a.revealSlotId) ? data.verdictByAnswer.get(a.id)?.tier ?? null : null),
     prompt: data.contexts.find((question) => question.id === a.vaultQuestionId)!.prompt,
     operatorNote: outcomeForPair(data.outcomes, a.vaultQuestionId, a.revealSlotId)?.operatorNote ?? null,

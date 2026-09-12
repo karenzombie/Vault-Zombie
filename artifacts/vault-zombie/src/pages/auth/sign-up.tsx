@@ -14,6 +14,7 @@ export default function SignUpPage() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const [referrerCode] = useState(() => new URLSearchParams(window.location.search).get("ref") ?? undefined);
 
   useEffect(() => {
     if (window.location.pathname.endsWith("/sso-callback")) {
@@ -24,7 +25,7 @@ export default function SignUpPage() {
   async function signupMetadata() {
     if (!legal.data || !accepted) throw new Error("Explicit legal acceptance is required.");
     const intent = await createIntent.mutateAsync({ data: { accepted: true, termsVersion: legal.data.termsVersion, privacyVersion: legal.data.privacyVersion } });
-    return { legalSignupIntent: intent.token };
+    return { legalSignupIntent: intent.token, ...(referrerCode ? { referrerCode } : {}) };
   }
   async function createAccount(event: FormEvent) {
     event.preventDefault();
