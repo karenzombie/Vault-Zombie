@@ -20,32 +20,49 @@ const STARTER_SET_SIZE = 20;
  * and produces the same result every time for a given vault type (VaultZombie-Flow1-
  * Build-Stages.md, 3.4, decision 5).
  */
-async function pickStarterSet(dbClient: Pick<typeof db, "select">, vaultTypeId: string) {
+/**
+ * The full bank selection for a new vault: the starter set (as before, unchanged), plus
+ * every other non-retired bank question for the vault type, so vault creation can seed a
+ * vault_questions row for the complete bank (VaultZombie correction, "GIVE EVERY VAULT ITS
+ * FULL QUESTION BANK"). The starter set keeps its existing round-robin order. The rest
+ * follow it in sub-category display order, then bank display order within each
+ * sub-category, which is their natural order with the starter picks removed. This is a
+ * display-order placement choice, not a product decision: the rest arrive disabled, so
+ * their position in display order only matters until a host turns one on, at which point
+ * it renders inside its own sub-category group regardless of its numeric position.
+ */
+async function pickBankSelection(dbClient: Pick<typeof db, "select">, vaultTypeId: string) {
   const subcategories = await dbClient.select({ id: subcategoriesTable.id })
     .from(subcategoriesTable)
     .where(and(eq(subcategoriesTable.vaultTypeId, vaultTypeId), eq(subcategoriesTable.isRetired, false)))
     .orderBy(asc(subcategoriesTable.displayOrder));
-  if (!subcategories.length) return [];
+  if (!subcategories.length) return { starter: [], rest: [] };
   const questions = await dbClient.select({ id: questionsTable.id, prompt: questionsTable.prompt, subcategoryId: questionsTable.subcategoryId })
     .from(questionsTable)
     .where(and(inArray(questionsTable.subcategoryId, subcategories.map((row) => row.id)), eq(questionsTable.isRetired, false)))
     .orderBy(asc(questionsTable.displayOrder));
   const queueBySubcategory = new Map(subcategories.map((row) => [row.id, questions.filter((q) => q.subcategoryId === row.id)]));
-  const picked: { id: string; prompt: string }[] = [];
+  const starter: { id: string; prompt: string }[] = [];
   let exhausted = false;
-  while (picked.length < STARTER_SET_SIZE && !exhausted) {
+  while (starter.length < STARTER_SET_SIZE && !exhausted) {
     exhausted = true;
     for (const subcategory of subcategories) {
-      if (picked.length >= STARTER_SET_SIZE) break;
+      if (starter.length >= STARTER_SET_SIZE) break;
       const queue = queueBySubcategory.get(subcategory.id)!;
       const next = queue.shift();
       if (next) {
-        picked.push({ id: next.id, prompt: next.prompt });
+        starter.push({ id: next.id, prompt: next.prompt });
         exhausted = false;
       }
     }
   }
-  return picked;
+  const rest: { id: string; prompt: string }[] = [];
+  for (const subcategory of subcategories) {
+    for (const question of queueBySubcategory.get(subcategory.id)!) {
+      rest.push({ id: question.id, prompt: question.prompt });
+    }
+  }
+  return { starter, rest };
 }
 
 /**
@@ -82,13 +99,22 @@ export async function createDraftVault(input: {
     guestTokenHash: tokenHash(guestToken),
     referrerCode,
   }).returning();
-  const starterSet = await pickStarterSet(dbClient, input.vaultTypeId);
-  if (starterSet.length) {
-    await dbClient.insert(vaultQuestionsTable).values(starterSet.map((question, index) => ({
+  // Seed the complete bank for the vault type, not only the starter set, so the host can
+  // browse and toggle every prompt (VaultZombie-Flow1-Build-Stages.md, 3.4; corrected in
+  // the "GIVE EVERY VAULT ITS FULL QUESTION BANK" follow-up). The starter set arrives
+  // enabled, in its existing round-robin order. Everything else arrives disabled, right
+  // after it in display order (see pickBankSelection).
+  const { starter, rest } = await pickBankSelection(dbClient, input.vaultTypeId);
+  const bankRows = [
+    ...starter.map((question) => ({ question, enabled: true })),
+    ...rest.map((question) => ({ question, enabled: false })),
+  ];
+  if (bankRows.length) {
+    await dbClient.insert(vaultQuestionsTable).values(bankRows.map(({ question, enabled }, index) => ({
       vaultId: vault.id,
       questionId: question.id,
       promptSnapshot: question.prompt,
-      enabled: true,
+      enabled,
       displayOrder: index,
       isCustom: false,
     })));
