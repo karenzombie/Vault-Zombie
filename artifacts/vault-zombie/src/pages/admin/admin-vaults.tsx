@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useListAdminVaults, useGetAdminVaultSupportDetail, useManualUnlockVault, useResealAdminVault, useDownloadAdminVaultUnlockedExport, useGetAdminVaultDeletionPreview, useDeleteAdminVault, useListAdminVaultGuests, useSetAdminGuestEmailSubscription, getListAdminVaultsQueryKey, getGetAdminVaultSupportDetailQueryKey, getGetAdminVaultDeletionPreviewQueryKey, getDownloadAdminVaultUnlockedExportQueryKey, getListAdminVaultGuestsQueryKey } from "@workspace/api-client-react";
+import { useListAdminVaults, useGetAdminVaultSupportDetail, useManualUnlockVault, useResealAdminVault, useDownloadAdminVaultUnlockedExport, useGetAdminVaultDeletionPreview, useDeleteAdminVault, useListAdminVaultGuests, useSetAdminGuestEmailSubscription, useListAdminDeletedVaults, useRestoreAdminVault, getListAdminVaultsQueryKey, getGetAdminVaultSupportDetailQueryKey, getGetAdminVaultDeletionPreviewQueryKey, getDownloadAdminVaultUnlockedExportQueryKey, getListAdminVaultGuestsQueryKey, getListAdminDeletedVaultsQueryKey } from "@workspace/api-client-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, ChevronRight, ShieldAlert, Lock, Unlock, Download, Trash2, ArrowLeft, Mail } from "lucide-react";
+import { Search, ChevronRight, ShieldAlert, Lock, Unlock, Download, Trash2, ArrowLeft, Mail, Archive, RotateCcw } from "lucide-react";
 import { getTierLabel } from "@/lib/utils";
 import { useSensitiveAdminAction } from "@/hooks/use-sensitive-admin-action";
 
@@ -20,6 +20,11 @@ export function AdminVaultsTab({ vaultId }: { vaultId?: string }) {
 function VaultListView() {
   const { data, isLoading } = useListAdminVaults();
   const [search, setSearch] = useState("");
+  const [showArchive, setShowArchive] = useState(false);
+
+  if (showArchive) {
+    return <ArchivedVaultsView onBack={() => setShowArchive(false)} />;
+  }
 
   if (isLoading) return <div className="p-12 text-center text-text-2">Loading vaults...</div>;
 
@@ -39,6 +44,10 @@ function VaultListView() {
             className="pl-9"
           />
         </div>
+        <Button type="button" variant="outline" onClick={() => setShowArchive(true)} data-testid="button-view-archive">
+          <Archive className="w-4 h-4 mr-2" />
+          View archive
+        </Button>
       </div>
 
       <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
@@ -92,6 +101,123 @@ function VaultListView() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ArchivedVaultsView({ onBack }: { onBack: () => void }) {
+  const { data, isLoading } = useListAdminDeletedVaults();
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+
+  const vaults = data?.vaults || [];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Button type="button" variant="ghost" size="sm" onClick={onBack} data-testid="button-back-from-archive">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to vaults
+        </Button>
+        <h2 className="font-display text-xl text-ink">Deleted vaults</h2>
+      </div>
+
+      {isLoading && <div className="p-12 text-center text-text-2">Loading archive...</div>}
+
+      {!isLoading && (
+        <div className="bg-white border border-border rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-muted text-text-2 font-bold tracking-wider uppercase text-[10px]">
+                <tr>
+                  <th className="px-6 py-4 border-b">Vault / ID</th>
+                  <th className="px-6 py-4 border-b">Host</th>
+                  <th className="px-6 py-4 border-b">Tier / Type</th>
+                  <th className="px-6 py-4 border-b text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {vaults.map((vault) => (
+                  <tr key={vault.id} className="hover:bg-muted/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-ink">{vault.name}</div>
+                      <div className="text-text-2 text-xs font-mono mt-1">{vault.id}</div>
+                    </td>
+                    <td className="px-6 py-4 text-ink">{vault.operatorName}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-ink uppercase text-[10px] tracking-wider">{getTierLabel(vault.planTier as any)}</div>
+                      <div className="text-text-2 text-xs mt-1">{vault.vaultTypeName}</div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Button type="button" variant="outline" size="sm" onClick={() => setRestoringId(vault.id)} data-testid={`button-restore-${vault.id}`}>
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Restore
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {vaults.length === 0 && (
+                  <tr><td colSpan={4} className="px-6 py-12 text-center text-text-2">No deleted vaults.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {restoringId && (
+        <RestoreVaultDialog
+          vaultId={restoringId}
+          vaultName={vaults.find((v) => v.id === restoringId)?.name || restoringId}
+          open
+          onClose={() => setRestoringId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function RestoreVaultDialog({ vaultId, vaultName, open, onClose }: { vaultId: string, vaultName: string, open: boolean, onClose: () => void }) {
+  const [reason, setReason] = useState("");
+  const restore = useRestoreAdminVault();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const runSensitive = useSensitiveAdminAction();
+
+  const handleRestore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await runSensitive(() => restore.mutateAsync({ vaultId, data: { reason } }));
+      toast({ title: "Vault Restored", description: `${vaultName} is visible to its host again.` });
+      queryClient.invalidateQueries({ queryKey: getListAdminDeletedVaultsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListAdminVaultsQueryKey() });
+      onClose();
+    } catch (err: any) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        toast({ title: "Fresh MFA Required", description: "Please re-authenticate.", variant: "destructive" });
+      } else {
+        toast({ title: "Action Failed", description: err?.response?.data?.message || "Unknown error", variant: "destructive" });
+      }
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><RotateCcw className="w-5 h-5" /> Restore Vault</DialogTitle>
+          <DialogDescription>Returns "{vaultName}" to the status it held before deletion, visible to its host again.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleRestore} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-bold">Reason for restoring</label>
+            <Input value={reason} onChange={(e) => setReason(e.target.value)} required minLength={1} maxLength={1000} placeholder="Host requested reversal..." />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={restore.isPending || reason.length < 1}>Restore Vault</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
