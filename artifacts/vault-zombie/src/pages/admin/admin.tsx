@@ -1,7 +1,8 @@
 import { Link, useRoute, useLocation } from "wouter";
+import { useClerk } from "@clerk/react";
 import {
   LayoutDashboard, Box, Users, TrendingUp, CreditCard,
-  Gift, AlertCircle, Key, Mail, FileText, ClipboardList, ShieldAlert, Download
+  Gift, AlertCircle, Key, Mail, FileText, ClipboardList, ShieldAlert, Download, LogOut
 } from "lucide-react";
 
 import { AdminDashboardTab } from "./admin-dashboard";
@@ -21,9 +22,15 @@ export default function AdminPage() {
   const [matchTabId, paramsTabId] = useRoute("/admin/:tab/:id");
   const [matchTab, paramsTab] = useRoute("/admin/:tab");
   const [, setLocation] = useLocation();
+  const clerk = useClerk();
 
   const tab = paramsTabId?.tab || paramsTab?.tab || "dashboard";
   const id = paramsTabId?.id;
+
+  async function signOut() {
+    await clerk.signOut();
+    setLocation("/");
+  }
 
   return (
     <div className="flex flex-col md:flex-row min-h-[100dvh] w-full text-foreground bg-background">
@@ -54,6 +61,19 @@ export default function AdminPage() {
           <NavButton id="audit" icon={<ClipboardList className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Audit" active={tab} setTab={(t) => setLocation(`/admin/${t}`)} />
           <NavButton id="exports" icon={<Download className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" />} label="Exports" active={tab} setTab={(t) => setLocation(`/admin/${t}`)} />
         </nav>
+
+        <div className="mt-auto pt-2 md:pt-4 px-2 md:px-0 md:border-t border-white/10">
+          <button
+            type="button"
+            data-testid="button-admin-sign-out"
+            onClick={signOut}
+            aria-label="Sign out"
+            title="Sign out"
+            className="flex items-center gap-2 md:gap-3 px-3 py-2 md:py-2.5 rounded-md font-medium text-[13px] md:text-[14.5px] text-gray hover:bg-white/10 hover:text-white transition-colors w-full"
+          >
+            <LogOut className="w-[16px] h-[16px] md:w-[18px] md:h-[18px]" /> <span className="hidden sm:inline md:inline">Sign out</span>
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 w-full md:ml-[236px] p-4 md:p-10 max-w-full md:max-w-[1400px] min-w-0 overflow-x-hidden">
