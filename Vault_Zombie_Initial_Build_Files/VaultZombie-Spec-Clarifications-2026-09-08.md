@@ -239,3 +239,10 @@ document changes or clarifies an earlier document, this document wins.
   upsell. Admins see referral counts for every vault, including Lockbox.
   Referral views show counts only, never who signed up or any personal detail
   about them.
+- `createDraftVault()` (2026-09-11): plan tier, reveal schedule, and vault name
+  are product decisions supplied by the vault-creation flow, which does not
+  exist yet anywhere in the app. `createDraftVault()` takes them as required
+  inputs and throws rather than defaulting or falling back on any of them —
+  including the fact that a host who selects a paid tier pays before setup
+  continues, which a default plan tier would bypass. The function still has
+  no caller.

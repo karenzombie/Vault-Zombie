@@ -13,18 +13,21 @@ const tokenHash = (token: string) => createHash("sha256").update(token, "utf8").
  * Creates the initial draft row for a new vault. This is the single insertion point for
  * `vaultsTable`, so it is where the H2 "vault created" email (spec section 6) fires.
  *
- * Placeholder defaults (interpretive choice, no vault-creation UI/flow exists yet to source
- * real values from): name falls back to the vault type's display name, subjectValues starts
- * empty (hosts fill it in via updateDraftVaultSetup / the setup wizard), planTier defaults to
- * "lockbox" (the free tier, safest default before payment), and revealSchedule defaults to
- * "weekly_sprint" (the only schedule available on every plan tier, including lockbox).
+ * planTier, revealSchedule, and name are required inputs with no default or fallback: they
+ * are product decisions supplied by the (not-yet-built) vault-creation flow, and this
+ * function must never invent them. See VaultZombie-Spec-Clarifications-2026-09-08.md.
  */
 export async function createDraftVault(input: {
   operatorId: string;
   vaultTypeId: string;
-  name?: string;
+  name: string;
+  planTier: PlanTier;
+  revealSchedule: RevealSchedule;
   subjectValues?: Record<string, string>;
 }) {
+  if (!input.planTier) throw new Error("planTier is required and has no default.");
+  if (!input.revealSchedule) throw new Error("revealSchedule is required and has no default.");
+  if (!input.name || !input.name.trim()) throw new Error("name is required and has no default.");
   const [vaultType] = await db.select({ name: vaultTypesTable.name }).from(vaultTypesTable).where(eq(vaultTypesTable.id, input.vaultTypeId)).limit(1);
   if (!vaultType) throw new Error("Unknown vault type.");
   const guestToken = randomBytes(24).toString("base64url");
@@ -32,10 +35,10 @@ export async function createDraftVault(input: {
   const [vault] = await db.insert(vaultsTable).values({
     operatorId: input.operatorId,
     vaultTypeId: input.vaultTypeId,
-    name: input.name?.trim() || vaultType.name,
+    name: input.name.trim(),
     subjectValues: input.subjectValues ?? {},
-    planTier: "lockbox",
-    revealSchedule: "weekly_sprint",
+    planTier: input.planTier,
+    revealSchedule: input.revealSchedule,
     guestTokenHash: tokenHash(guestToken),
     referrerCode,
   }).returning();
