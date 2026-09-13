@@ -1,9 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/react";
+import { isClerkAPIResponseError } from "@clerk/shared/error";
 import { useLocation } from "wouter";
 import QRCode from "qrcode";
 
 type Stage = "loading" | "scan" | "verifying" | "backup-codes" | "error";
+
+/**
+ * Turns any error thrown by Clerk's frontend API into a readable string.
+ * Clerk's rate-limit (429) responses carry no message string, so a plain
+ * `err.message` fallback renders as an empty string with nothing to read.
+ * This always returns non-empty text, including the HTTP status when one
+ * is available, so the error stage never renders blank.
+ */
+function describeSetupError(err: unknown): string {
+  if (isClerkAPIResponseError(err)) {
+    const detail = err.errors?.[0]?.longMessage || err.errors?.[0]?.message;
+    if (detail) {
+      return err.status ? `${detail} (HTTP ${err.status})` : detail;
+    }
+    return err.status
+      ? `Authenticator setup failed with HTTP ${err.status}. Please try again.`
+      : "Authenticator setup failed. Please try again.";
+  }
+  if (err instanceof Error && err.message) {
+    return err.message;
+  }
+  return "Could not start authenticator setup. Please try again.";
+}
 
 /**
  * Shown to a signed-in admin whose Clerk user has no authenticator app
@@ -21,31 +45,50 @@ export default function AdminTotpEnrollPage() {
   const [code, setCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Bumped only by the retry button. createTOTP() must run exactly once per
+  // value of `attempt`; the ref below remembers which attempt already
+  // started so the effect can no-op when it re-fires for reasons other than
+  // a retry (e.g. Clerk's user object changing identity after createTOTP()
+  // itself resolves, which would otherwise re-trigger this effect forever).
+  const [attempt, setAttempt] = useState(0);
+  const startedAttempt = useRef<number | null>(null);
+  // Tracks real unmount only. Clerk's `user` object gets a new identity as
+  // soon as createTOTP() resolves (it updates the underlying resource), which
+  // re-fires this effect. That re-fire must not abandon the in-flight
+  // request's result, so "was this cancelled" is tracked here instead of via
+  // a variable scoped to one effect invocation.
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
     if (!user) return;
+    if (startedAttempt.current === attempt) return;
+    startedAttempt.current = attempt;
+    setStage("loading");
+    setError(null);
     (async () => {
       try {
         const totp = await user.createTOTP();
-        if (cancelled) return;
+        if (!isMountedRef.current) return;
         if (!totp.uri) throw new Error("Clerk did not return a TOTP setup link.");
         setSecret(totp.secret ?? null);
         const dataUrl = await QRCode.toDataURL(totp.uri, { width: 320, margin: 1 });
-        if (cancelled) return;
+        if (!isMountedRef.current) return;
         setQrDataUrl(dataUrl);
         setStage("scan");
       } catch (err) {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Could not start authenticator setup.");
+        if (!isMountedRef.current) return;
+        setError(describeSetupError(err));
         setStage("error");
       }
     })();
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, attempt]);
 
   async function submitCode() {
     if (!user || !code.trim()) return;
@@ -57,7 +100,7 @@ export default function AdminTotpEnrollPage() {
       setBackupCodes(backupCodeResource.codes ?? []);
       setStage("backup-codes");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That code did not verify. Try again.");
+      setError(describeSetupError(err));
       setStage("scan");
     }
   }
@@ -69,7 +112,15 @@ export default function AdminTotpEnrollPage() {
   if (stage === "error") {
     return (
       <Shell>
-        <p className="text-destructive">{error}</p>
+        <p className="text-destructive mb-4">
+          {error ?? "Could not start authenticator setup. Please try again."}
+        </p>
+        <button
+          className="bg-ink text-brass-lt font-semibold px-5 py-3 rounded-lg hover:bg-ink-2 w-full"
+          onClick={() => setAttempt((current) => current + 1)}
+        >
+          Try again
+        </button>
       </Shell>
     );
   }
