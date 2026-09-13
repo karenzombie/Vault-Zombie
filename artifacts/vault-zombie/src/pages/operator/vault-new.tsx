@@ -190,17 +190,23 @@ function DetailsForm({
     }
   }
 
+  function isTokenRequired(type: { slug: string }, token: string): boolean {
+    return !(type.slug === "baby" && token === "[Baby]");
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!vaultTypeId || !selectedType) return;
-    const missingToken = selectedType.requiredSubjectTokens.find((t) => !subjectValues[t]?.trim());
+    const missingToken = selectedType.requiredSubjectTokens.find(
+      (t) => isTokenRequired(selectedType, t) && !subjectValues[t]?.trim(),
+    );
     if (missingToken || !name.trim()) return;
     createVault.mutate(
       { data: { billingRecordId, vaultTypeId, name: name.trim(), subjectValues } },
       {
         onSuccess: (res) => onCreated(res.vaultId),
-        onError: () => {
-          toast({ title: "Could not create vault", description: "This entitlement may already be spent. Try again from the dashboard.", variant: "destructive" });
+        onError: (err: any) => {
+          toast({ title: "Could not create vault", description: err?.message ?? "Something went wrong.", variant: "destructive" });
         },
       },
     );
@@ -208,7 +214,7 @@ function DetailsForm({
 
   const canSubmit = Boolean(
     vaultTypeId && selectedType && name.trim() &&
-    selectedType.requiredSubjectTokens.every((t) => subjectValues[t]?.trim()),
+    selectedType.requiredSubjectTokens.every((t) => !isTokenRequired(selectedType, t) || subjectValues[t]?.trim()),
   );
 
   return (
@@ -247,17 +253,23 @@ function DetailsForm({
           <div className="space-y-4">
             <Label className="text-lg font-bold text-ink">Subject names</Label>
             <div className="grid gap-4 sm:grid-cols-2">
-              {selectedType.requiredSubjectTokens.map((token) => (
-                <div className="space-y-2" key={token}>
-                  <Label htmlFor={`subject-${token}`}>{token}</Label>
-                  <Input
-                    id={`subject-${token}`}
-                    value={subjectValues[token] ?? ""}
-                    onChange={(e) => updateSubjectValue(token, e.target.value)}
-                    required
-                  />
-                </div>
-              ))}
+              {selectedType.requiredSubjectTokens.map((token) => {
+                const required = isTokenRequired(selectedType, token);
+                return (
+                  <div className="space-y-2" key={token}>
+                    <Label htmlFor={`subject-${token}`}>{token}</Label>
+                    <Input
+                      id={`subject-${token}`}
+                      value={subjectValues[token] ?? ""}
+                      onChange={(e) => updateSubjectValue(token, e.target.value)}
+                      required={required}
+                    />
+                    {!required && (
+                      <p className="text-sm text-text-2">Leave this blank if the name is not decided yet.</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

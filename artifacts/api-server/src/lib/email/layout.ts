@@ -81,8 +81,9 @@ function blockHtml(block: Block, ctx: { dark?: boolean } = {}): string {
       return `<p style="font-family:${FONT};font-size:16px;line-height:1.5;color:${color};margin:0 0 16px">${block.text}</p>`;
     }
     case "sectionHeading": {
-      const iconHtml = block.icon ? iconImg(block.icon, block.dark ? "brass" : "bronze") : "";
-      const color = block.dark ? COLOR.brassLight : COLOR.ink;
+      const dark = ctx.dark || block.dark;
+      const iconHtml = block.icon ? iconImg(block.icon, dark ? "brass" : "bronze") : "";
+      const color = dark ? COLOR.parchment : COLOR.ink;
       return `<h2 style="font-family:${FONT};font-size:17px;font-weight:600;color:${color};margin:0 0 12px">${iconHtml}${block.text}</h2>`;
     }
     case "highlightBand":
@@ -113,29 +114,39 @@ function blockHtml(block: Block, ctx: { dark?: boolean } = {}): string {
       const cell = `<td style="background:${COLOR.ink};border-radius:8px;padding:14px 28px;text-align:center"><a href="${block.url}" style="font-family:${FONT};font-size:16px;font-weight:600;color:${COLOR.brassLight};text-decoration:none">${escapeHtml(block.label)}</a></td>`;
       return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 20px"><tr>${cell}</tr></table>`;
     }
-    case "numberedSteps":
+    case "numberedSteps": {
+      const circleBg = ctx.dark ? COLOR.parchment : COLOR.ink;
+      const circleColor = ctx.dark ? COLOR.ink : COLOR.brassLight;
+      const textColor = ctx.dark ? COLOR.parchment : COLOR.ink;
       return `<div style="margin:0 0 16px">${block.steps.map((step, index) => (
         `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:10px"><tr>` +
-        `<td style="width:26px;vertical-align:top"><div style="width:26px;height:26px;border-radius:50%;background:${COLOR.ink};color:${COLOR.brassLight};font-family:${FONT};font-size:13px;font-weight:700;text-align:center;line-height:26px">${index + 1}</div></td>` +
-        `<td style="padding-left:10px;font-family:${FONT};font-size:16px;line-height:1.5;color:${COLOR.ink}">${step}</td>` +
+        `<td style="width:26px;vertical-align:top"><div style="width:26px;height:26px;border-radius:50%;background:${circleBg};color:${circleColor};font-family:${FONT};font-size:13px;font-weight:700;text-align:center;line-height:26px">${index + 1}</div></td>` +
+        `<td style="padding-left:10px;font-family:${FONT};font-size:16px;line-height:1.5;color:${textColor}">${step}</td>` +
         `</tr></table>`
       )).join("")}</div>`;
-    case "bulletList":
-      return `<ul style="font-family:${FONT};font-size:16px;line-height:1.5;color:${COLOR.ink};margin:0 0 16px;padding-left:20px">${block.items.map((item) => `<li style="margin-bottom:6px">${item}</li>`).join("")}</ul>`;
+    }
+    case "bulletList": {
+      const color = ctx.dark ? COLOR.parchment : COLOR.ink;
+      return `<ul style="font-family:${FONT};font-size:16px;line-height:1.5;color:${color};margin:0 0 16px;padding-left:20px">${block.items.map((item) => `<li style="margin-bottom:6px">${item}</li>`).join("")}</ul>`;
+    }
     case "receiptTable": {
+      const color = ctx.dark ? COLOR.parchment : COLOR.ink;
+      const ruleColor = ctx.dark ? COLOR.parchment : COLOR.ink;
       const rows = block.rows.map((row) => (
-        `<tr><td style="padding:8px 0;border-bottom:1px solid ${COLOR.hairline};font-family:${FONT};font-size:16px;color:${COLOR.ink}">${row.label}</td>` +
-        `<td style="padding:8px 0;border-bottom:1px solid ${COLOR.hairline};font-family:${FONT};font-size:16px;color:${COLOR.ink};text-align:right">${row.value}</td></tr>`
+        `<tr><td style="padding:8px 0;border-bottom:1px solid ${COLOR.hairline};font-family:${FONT};font-size:16px;color:${color}">${row.label}</td>` +
+        `<td style="padding:8px 0;border-bottom:1px solid ${COLOR.hairline};font-family:${FONT};font-size:16px;color:${color};text-align:right">${row.value}</td></tr>`
       )).join("");
-      const total = `<tr><td style="padding:10px 0;border-top:2px solid ${COLOR.ink};border-bottom:2px solid ${COLOR.ink};font-family:${FONT};font-size:16px;font-weight:700;color:${COLOR.ink}">${block.total.label}</td>` +
-        `<td style="padding:10px 0;border-top:2px solid ${COLOR.ink};border-bottom:2px solid ${COLOR.ink};font-family:${FONT};font-size:16px;font-weight:700;color:${COLOR.ink};text-align:right">${block.total.value}</td></tr>`;
+      const total = `<tr><td style="padding:10px 0;border-top:2px solid ${ruleColor};border-bottom:2px solid ${ruleColor};font-family:${FONT};font-size:16px;font-weight:700;color:${color}">${block.total.label}</td>` +
+        `<td style="padding:10px 0;border-top:2px solid ${ruleColor};border-bottom:2px solid ${ruleColor};font-family:${FONT};font-size:16px;font-weight:700;color:${color};text-align:right">${block.total.value}</td></tr>`;
       return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px">${rows}${total}</table>`;
     }
-    case "checklist":
+    case "checklist": {
+      const color = ctx.dark ? COLOR.parchment : COLOR.ink;
       return `<div style="margin:0 0 8px">${block.items.map((item) => (
-        `<div style="font-family:${FONT};font-size:16px;color:${COLOR.ink};margin-bottom:8px">` +
-        `<span style="color:${item.done ? COLOR.bronze : COLOR.text2};display:inline-block;width:20px">${item.done ? "✓" : "☐"}</span>${escapeHtml(item.label)}</div>`
+        `<div style="font-family:${FONT};font-size:16px;color:${color};margin-bottom:8px">` +
+        `<span style="color:${item.done ? COLOR.bronze : (ctx.dark ? COLOR.parchment : COLOR.text2)};display:inline-block;width:20px">${item.done ? "✓" : "☐"}</span>${escapeHtml(item.label)}</div>`
       )).join("")}</div>`;
+    }
     case "resultScoreTiles": {
       const cells = block.tiles.map((tile) => {
         if ("rank" in tile) {
@@ -153,8 +164,9 @@ function blockHtml(block: Block, ctx: { dark?: boolean } = {}): string {
     case "predictionsTable":
       return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 16px">${block.rows.map((row) => {
         const colors = RESULT_COLOR[row.result];
+        const promptColor = ctx.dark ? COLOR.parchment : COLOR.ink;
         return `<tr><td style="padding:10px 0;border-bottom:1px solid ${COLOR.hairline};vertical-align:top">` +
-          `<div style="font-family:${FONT};font-size:15px;font-weight:600;color:${COLOR.ink}">${escapeHtml(row.prompt)}</div>` +
+          `<div style="font-family:${FONT};font-size:15px;font-weight:600;color:${promptColor}">${escapeHtml(row.prompt)}</div>` +
           `<div style="font-family:${FONT};font-size:14px;color:${COLOR.text2}">You said: ${escapeHtml(row.said)}</div>` +
           (row.note ? `<div style="font-family:${FONT};font-size:13px;color:${COLOR.gray}">Host's note: ${escapeHtml(row.note)}</div>` : "") +
           `</td><td style="padding:10px 0;border-bottom:1px solid ${COLOR.hairline};text-align:right;vertical-align:top;white-space:nowrap">` +
