@@ -289,41 +289,48 @@ function CoverSection({ vaultId, detail }: { vaultId: string; detail: { planTier
 
   return (
     <SectionCard title="Your cover">
-      <div className="flex items-center gap-5">
-        <div className="w-24 h-24 rounded-xl border border-border bg-bronze-wash/40 flex items-center justify-center overflow-hidden shrink-0">
-          {coverSrc ? (
-            <img src={coverSrc} alt="" className="w-full h-full object-cover" data-testid="img-vault-cover" />
-          ) : (
-            <span className="text-xs text-gray">No image</span>
-          )}
+      {isLockbox ? (
+        <div className="flex flex-col gap-3">
+          <div className="w-24 h-24 rounded-xl border border-border bg-bronze-wash/40 flex items-center justify-center overflow-hidden shrink-0">
+            {coverSrc ? (
+              <img src={coverSrc} alt="" className="w-full h-full object-cover" data-testid="img-vault-cover" />
+            ) : (
+              <span className="text-xs text-gray">No image</span>
+            )}
+          </div>
+          <p className="text-sm text-text-2">Upgrade to any paid plan to use your own photo.</p>
         </div>
-        <div className="flex-1 min-w-0">
-          {isLockbox ? (
-            <p className="text-sm text-text-2">This is your vault's cover. Photo uploads are available on paid plans.</p>
-          ) : (
-            <>
-              <p className="text-sm text-text-2 mb-3">{detail.coverObjectKey ? "Your uploaded photo." : "Your vault type's default cover."}</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <input
-                  ref={inputRef}
-                  type="file"
-                  accept={ACCEPTED_COVER_TYPES}
-                  data-testid="input-cover-file"
-                  onChange={(e) => handleFile(e.target.files?.[0])}
-                  disabled={upload.isPending}
-                />
-                {detail.coverObjectKey && (
-                  <Button type="button" variant="secondary" size="sm" data-testid="button-remove-cover" disabled={remove.isPending} onClick={handleRemove}>
-                    {remove.isPending ? "Removing…" : "Remove photo"}
-                  </Button>
-                )}
-              </div>
-              {upload.isPending && <p className="text-xs text-text-2 mt-2">Uploading…</p>}
-              {error && <p className="text-sm text-destructive mt-2" data-testid="text-cover-error">{error}</p>}
-            </>
-          )}
+      ) : (
+        <div className="flex items-center gap-5">
+          <div className="w-24 h-24 rounded-xl border border-border bg-bronze-wash/40 flex items-center justify-center overflow-hidden shrink-0">
+            {coverSrc ? (
+              <img src={coverSrc} alt="" className="w-full h-full object-cover" data-testid="img-vault-cover" />
+            ) : (
+              <span className="text-xs text-gray">No image</span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-text-2 mb-3">{detail.coverObjectKey ? "Your uploaded photo." : "Your vault type's default cover."}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                ref={inputRef}
+                type="file"
+                accept={ACCEPTED_COVER_TYPES}
+                data-testid="input-cover-file"
+                onChange={(e) => handleFile(e.target.files?.[0])}
+                disabled={upload.isPending}
+              />
+              {detail.coverObjectKey && (
+                <Button type="button" variant="secondary" size="sm" data-testid="button-remove-cover" disabled={remove.isPending} onClick={handleRemove}>
+                  {remove.isPending ? "Removing…" : "Remove photo"}
+                </Button>
+              )}
+            </div>
+            {upload.isPending && <p className="text-xs text-text-2 mt-2">Uploading…</p>}
+            {error && <p className="text-sm text-destructive mt-2" data-testid="text-cover-error">{error}</p>}
+          </div>
         </div>
-      </div>
+      )}
     </SectionCard>
   );
 }
