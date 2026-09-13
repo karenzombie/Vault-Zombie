@@ -188,6 +188,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/legal':
+        specifier: workspace:*
+        version: link:../../lib/legal
       '@workspace/shared':
         specifier: workspace:*
         version: link:../../lib/shared
@@ -693,13 +696,25 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
 
+  lib/legal:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.9.5
+
   lib/shared: {}
 
   scripts:
     dependencies:
+      '@clerk/backend':
+        specifier: ^3.17.1
+        version: 3.17.1
       '@workspace/db':
         specifier: workspace:*
         version: link:../lib/db
+      '@workspace/legal':
+        specifier: workspace:*
+        version: link:../lib/legal
       stripe:
         specifier: ^22.6.1
         version: 22.6.1(@types/node@25.9.5)

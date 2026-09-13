@@ -8,6 +8,7 @@
     "setup:stripe-products": "tsx ./src/stripe-product-setup.ts",
     "validate:question-banks": "tsx ./src/question-bank-import.ts --validate",
     "import:question-banks": "tsx ./src/question-bank-import.ts --apply",
+    "create:admin": "tsx ./src/create-admin.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
@@ -16,6 +17,8 @@
   },
   "dependencies": {
     "stripe": "^22.6.1",
-    "@workspace/db": "workspace:*"
+    "@clerk/backend": "^3.17.1",
+    "@workspace/db": "workspace:*",
+    "@workspace/legal": "workspace:*"
   }
 }

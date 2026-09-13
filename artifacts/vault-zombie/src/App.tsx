@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useEffect } from 'react';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import { ClerkProvider, RedirectToSignIn, useAuth } from '@clerk/react';
 import { getGetAdminDashboardQueryKey, useGetAdminDashboard } from '@workspace/api-client-react';
@@ -21,8 +22,10 @@ import VaultSharePage from '@/pages/operator/vault-share';
 import OperatorPage, { OperatorReveal } from '@/pages/operator/operator-page';
 import { useParams } from 'wouter';
 import AdminPage from '@/pages/admin/admin';
+import AdminTotpEnrollPage from '@/pages/admin/admin-totp-enroll';
 import SignInPage from '@/pages/auth/sign-in';
 import SignUpPage from '@/pages/auth/sign-up';
+import AdminSignInPage from '@/pages/auth/admin-sign-in';
 
 /* Reports */
 import HealthReportPage from '@/pages/operator/reports/health';
@@ -103,17 +106,39 @@ function MissingAdminConfiguration() {
   return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">Administrator access is unavailable because authentication is not configured.</div>;
 }
 
+// Admin has its own sign in page, separate from the operator flow's
+// RedirectToSignIn (which targets /sign-in). This redirects unauthenticated
+// admin visitors to /admin/sign-in instead, without touching the operator
+// redirect above.
+function RedirectToAdminSignIn() {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    setLocation("/admin/sign-in");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Redirecting…</div>;
+}
+
 function AuthenticatedAdminRoute() {
   const { isLoaded, isSignedIn } = useAuth();
   if (!isLoaded) return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Checking your session…</div>;
-  if (!isSignedIn) return <RedirectToSignIn />;
+  if (!isSignedIn) return <RedirectToAdminSignIn />;
   return <ConsentGate><AdminAccess /></ConsentGate>;
+}
+
+function adminTotpRequired(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("data" in error)) return false;
+  const data = (error as { data?: unknown }).data;
+  return !!data && typeof data === "object" && (data as { code?: unknown }).code === "ADMIN_TOTP_REQUIRED";
 }
 
 function AdminAccess() {
   const dashboard = useGetAdminDashboard({ query: { enabled: true, retry: false, queryKey: getGetAdminDashboardQueryKey() } });
   if (dashboard.isLoading) return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Verifying administrator access…</div>;
-  if (dashboard.isError) return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">403 — Administrator access is required. Complete MFA and retry if your session is stale.</div>;
+  if (dashboard.isError) {
+    if (adminTotpRequired(dashboard.error)) return <AdminTotpEnrollPage />;
+    return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">403 — Administrator access is required. Complete MFA and retry if your session is stale.</div>;
+  }
   return <AdminPage />;
 }
 
@@ -154,6 +179,9 @@ function Router() {
         <Route path="/operator/vaults/:vaultId/share" component={AuthenticatedVaultShare} />
         <Route path="/operator/vaults/:vaultId" component={AuthenticatedOperatorReveal} />
         <Route path="/operator/gifts/redeem" component={GiftRedeemRoute} />
+
+        {/* Admin sign in must be matched before the generic /admin/:tab route below. */}
+        <Route path="/admin/sign-in/*?" component={AdminSignInPage} />
 
         {/* Admin Routes */}
         <Route path="/admin" component={AuthenticatedAdmin} />
