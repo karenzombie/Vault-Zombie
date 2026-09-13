@@ -1,9 +1,41 @@
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "./index";
+import { isVaultFullyResolved } from "./reports";
 import { revealSlotsTable, vaultsTable } from "./schema/vaults";
 import { vaultTypesTable } from "./schema/content";
 
 export type OperatorVaultCardStatus = "draft" | "sealed" | "partially_unlocked" | "fully_unlocked" | "completed";
+
+/**
+ * Advances a sealed vault to active once its first reveal date has passed, and an
+ * active vault to completed once every reveal is open and every scoreable prediction
+ * has a recorded outcome (Flow1 Addendum 1, section A4: "these happen on their own,
+ * with no host action"). Worked out from the vault's existing reveal slots and scoring
+ * data (isVaultFullyResolved); no new columns. There is no background job for this:
+ * it runs lazily wherever a host's vault list or vault detail is read (listOperatorVaults,
+ * getVaultHealthReport), so the stored status is always caught up to date by the time a
+ * host sees it, without them ever needing to click anything. Returns the vault's status
+ * after any transition, for the caller to use immediately.
+ */
+export async function syncVaultLifecycleStatus(vault: { id: string; status: string; operatorId: string }): Promise<string> {
+  if (vault.status !== "sealed" && vault.status !== "active") return vault.status;
+  let status = vault.status;
+  if (status === "sealed") {
+    const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vault.id));
+    const today = new Date().toISOString().slice(0, 10);
+    if (slots.some((slot) => slot.revealDate <= today)) {
+      await db.update(vaultsTable).set({ status: "active" }).where(and(eq(vaultsTable.id, vault.id), eq(vaultsTable.status, "sealed")));
+      status = "active";
+    }
+  }
+  if (status === "active") {
+    if (await isVaultFullyResolved(vault.id, vault.operatorId)) {
+      await db.update(vaultsTable).set({ status: "completed" }).where(and(eq(vaultsTable.id, vault.id), eq(vaultsTable.status, "active")));
+      status = "completed";
+    }
+  }
+  return status;
+}
 
 /**
  * Maps a stored vault status to the label a host sees on their dashboard, per
@@ -41,7 +73,10 @@ export async function listOperatorVaults(operatorId: string) {
     .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id))
     .where(and(eq(vaultsTable.operatorId, operatorId), ne(vaultsTable.status, "deleted")));
 
-  const withLabels = await Promise.all(rows.map(async (row) => ({ ...row, cardStatus: await operatorVaultCardStatus(row) })));
+  const withSyncedStatus = await Promise.all(rows.map(async (row) => ({
+    ...row, status: await syncVaultLifecycleStatus({ id: row.id, status: row.status, operatorId }),
+  })));
+  const withLabels = await Promise.all(withSyncedStatus.map(async (row) => ({ ...row, cardStatus: await operatorVaultCardStatus(row) })));
 
   const groupOrder: Record<OperatorVaultCardStatus, number> = {
     draft: 0,

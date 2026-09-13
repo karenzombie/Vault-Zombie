@@ -1695,7 +1695,8 @@ export const GetVaultSetupDetailResponse = zod.object({
   "milestoneDate": zod.coerce.date().nullable(),
   "milestoneLabel": zod.string().max(getVaultSetupDetailResponseMilestoneLabelMax).nullable(),
   "coverObjectKey": zod.string().nullable(),
-  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
+  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts']),
+  "guestToken": zod.string().describe('The raw guest link token. Only ever returned to this vault\'s own authenticated host on this read; never exposed to a guest or an unauthenticated request.')
 })
 
 
@@ -1736,7 +1737,8 @@ export const UpdateVaultSetupResponse = zod.object({
   "milestoneDate": zod.coerce.date().nullable(),
   "milestoneLabel": zod.string().max(updateVaultSetupResponseMilestoneLabelMax).nullable(),
   "coverObjectKey": zod.string().nullable(),
-  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
+  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts']),
+  "guestToken": zod.string().describe('The raw guest link token. Only ever returned to this vault\'s own authenticated host on this read; never exposed to a guest or an unauthenticated request.')
 })
 
 
@@ -1777,6 +1779,38 @@ export const UpdateVaultGuestLayoutBody = zod.object({
 
 export const UpdateVaultGuestLayoutResponse = zod.object({
   "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
+})
+
+
+/**
+ * @summary Check whether a draft vault meets every condition to be sealed
+ */
+export const GetSealReadinessParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const GetSealReadinessResponse = zod.object({
+  "ready": zod.boolean(),
+  "reasons": zod.array(zod.string()),
+  "promptCount": zod.number().int(),
+  "scheduleName": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullable(),
+  "tierName": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "firstRevealDate": zod.coerce.date().nullable(),
+  "lastRevealDate": zod.coerce.date().nullable()
+})
+
+
+/**
+ * @summary Seal a draft vault, locking its prompts and computing its reveal schedule
+ */
+export const SealVaultActionParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const SealVaultActionResponse = zod.object({
+  "vaultId": zod.string().uuid(),
+  "guestToken": zod.string(),
+  "sealedAt": zod.coerce.date()
 })
 
 

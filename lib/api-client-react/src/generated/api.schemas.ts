@@ -324,6 +324,51 @@ export interface VaultSetupDetail {
   /** @nullable */
   coverObjectKey: string | null;
   guestLayout: VaultSetupDetailGuestLayout;
+  /** The raw guest link token. Only ever returned to this vault's own authenticated host on this read; never exposed to a guest or an unauthenticated request. */
+  guestToken: string;
+}
+
+/**
+ * @nullable
+ */
+export type SealReadinessScheduleName = typeof SealReadinessScheduleName[keyof typeof SealReadinessScheduleName] | null;
+
+
+export const SealReadinessScheduleName = {
+  weekly_sprint: 'weekly_sprint',
+  monthly_x3: 'monthly_x3',
+  monthly_year: 'monthly_year',
+  half_then_annual: 'half_then_annual',
+  annual_keepsake: 'annual_keepsake',
+} as const;
+
+export type SealReadinessTierName = typeof SealReadinessTierName[keyof typeof SealReadinessTierName];
+
+
+export const SealReadinessTierName = {
+  lockbox: 'lockbox',
+  safe: 'safe',
+  vault: 'vault',
+  deep_vault: 'deep_vault',
+} as const;
+
+export interface SealReadiness {
+  ready: boolean;
+  reasons: string[];
+  promptCount: number;
+  /** @nullable */
+  scheduleName: SealReadinessScheduleName;
+  tierName: SealReadinessTierName;
+  /** @nullable */
+  firstRevealDate: string | null;
+  /** @nullable */
+  lastRevealDate: string | null;
+}
+
+export interface SealVaultResult {
+  vaultId: string;
+  guestToken: string;
+  sealedAt: string;
 }
 
 export type UpdateVaultSetupInputPlanTier = typeof UpdateVaultSetupInputPlanTier[keyof typeof UpdateVaultSetupInputPlanTier];

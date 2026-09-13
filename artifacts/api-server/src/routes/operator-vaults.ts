@@ -8,6 +8,7 @@ import {
   CreateOperatorVaultResponse,
   DeleteOperatorVaultParams,
   GetSealedVaultDateInfoParams,
+  GetSealReadinessParams,
   GetVaultSetupDetailParams,
   ListOperatorVaultTypesResponse,
   PreviewSealedVaultDateChangeParams,
@@ -15,6 +16,7 @@ import {
   PreviewVaultScheduleBody,
   PreviewVaultScheduleParams,
   ReorderVaultPromptsBody,
+  SealVaultActionParams,
   ToggleVaultPromptBody,
   ToggleVaultPromptParams,
   UpdateVaultGuestLayoutBody,
@@ -26,6 +28,7 @@ import {
   db,
   deleteOperatorVault,
   getSealedVaultDateInfo,
+  getSealReadiness,
   getVaultSetupDetail,
   listOperatorVaults,
   listVaultPrompts,
@@ -33,6 +36,7 @@ import {
   previewVaultSchedule,
   removeVaultCover,
   reorderVaultPrompts,
+  sealVault,
   setVaultCover,
   setVaultGuestLayout,
   spendEntitlementForNewVault,
@@ -235,6 +239,26 @@ operatorVaultsRouter.patch("/operator/vaults/:vaultId/guest-layout", requireOper
     res.json(result);
   } catch (error) {
     if (error instanceof Error && error.message.toLowerCase().includes("not found")) { res.status(404).json({ error: error.message }); return; }
+    badRequestOr(error, res, next);
+  }
+});
+
+operatorVaultsRouter.get("/operator/vaults/:vaultId/seal-readiness", requireOperator, async (req, res, next) => {
+  try {
+    const { vaultId } = GetSealReadinessParams.parse(req.params);
+    const readiness = await getSealReadiness(vaultId, req.account!.id);
+    res.json(readiness);
+  } catch (error) { notFoundOr(error, res, next, "not found"); }
+});
+
+operatorVaultsRouter.post("/operator/vaults/:vaultId/seal", requireOperator, async (req, res, next) => {
+  try {
+    const { vaultId } = SealVaultActionParams.parse(req.params);
+    const sealDate = new Date().toISOString().slice(0, 10);
+    const { vault } = await sealVault({ vaultId, operatorId: req.account!.id, sealDate });
+    res.json({ vaultId: vault.id, guestToken: vault.guestToken, sealedAt: (vault.sealedAt as Date).toISOString() });
+  } catch (error) {
+    if (error instanceof Error && error.message.toLowerCase().includes("missing or already sealed")) { res.status(404).json({ error: error.message }); return; }
     badRequestOr(error, res, next);
   }
 });

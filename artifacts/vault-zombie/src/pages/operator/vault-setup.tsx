@@ -26,6 +26,8 @@ import {
   useUploadVaultCover,
   useRemoveVaultCover,
   useUpdateVaultGuestLayout,
+  useGetSealReadiness,
+  useSealVaultAction,
   getListVaultPromptsQueryKey,
   getGetVaultSetupDetailQueryKey,
   type VaultPrompt,
@@ -35,6 +37,7 @@ import {
 } from "@workspace/api-client-react";
 import { PLAN_POLICY, type RevealSchedule } from "@workspace/db/schedule";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion, useReducedMotion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,9 +45,21 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ChevronDown, ChevronRight, GripVertical, Plus } from "lucide-react";
 import { getTierLabel } from "@/lib/utils";
 import { VAULT_ART } from "./operator-page";
+import { ShareLinkPanel } from "./vault-share";
 
 /**
  * /operator/vaults/:vaultId/setup (Flow1 Build Stages 3.1-3.4). Draft-only
@@ -108,6 +123,7 @@ export default function VaultSetupPage({ vaultId }: { vaultId: string }) {
         <GuestLayoutSection vaultId={vaultId} guestLayout={detail.data.guestLayout} />
         <ScheduleSection vaultId={vaultId} detail={detail.data} />
         <PromptsSection vaultId={vaultId} />
+        <SealSection vaultId={vaultId} vaultName={detail.data.name} />
 
         <div className="flex justify-end mt-10">
           <Button data-testid="button-setup-done" onClick={() => setLocation(`/operator/vaults/${vaultId}`)}>
@@ -116,6 +132,115 @@ export default function VaultSetupPage({ vaultId }: { vaultId: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+const SCHEDULE_NAME_LOOKUP = SCHEDULE_INFO;
+
+/** 5.3: the Seal this vault button, its confirmation box, the seal animation,
+ * and the sealed confirmation. Once a vault is sealed this section replaces
+ * itself with the guest link, QR code, and print buttons, matching the
+ * share screen (5.1) it is reachable from. */
+function SealSection({ vaultId, vaultName }: { vaultId: string; vaultName: string }) {
+  const queryClient = useQueryClient();
+  const readiness = useGetSealReadiness(vaultId);
+  const seal = useSealVaultAction();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "sealing" | "sealed">("idle");
+  const [sealedToken, setSealedToken] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
+
+  if (phase === "sealed" && sealedToken) {
+    return (
+      <SectionCard title="Your vault is sealed">
+        <ShareLinkPanel vaultName={vaultName} guestToken={sealedToken} />
+      </SectionCard>
+    );
+  }
+
+  const r = readiness.data;
+  const scheduleName = r?.scheduleName ? SCHEDULE_NAME_LOOKUP[r.scheduleName as RevealSchedule]?.name ?? r.scheduleName : "";
+  const tierName = r?.tierName ? getTierLabel(r.tierName) : "";
+
+  function handleSeal() {
+    seal.mutate(
+      { vaultId },
+      {
+        onSuccess: (res) => {
+          setConfirmOpen(false);
+          queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) });
+          setSealedToken(res.guestToken);
+          if (reduceMotion) {
+            setPhase("sealed");
+          } else {
+            setPhase("sealing");
+            setTimeout(() => setPhase("sealed"), 1200);
+          }
+        },
+      },
+    );
+  }
+
+  if (phase === "sealing") {
+    return (
+      <SectionCard title="Sealing your vault">
+        <div className="flex flex-col items-center py-10">
+          <motion.img
+            src={`${import.meta.env.BASE_URL}vault_zombie_png.png`}
+            alt=""
+            className="h-20 w-auto"
+            initial={{ rotate: 0, scale: 1 }}
+            animate={{ rotate: [0, -6, 0], scale: [1, 0.94, 1] }}
+            transition={{ duration: 1.1, ease: "easeInOut" }}
+          />
+          <p className="text-sm text-text-2 mt-4">Sealing your vault…</p>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard title="Seal this vault">
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogTrigger asChild>
+          <Button data-testid="button-seal-vault" disabled={!r || !r.ready}>
+            Seal this vault
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ready to seal?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-left space-y-3 text-text-2">
+                <p>Once you seal, these are locked for good:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Your {r?.promptCount ?? 0} prompts</li>
+                  <li>Your reveal schedule, {scheduleName}</li>
+                  <li>Your plan, {tierName}</li>
+                  <li>
+                    Your reveal dates: {r?.firstRevealDate ? formatSlotDate(r.firstRevealDate) : "—"} through{" "}
+                    {r?.lastRevealDate ? formatSlotDate(r.lastRevealDate) : "—"}
+                  </li>
+                </ul>
+                <p>You can still change your event date, your cover, and how guests see the prompts.</p>
+                <p>Guests can start answering the moment you seal.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-seal">Cancel</AlertDialogCancel>
+            <AlertDialogAction data-testid="button-confirm-seal" onClick={handleSeal} disabled={seal.isPending}>
+              Seal it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {r && !r.ready && (
+        <p className="text-sm text-destructive mt-3" data-testid="text-seal-disabled-reason">
+          {r.reasons[0]}
+        </p>
+      )}
+    </SectionCard>
   );
 }
 

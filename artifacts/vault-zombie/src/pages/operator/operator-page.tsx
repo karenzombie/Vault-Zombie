@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Inbox, FileText, Activity, BarChart, Clock, Database, Award, Printer, Trash2 } from "lucide-react";
+import { Inbox, FileText, Activity, BarChart, Clock, Database, Award, Printer, Trash2, Share2 } from "lucide-react";
 
 import { QuestionResolver } from "./question-resolver";
 import { OperatorScoreboard } from "./operator-scoreboard";
@@ -169,6 +169,13 @@ export function OperatorReveal({ vaultId }: { vaultId: string }) {
         <div className="w-full max-w-lg">
           <EventDateChangeSection vaultId={vaultId} />
           {healthData && <GuestLayoutChangeSection vaultId={vaultId} guestLayout={healthData.guestLayout} />}
+          <Link
+            href={`/operator/vaults/${vaultId}/share`}
+            data-testid="link-share-vault"
+            className="flex items-center justify-center gap-2 rounded-xl border border-hairline bg-white p-3 mb-4 text-sm font-bold text-ink hover-elevate"
+          >
+            <Share2 className="w-4 h-4" /> Share with guests
+          </Link>
         </div>
       </div>
 

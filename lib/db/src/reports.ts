@@ -129,6 +129,10 @@ function timelineFromData(data: Awaited<ReturnType<typeof reportData>>) {
 
 export async function getVaultHealthReport(vaultId: string, operatorId: string) {
   const vault = await owned(vaultId, operatorId);
+  // Lazily catches this vault up to its correct sealed/active/completed status before
+  // this read renders it (Flow1 Addendum 1, A4); see syncVaultLifecycleStatus.
+  const { syncVaultLifecycleStatus } = await import("./vault-lifecycle");
+  const status = await syncVaultLifecycleStatus({ id: vault.id, status: vault.status, operatorId });
   const [predictions] = await db.select({ value: count() }).from(answersTable)
     .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id)).where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
   const [guests] = await db.select({ value: count() }).from(guestsTable).innerJoin(submissionsTable, eq(submissionsTable.guestId, guestsTable.id)).where(and(eq(guestsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
@@ -137,7 +141,7 @@ export async function getVaultHealthReport(vaultId: string, operatorId: string) 
   const today = new Date().toISOString().slice(0, 10);
   const referralCount = vault.entitledPlanTier === "lockbox" ? null : Number((await db.select({ value: count() }).from(accountsTable).where(eq(accountsTable.referredByVaultId, vaultId)))[0]?.value ?? 0);
   const [vaultType] = await db.select({ slug: vaultTypesTable.slug }).from(vaultTypesTable).where(eq(vaultTypesTable.id, vault.vaultTypeId)).limit(1);
-  return { vaultId, planTier: vault.entitledPlanTier, status: vault.status, predictionCount: Number(predictions.value),
+  return { vaultId, planTier: vault.entitledPlanTier, status, predictionCount: Number(predictions.value),
     guestCount: Number(guests.value), revealSlots: slots, completedRevealCount: slots.filter((s) => s.revealDate <= today).length,
     nextRevealDate: slots.find((s) => s.revealDate > today)?.revealDate ?? null, referralCount,
     vaultTypeSlug: vaultType?.slug ?? "", coverObjectKey: vault.coverObjectKey, guestLayout: vault.guestLayout };
@@ -236,6 +240,26 @@ export async function getVaultResultsSummary(vaultId: string, operatorId: string
   return { ...base, depth: "full" as const, areas: areas.areas, timeline: timeline.reveals,
     scoreboard: (await getOperatorScoreboard(vaultId, operatorId)).entries };
 }
+/**
+ * Whether a vault is fully resolved: every answer is unlocked (compared against the
+ * canonical unlocked-content read, so manual unlock overrides and scheduled unlocks use
+ * exactly the same boundary) and every scoreable answer has a recorded outcome. Shared
+ * by getFinaleReport's completionReady flag and, since Stage 5 (Flow1 Addendum 1, A4),
+ * the active-to-completed lifecycle transition, so both use one definition of "done."
+ */
+export async function isVaultFullyResolved(vaultId: string, operatorId: string) {
+  const data = await reportData(vaultId, operatorId);
+  const scoreableAnswers = scoreable(data);
+  const outcomeByPair = new Map(data.outcomes.map((outcome) => [`${outcome.vaultQuestionId}:${outcome.revealSlotId}`, outcome]));
+  const [allAnswers] = await db.select({ value: count() }).from(answersTable)
+    .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
+    .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
+  const totalAnswerCount = Number(allAnswers.value);
+  const allAnswersUnlocked = totalAnswerCount > 0 && totalAnswerCount === data.answers.length;
+  const allResolved = scoreableAnswers.every((answer) => outcomeByPair.has(`${answer.vaultQuestionId}:${answer.revealSlotId}`));
+  return allAnswersUnlocked && allResolved;
+}
+
 export async function getFinaleReport(vaultId: string, operatorId: string) {
   const data = await reportData(vaultId, operatorId); assertPaid(data.vault.entitledPlanTier);
   // The archive is constructed from this single unlocked data set; no raw answer
@@ -251,20 +275,13 @@ export async function getFinaleReport(vaultId: string, operatorId: string) {
     return question && outcome ? { vaultQuestionId: question.id, prompt: question.prompt, outcomeTier: tier, operatorNote: outcome.operatorNote } : null;
   };
   const scoreboard = scoreboardFromData(data);
-  const [allAnswers] = await db.select({ value: count() }).from(answersTable)
-    .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
-    .where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
-  // Compare answer metadata counts with the canonical unlocked-content read so
-  // manual unlock overrides and scheduled unlocks use exactly the same boundary.
-  const totalAnswerCount = Number(allAnswers.value);
-  const allAnswersUnlocked = totalAnswerCount > 0 && totalAnswerCount === data.answers.length;
-  const allResolved = scoreableAnswers.every((answer) => outcomeByPair.has(`${answer.vaultQuestionId}:${answer.revealSlotId}`));
+  const completionReady = await isVaultFullyResolved(vaultId, operatorId);
   return { vaultId, planTier: data.vault.entitledPlanTier, outcomeCounts: counts(scoreableAnswers.map((answer) => data.verdictByAnswer.get(answer.id)?.tier)),
     certificate: data.vault.entitledPlanTier === "deep_vault", scoreboard, winner: scoreboard[0] ?? null,
     areas: areasFromData(data), timeline: timelineFromData(data),
     standouts: [standout("full"), standout("zero")].filter((item): item is NonNullable<typeof item> => Boolean(item)),
     guestCount: new Set(data.answers.map((answer) => answer.guestId)).size, predictionCount: data.answers.length,
-    completionReady: allAnswersUnlocked && allResolved, ...archive };
+    completionReady, ...archive };
 }
 /** Printable uses precisely the same paid, unlocked archive DTO; rendering is a client concern. */
 export async function getPrintArchive(vaultId: string, operatorId: string) {

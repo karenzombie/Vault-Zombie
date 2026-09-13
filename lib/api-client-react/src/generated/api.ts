@@ -114,6 +114,8 @@ import type {
   SchedulePreviewInput,
   SchedulePreviewResult,
   Scoreboard,
+  SealReadiness,
+  SealVaultResult,
   SealedVaultDateChangeInput,
   SealedVaultDateChangeResult,
   SealedVaultDateInfo,
@@ -5295,6 +5297,154 @@ export const useUpdateVaultGuestLayout = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateVaultGuestLayoutMutationOptions(options));
+    }
+
+export const getGetSealReadinessUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/seal-readiness`
+}
+
+/**
+ * @summary Check whether a draft vault meets every condition to be sealed
+ */
+export const getSealReadiness = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<SealReadiness> => {
+
+  return customFetch<SealReadiness>(getGetSealReadinessUrl(vaultId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSealReadinessQueryKey = (vaultId: string,) => {
+    return [
+    `/api/operator/vaults/${vaultId}/seal-readiness`
+    ] as const;
+    }
+
+
+export const getGetSealReadinessQueryOptions = <TData = Awaited<ReturnType<typeof getSealReadiness>>, TError = ErrorType<void>>(vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSealReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSealReadinessQueryKey(vaultId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSealReadiness>>> = ({ signal }) => getSealReadiness(vaultId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: vaultId !== null && vaultId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSealReadiness>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSealReadinessQueryResult = NonNullable<Awaited<ReturnType<typeof getSealReadiness>>>
+export type GetSealReadinessQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check whether a draft vault meets every condition to be sealed
+ */
+
+export function useGetSealReadiness<TData = Awaited<ReturnType<typeof getSealReadiness>>, TError = ErrorType<void>>(
+ vaultId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSealReadiness>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSealReadinessQueryOptions(vaultId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSealVaultActionUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/seal`
+}
+
+/**
+ * @summary Seal a draft vault, locking its prompts and computing its reveal schedule
+ */
+export const sealVaultAction = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<SealVaultResult> => {
+
+  return customFetch<SealVaultResult>(getSealVaultActionUrl(vaultId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSealVaultActionMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sealVaultAction>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sealVaultAction>>, TError,{vaultId: string}, TContext> => {
+
+const mutationKey = ['sealVaultAction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sealVaultAction>>, {vaultId: string}> = (props) => {
+          const {vaultId} = props ?? {};
+
+          return  sealVaultAction(vaultId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SealVaultActionMutationResult = NonNullable<Awaited<ReturnType<typeof sealVaultAction>>>
+
+    export type SealVaultActionMutationError = ErrorType<void>
+
+    /**
+ * @summary Seal a draft vault, locking its prompts and computing its reveal schedule
+ */
+export const useSealVaultAction = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sealVaultAction>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sealVaultAction>>,
+        TError,
+        {vaultId: string},
+        TContext
+      > => {
+      return useMutation(getSealVaultActionMutationOptions(options));
     }
 
 export const getPreviewVaultScheduleUrl = (vaultId: string,) => {

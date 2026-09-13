@@ -281,4 +281,54 @@
   .print-hidden {
     display: none !important;
   }
+
+  /* Stage 5 printable cards: unlike the single full-page gift card above,
+     the table-card design lays several to a page, so it needs its own grid
+     rather than the single break-inside rule those share. */
+  body:has(#printable-table-cards) #root > * {
+    visibility: hidden;
+  }
+  body:has(#printable-table-cards) #printable-table-cards,
+  body:has(#printable-table-cards) #printable-table-cards * {
+    visibility: visible;
+  }
+  body:has(#printable-table-cards) #printable-table-cards {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8mm;
+  }
+  .table-card {
+    break-inside: avoid;
+    border: 1px solid #000;
+  }
+
+  body:has(#printable-sign) #root > * {
+    visibility: hidden;
+  }
+  body:has(#printable-sign) #printable-sign,
+  body:has(#printable-sign) #printable-sign * {
+    visibility: visible;
+  }
+  body:has(#printable-sign) #printable-sign {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 90vh;
+    break-inside: avoid;
+  }
 }

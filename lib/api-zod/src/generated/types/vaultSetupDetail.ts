@@ -34,4 +34,6 @@ export interface VaultSetupDetail {
   /** @nullable */
   coverObjectKey: string | null;
   guestLayout: VaultSetupDetailGuestLayout;
+  /** The raw guest link token. Only ever returned to this vault's own authenticated host on this read; never exposed to a guest or an unauthenticated request. */
+  guestToken: string;
 }

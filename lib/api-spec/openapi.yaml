@@ -814,6 +814,27 @@ paths:
         "200": { description: Guest layout saved, content: { application/json: { schema: { $ref: "#/components/schemas/GuestLayoutInfo" } } } }
         "401": { description: Authentication required }
         "404": { description: "Vault not found or not owned by this host" }
+  /operator/vaults/{vaultId}/seal-readiness:
+    get:
+      operationId: getSealReadiness
+      tags: [operator]
+      summary: Check whether a draft vault meets every condition to be sealed
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Seal readiness, content: { application/json: { schema: { $ref: "#/components/schemas/SealReadiness" } } } }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
+  /operator/vaults/{vaultId}/seal:
+    post:
+      operationId: sealVaultAction
+      tags: [operator]
+      summary: Seal a draft vault, locking its prompts and computing its reveal schedule
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Vault sealed, content: { application/json: { schema: { $ref: "#/components/schemas/SealVaultResult" } } } }
+        "400": { description: "Vault does not yet meet every condition to be sealed" }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found, not owned by this host, or already sealed" }
   /operator/vaults/{vaultId}/setup/schedule-preview:
     post:
       operationId: previewVaultSchedule
@@ -1295,7 +1316,7 @@ components:
         requiredSubjectTokens: { type: array, items: { type: string } }
     VaultSetupDetail:
       type: object
-      required: [id, name, status, planTier, entitledPlanTier, vaultTypeId, vaultTypeName, vaultTypeSlug, revealSchedule, anchorDate, milestoneDate, milestoneLabel, coverObjectKey, guestLayout]
+      required: [id, name, status, planTier, entitledPlanTier, vaultTypeId, vaultTypeName, vaultTypeSlug, revealSchedule, anchorDate, milestoneDate, milestoneLabel, coverObjectKey, guestLayout, guestToken]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -1311,6 +1332,30 @@ components:
         milestoneLabel: { type: ["string", "null"], maxLength: 60 }
         coverObjectKey: { type: ["string", "null"] }
         guestLayout: { type: string, enum: [one_at_a_time, all_prompts] }
+        guestToken:
+          type: string
+          description: >-
+            The raw guest link token. Only ever returned to this vault's own
+            authenticated host on this read; never exposed to a guest or an
+            unauthenticated request.
+    SealReadiness:
+      type: object
+      required: [ready, reasons, promptCount, scheduleName, tierName, firstRevealDate, lastRevealDate]
+      properties:
+        ready: { type: boolean }
+        reasons: { type: array, items: { type: string } }
+        promptCount: { type: integer }
+        scheduleName: { type: ["string", "null"], enum: [weekly_sprint, monthly_x3, monthly_year, half_then_annual, annual_keepsake, null] }
+        tierName: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        firstRevealDate: { type: ["string", "null"], format: date }
+        lastRevealDate: { type: ["string", "null"], format: date }
+    SealVaultResult:
+      type: object
+      required: [vaultId, guestToken, sealedAt]
+      properties:
+        vaultId: { type: string, format: uuid }
+        guestToken: { type: string }
+        sealedAt: { type: string, format: date-time }
     UpdateVaultSetupInput:
       type: object
       required: [planTier]

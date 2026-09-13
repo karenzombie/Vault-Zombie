@@ -191,12 +191,91 @@ export async function getVaultSetupDetail(vaultId: string, operatorId: string) {
     milestoneLabel: vaultsTable.milestoneLabel,
     coverObjectKey: vaultsTable.coverObjectKey,
     guestLayout: vaultsTable.guestLayout,
+    // Raw guest token (Stage 5.1): only ever read here, behind requireOperator plus the
+    // operatorId match above, so only this vault's own host can ever see it. Never
+    // selected by any guest-facing or unauthenticated read.
+    guestToken: vaultsTable.guestToken,
   }).from(vaultsTable)
     .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id))
     .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId)))
     .limit(1);
   if (!row) throw new Error("Vault not found.");
   return row;
+}
+
+/**
+ * Stage 5.3: everything the "Seal this vault" button needs to decide whether it can
+ * seal, why not if it cannot, and what to show in the pre-seal confirmation box. Mirrors
+ * sealVault's own checks exactly (entitlement, reveal schedule, Deep Vault milestone, at
+ * least one enabled prompt) plus subject names, which sealVault does not check itself
+ * (subject names are enforced at vault creation, so they are always present in practice,
+ * but this button still accounts for them). Reveal dates are a preview only, computed
+ * against today's date the same way the schedule preview endpoint does; the real seal
+ * date is fixed at the moment sealVault actually runs.
+ */
+export async function getSealReadiness(vaultId: string, operatorId: string) {
+  const [vault] = await db.select({
+    status: vaultsTable.status,
+    planTier: vaultsTable.planTier,
+    entitledPlanTier: vaultsTable.entitledPlanTier,
+    revealSchedule: vaultsTable.revealSchedule,
+    anchorDate: vaultsTable.anchorDate,
+    milestoneDate: vaultsTable.milestoneDate,
+    milestoneLabel: vaultsTable.milestoneLabel,
+    subjectValues: vaultsTable.subjectValues,
+    vaultTypeId: vaultsTable.vaultTypeId,
+  }).from(vaultsTable)
+    .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId)))
+    .limit(1);
+  if (!vault) throw new Error("Vault not found.");
+
+  const [vaultType] = await db.select({ requiredSubjectTokens: vaultTypesTable.requiredSubjectTokens })
+    .from(vaultTypesTable).where(eq(vaultTypesTable.id, vault.vaultTypeId)).limit(1);
+
+  const enabledPrompts = await db.select({ id: vaultQuestionsTable.id }).from(vaultQuestionsTable)
+    .where(and(eq(vaultQuestionsTable.vaultId, vaultId), eq(vaultQuestionsTable.enabled, true)));
+
+  const reasons: string[] = [];
+  if (vault.status !== "draft") reasons.push("This vault is already sealed.");
+  if (!isPlanTierWithinEntitlement(vault.planTier, vault.entitledPlanTier)) {
+    reasons.push("Complete payment before sealing a vault configured above its current entitlement.");
+  }
+  if (!vault.revealSchedule) reasons.push("Choose a reveal schedule before sealing.");
+  if (vault.planTier === "deep_vault" && (!vault.milestoneDate || !vault.milestoneLabel)) {
+    reasons.push("Set a milestone date and label before sealing a Deep Vault.");
+  }
+  if (!enabledPrompts.length) reasons.push("Select at least one prompt before sealing.");
+  const missingSubjects = (vaultType?.requiredSubjectTokens ?? [])
+    .some((token) => !vault.subjectValues?.[token]?.trim());
+  if (missingSubjects) reasons.push("Fill in every subject name before sealing.");
+
+  let firstRevealDate: string | null = null;
+  let lastRevealDate: string | null = null;
+  if (vault.revealSchedule) {
+    const today = new Date().toISOString().slice(0, 10);
+    const preview = buildRevealSlots({
+      anchorDate: vault.anchorDate ?? today,
+      sealDate: today,
+      planTier: vault.planTier,
+      schedule: vault.revealSchedule,
+      milestoneDate: vault.milestoneDate,
+      milestoneLabel: vault.milestoneLabel,
+    });
+    if (preview.length) {
+      firstRevealDate = preview[0].revealDate;
+      lastRevealDate = preview[preview.length - 1].revealDate;
+    }
+  }
+
+  return {
+    ready: reasons.length === 0,
+    reasons,
+    promptCount: enabledPrompts.length,
+    scheduleName: vault.revealSchedule,
+    tierName: vault.planTier,
+    firstRevealDate,
+    lastRevealDate,
+  };
 }
 
 /**
