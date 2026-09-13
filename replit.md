@@ -53,6 +53,24 @@ _Populate as you build — explicit user instructions worth remembering across s
   - **"Stop and report" means stop before building, and wait for an answer.** Flagging a decision after it has already been built does not satisfy this rule. If you find yourself about to write "worth your awareness" or "a call I made" in a report, that is the moment to stop and ask instead — before writing the code, not after. This also applies when a spec document says one thing and you believe something else fits better: report the difference and wait, rather than building your own version and noting it afterward.
 - **Literal means literal.** When a document specifies exact copy or exact values, transcribe them character for character rather than writing your own version of the same idea. Covering similar ground is not the same as building what the document specified. If a sentence cannot be made accurate for a real situation, stop and report it rather than rewriting it.
 - **Verify before reporting done.** Before reporting any work as finished, compare the built output against the document line by line: every subject line, heading, sentence, block, field, and icon. Report anything you could not match rather than substituting your own.
+- **Addendums govern.** Several documents in this project have addendums. An addendum amends its original document and governs wherever the two differ. Whenever you read one of these documents, read its addendums too, and follow the addendum where it covers the same ground. Addendum file names carry version numbers; the highest version of a given addendum is the current one.
+
+  The documents and their addendums, as of now:
+
+  - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-v2.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-1-v1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Spec-Clarifications-2026-09-08.md`
+
+  - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Build-Stages.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-2-v1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-3-v1.md`
+
+  - `Vault_Zombie_Initial_Build_Files/VaultZombie-Email-Spec.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Email-Spec-Addendum-1-v1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Email-Spec-Addendum-2-v1.md`
+
+  More addendums will be added over time. If you find an addendum file in the workspace that is not on this list, follow it as well and report that the list is out of date. Never treat an original document as current where an addendum covers the same ground.
 
 ## Gotchas
 
