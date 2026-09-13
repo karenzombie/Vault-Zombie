@@ -1,4 +1,5 @@
 import { asc, eq } from "drizzle-orm";
+import sharp from "sharp";
 import {
   AddCustomPromptBody,
   ChangeSealedVaultEventDateBody,
@@ -16,6 +17,7 @@ import {
   ReorderVaultPromptsBody,
   ToggleVaultPromptBody,
   ToggleVaultPromptParams,
+  UpdateVaultGuestLayoutBody,
   UpdateVaultSetupBody,
 } from "@workspace/api-zod";
 import {
@@ -29,16 +31,27 @@ import {
   listVaultPrompts,
   previewSealedVaultEventDateChange,
   previewVaultSchedule,
+  removeVaultCover,
   reorderVaultPrompts,
+  setVaultCover,
+  setVaultGuestLayout,
   spendEntitlementForNewVault,
   toggleVaultPrompt,
   updateDraftVaultSetup,
   vaultTypesTable,
 } from "@workspace/db";
-import { Router, type IRouter } from "express";
+import express, { Router, type IRouter } from "express";
 import { requireOperator } from "../middlewares/auth";
+import { ObjectStorageService } from "../lib/objectStorage";
 
 const operatorVaultsRouter: IRouter = Router();
+const objectStorageService = new ObjectStorageService();
+
+/** Stage 4.1 cap: a cover photo may not exceed 10 MB. Raw-body limit is set a
+ * little above that so this handler (not Express) produces the user-facing
+ * error message. */
+const COVER_MAX_BYTES = 10 * 1024 * 1024;
+const rawImageBody = express.raw({ type: ["image/jpeg", "image/png", "application/octet-stream"], limit: "11mb" });
 
 operatorVaultsRouter.get("/operator/vaults", requireOperator, async (req, res, next) => {
   try {
@@ -134,6 +147,92 @@ operatorVaultsRouter.patch("/operator/vaults/:vaultId/setup", requireOperator, a
       anchorDate: dateStr(body.anchorDate), milestoneDate: dateStr(body.milestoneDate), milestoneLabel: body.milestoneLabel,
     });
     res.json(detail);
+  } catch (error) {
+    if (error instanceof Error && error.message.toLowerCase().includes("not found")) { res.status(404).json({ error: error.message }); return; }
+    badRequestOr(error, res, next);
+  }
+});
+
+/**
+ * Uploads a vault's cover photo (Stage 4.1). Accepted formats are validated
+ * by decoding the bytes with sharp, never by filename or Content-Type
+ * header, since either can be spoofed. The image is re-encoded at up to
+ * 1600px on its longest edge (never upscaled) and re-oriented from its EXIF
+ * orientation tag before that tag, and all other EXIF/ICC/XMP metadata
+ * (including GPS location), is discarded: sharp's pipeline only carries
+ * metadata forward when withMetadata() is called, which this never does.
+ * The old object (if any) is deleted from storage only after the new one is
+ * both stored and saved to the database, so a failed upload never leaves
+ * the vault without a cover.
+ */
+operatorVaultsRouter.post("/operator/vaults/:vaultId/cover", requireOperator, rawImageBody, async (req, res, next) => {
+  try {
+    const { vaultId } = GetVaultSetupDetailParams.parse(req.params);
+    const buffer = req.body;
+    if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+      res.status(400).json({ error: "No file was uploaded." });
+      return;
+    }
+    if (buffer.length > COVER_MAX_BYTES) {
+      res.status(400).json({ error: "File exceeds the 10 MB limit." });
+      return;
+    }
+
+    let metadata;
+    try {
+      metadata = await sharp(buffer).metadata();
+    } catch {
+      res.status(400).json({ error: "File must be a JPEG or PNG image." });
+      return;
+    }
+    if (metadata.format !== "jpeg" && metadata.format !== "png") {
+      res.status(400).json({ error: "File must be a JPEG or PNG image." });
+      return;
+    }
+    const contentType = metadata.format === "png" ? "image/png" : "image/jpeg";
+
+    let pipeline = sharp(buffer).rotate().resize({
+      width: 1600,
+      height: 1600,
+      fit: "inside",
+      withoutEnlargement: true,
+    });
+    pipeline = metadata.format === "png" ? pipeline.png() : pipeline.jpeg();
+    const processed = await pipeline.toBuffer();
+
+    const objectPath = await objectStorageService.uploadEntityBuffer(processed, contentType, "covers");
+    const { previousObjectKey } = await setVaultCover({ vaultId, operatorId: req.account!.id, coverObjectKey: objectPath });
+    if (previousObjectKey) {
+      await objectStorageService.deleteObjectEntity(previousObjectKey);
+    }
+    res.json({ coverObjectKey: objectPath });
+  } catch (error) {
+    if (error instanceof Error && error.message.toLowerCase().includes("not found")) { res.status(404).json({ error: error.message }); return; }
+    if (error instanceof Error && error.message.toLowerCase().includes("lockbox")) { res.status(403).json({ error: error.message }); return; }
+    next(error);
+  }
+});
+
+operatorVaultsRouter.delete("/operator/vaults/:vaultId/cover", requireOperator, async (req, res, next) => {
+  try {
+    const { vaultId } = GetVaultSetupDetailParams.parse(req.params);
+    const { previousObjectKey } = await removeVaultCover({ vaultId, operatorId: req.account!.id });
+    if (previousObjectKey) {
+      await objectStorageService.deleteObjectEntity(previousObjectKey);
+    }
+    res.json({ coverObjectKey: null });
+  } catch (error) {
+    if (error instanceof Error && error.message.toLowerCase().includes("not found")) { res.status(404).json({ error: error.message }); return; }
+    next(error);
+  }
+});
+
+operatorVaultsRouter.patch("/operator/vaults/:vaultId/guest-layout", requireOperator, async (req, res, next) => {
+  try {
+    const { vaultId } = GetVaultSetupDetailParams.parse(req.params);
+    const body = UpdateVaultGuestLayoutBody.parse(req.body);
+    const result = await setVaultGuestLayout({ vaultId, operatorId: req.account!.id, guestLayout: body.guestLayout });
+    res.json(result);
   } catch (error) {
     if (error instanceof Error && error.message.toLowerCase().includes("not found")) { res.status(404).json({ error: error.message }); return; }
     badRequestOr(error, res, next);

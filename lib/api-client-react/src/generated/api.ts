@@ -77,6 +77,8 @@ import type {
   GiftResendResult,
   GuestEmailSubscriptionInput,
   GuestEmailSubscriptionResult,
+  GuestLayoutInfo,
+  GuestLayoutInput,
   GuestPersonalReport,
   GuestSubmissionConfirmation,
   GuestSubmissionInput,
@@ -124,6 +126,7 @@ import type {
   VaultBillingStatus,
   VaultCheckoutInput,
   VaultCheckoutSession,
+  VaultCoverInfo,
   VaultHealthReport,
   VaultPrompt,
   VaultPromptList,
@@ -5077,6 +5080,221 @@ export const useUpdateVaultSetup = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateVaultSetupMutationOptions(options));
+    }
+
+export const getUploadVaultCoverUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/cover`
+}
+
+/**
+ * @summary Upload a vault's cover photo (paid tiers only); replaces any existing photo
+ */
+export const uploadVaultCover = async (vaultId: string,
+    uploadVaultCoverBody: Blob, options?: Parameters<typeof customFetch>[1]): Promise<VaultCoverInfo> => {
+
+  return customFetch<VaultCoverInfo>(getUploadVaultCoverUrl(vaultId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'image/jpeg', ...options?.headers },
+    body: uploadVaultCoverBody
+  }
+);}
+
+
+
+
+
+export const getUploadVaultCoverMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadVaultCover>>, TError,{vaultId: string;data: BodyType<Blob>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadVaultCover>>, TError,{vaultId: string;data: BodyType<Blob>}, TContext> => {
+
+const mutationKey = ['uploadVaultCover'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadVaultCover>>, {vaultId: string;data: BodyType<Blob>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  uploadVaultCover(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadVaultCoverMutationResult = NonNullable<Awaited<ReturnType<typeof uploadVaultCover>>>
+    export type UploadVaultCoverMutationBody = BodyType<Blob>
+    export type UploadVaultCoverMutationError = ErrorType<void>
+
+    /**
+ * @summary Upload a vault's cover photo (paid tiers only); replaces any existing photo
+ */
+export const useUploadVaultCover = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadVaultCover>>, TError,{vaultId: string;data: BodyType<Blob>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadVaultCover>>,
+        TError,
+        {vaultId: string;data: BodyType<Blob>},
+        TContext
+      > => {
+      return useMutation(getUploadVaultCoverMutationOptions(options));
+    }
+
+export const getRemoveVaultCoverUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/cover`
+}
+
+/**
+ * @summary Remove a vault's uploaded cover photo, reverting to the vault type's silhouette
+ */
+export const removeVaultCover = async (vaultId: string, options?: Parameters<typeof customFetch>[1]): Promise<VaultCoverInfo> => {
+
+  return customFetch<VaultCoverInfo>(getRemoveVaultCoverUrl(vaultId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveVaultCoverMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeVaultCover>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeVaultCover>>, TError,{vaultId: string}, TContext> => {
+
+const mutationKey = ['removeVaultCover'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeVaultCover>>, {vaultId: string}> = (props) => {
+          const {vaultId} = props ?? {};
+
+          return  removeVaultCover(vaultId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveVaultCoverMutationResult = NonNullable<Awaited<ReturnType<typeof removeVaultCover>>>
+
+    export type RemoveVaultCoverMutationError = ErrorType<void>
+
+    /**
+ * @summary Remove a vault's uploaded cover photo, reverting to the vault type's silhouette
+ */
+export const useRemoveVaultCover = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeVaultCover>>, TError,{vaultId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeVaultCover>>,
+        TError,
+        {vaultId: string},
+        TContext
+      > => {
+      return useMutation(getRemoveVaultCoverMutationOptions(options));
+    }
+
+export const getUpdateVaultGuestLayoutUrl = (vaultId: string,) => {
+
+
+
+
+  return `/api/operator/vaults/${vaultId}/guest-layout`
+}
+
+/**
+ * @summary Change how guests see the prompt list; allowed at any vault status
+ */
+export const updateVaultGuestLayout = async (vaultId: string,
+    guestLayoutInput: GuestLayoutInput, options?: Parameters<typeof customFetch>[1]): Promise<GuestLayoutInfo> => {
+
+  return customFetch<GuestLayoutInfo>(getUpdateVaultGuestLayoutUrl(vaultId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(guestLayoutInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateVaultGuestLayoutMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVaultGuestLayout>>, TError,{vaultId: string;data: BodyType<GuestLayoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateVaultGuestLayout>>, TError,{vaultId: string;data: BodyType<GuestLayoutInput>}, TContext> => {
+
+const mutationKey = ['updateVaultGuestLayout'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateVaultGuestLayout>>, {vaultId: string;data: BodyType<GuestLayoutInput>}> = (props) => {
+          const {vaultId,data} = props ?? {};
+
+          return  updateVaultGuestLayout(vaultId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateVaultGuestLayoutMutationResult = NonNullable<Awaited<ReturnType<typeof updateVaultGuestLayout>>>
+    export type UpdateVaultGuestLayoutMutationBody = BodyType<GuestLayoutInput>
+    export type UpdateVaultGuestLayoutMutationError = ErrorType<void>
+
+    /**
+ * @summary Change how guests see the prompt list; allowed at any vault status
+ */
+export const useUpdateVaultGuestLayout = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateVaultGuestLayout>>, TError,{vaultId: string;data: BodyType<GuestLayoutInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateVaultGuestLayout>>,
+        TError,
+        {vaultId: string;data: BodyType<GuestLayoutInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateVaultGuestLayoutMutationOptions(options));
     }
 
 export const getPreviewVaultScheduleUrl = (vaultId: string,) => {

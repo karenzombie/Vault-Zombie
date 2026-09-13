@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { VaultSetupDetailEntitledPlanTier } from './vaultSetupDetailEntitledPlanTier';
+import type { VaultSetupDetailGuestLayout } from './vaultSetupDetailGuestLayout';
 import type { VaultSetupDetailPlanTier } from './vaultSetupDetailPlanTier';
 import type { VaultSetupDetailRevealSchedule } from './vaultSetupDetailRevealSchedule';
 import type { VaultSetupDetailStatus } from './vaultSetupDetailStatus';
@@ -18,6 +19,7 @@ export interface VaultSetupDetail {
   entitledPlanTier: VaultSetupDetailEntitledPlanTier;
   vaultTypeId: string;
   vaultTypeName: string;
+  vaultTypeSlug: string;
   /** @nullable */
   revealSchedule: VaultSetupDetailRevealSchedule;
   /** @nullable */
@@ -29,4 +31,7 @@ export interface VaultSetupDetail {
      * @nullable
      */
   milestoneLabel: string | null;
+  /** @nullable */
+  coverObjectKey: string | null;
+  guestLayout: VaultSetupDetailGuestLayout;
 }

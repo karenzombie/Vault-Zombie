@@ -184,16 +184,67 @@ export async function getVaultSetupDetail(vaultId: string, operatorId: string) {
     entitledPlanTier: vaultsTable.entitledPlanTier,
     vaultTypeId: vaultsTable.vaultTypeId,
     vaultTypeName: vaultTypesTable.name,
+    vaultTypeSlug: vaultTypesTable.slug,
     revealSchedule: vaultsTable.revealSchedule,
     anchorDate: vaultsTable.anchorDate,
     milestoneDate: vaultsTable.milestoneDate,
     milestoneLabel: vaultsTable.milestoneLabel,
+    coverObjectKey: vaultsTable.coverObjectKey,
+    guestLayout: vaultsTable.guestLayout,
   }).from(vaultsTable)
     .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id))
     .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId)))
     .limit(1);
   if (!row) throw new Error("Vault not found.");
   return row;
+}
+
+/**
+ * Sets or replaces a vault's uploaded cover photo (Stage 4.1). Lockbox never
+ * gets an upload control in the UI, but this is enforced here too so the
+ * restriction cannot be bypassed by calling the endpoint directly. Returns
+ * the previous coverObjectKey so the caller can delete that object from
+ * storage after the database write commits; the cover is not sealed content,
+ * so this is allowed at any vault status, not just draft.
+ */
+export async function setVaultCover(input: { vaultId: string; operatorId: string; coverObjectKey: string }) {
+  const [vault] = await db.select({ planTier: vaultsTable.planTier, coverObjectKey: vaultsTable.coverObjectKey })
+    .from(vaultsTable)
+    .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId)))
+    .limit(1);
+  if (!vault) throw new Error("Vault not found.");
+  if (vault.planTier === "lockbox") throw new Error("Lockbox vaults cannot upload a cover photo.");
+  const previousObjectKey = vault.coverObjectKey;
+  await db.update(vaultsTable).set({ coverObjectKey: input.coverObjectKey })
+    .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId)));
+  return { previousObjectKey };
+}
+
+/** Removes a vault's uploaded cover photo, reverting to the vault type's silhouette (Stage 4.1). */
+export async function removeVaultCover(input: { vaultId: string; operatorId: string }) {
+  const [vault] = await db.select({ coverObjectKey: vaultsTable.coverObjectKey })
+    .from(vaultsTable)
+    .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId)))
+    .limit(1);
+  if (!vault) throw new Error("Vault not found.");
+  const previousObjectKey = vault.coverObjectKey;
+  await db.update(vaultsTable).set({ coverObjectKey: null })
+    .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId)));
+  return { previousObjectKey };
+}
+
+/**
+ * Changes how guests see the prompt list (Stage 4.2). Unlike the rest of
+ * setup, this is not draft-only: the build brief requires it changeable at
+ * any time, including after the vault is sealed, so there is no status
+ * check here.
+ */
+export async function setVaultGuestLayout(input: { vaultId: string; operatorId: string; guestLayout: "one_at_a_time" | "all_prompts" }) {
+  const [updated] = await db.update(vaultsTable).set({ guestLayout: input.guestLayout })
+    .where(and(eq(vaultsTable.id, input.vaultId), eq(vaultsTable.operatorId, input.operatorId)))
+    .returning({ guestLayout: vaultsTable.guestLayout });
+  if (!updated) throw new Error("Vault not found.");
+  return updated;
 }
 
 export async function updateDraftVaultSetup(input: {

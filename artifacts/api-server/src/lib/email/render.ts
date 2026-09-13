@@ -508,7 +508,7 @@ const CHECKLIST_LABELS = {
   revealSchedule: "Choose your reveal schedule",
   prompts: "Pick your prompts, and add your own",
   guestLayout: "Choose how guests see the prompts: one at a time, or all on one page",
-  cover: "Pick a cover",
+  cover: "Add your own cover photo, if you want one",
   sealed: "Seal your vault",
 } as const;
 
@@ -534,7 +534,9 @@ async function buildH2(row: EmailDelivery): Promise<Doc> {
     { done: Boolean(vault.revealSchedule), label: CHECKLIST_LABELS.revealSchedule },
     { done: promptCount > 0, label: CHECKLIST_LABELS.prompts },
     { done: true, label: CHECKLIST_LABELS.guestLayout },
-    { done: Boolean(vault.coverObjectKey), label: CHECKLIST_LABELS.cover },
+    // Lockbox has no cover upload control at all, so this line is omitted
+    // rather than shown as permanently unchecked.
+    ...(vault.planTier === "lockbox" ? [] : [{ done: Boolean(vault.coverObjectKey), label: CHECKLIST_LABELS.cover }]),
     { done: vault.status === "sealed", label: CHECKLIST_LABELS.sealed },
   ];
   return h2VaultCreated({ vaultId: row.vaultId, vaultType: vaultType.name, planTier: vault.planTier, checklist });

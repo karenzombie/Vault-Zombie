@@ -8,8 +8,11 @@ import {
   useGetSealedVaultDateInfo,
   useChangeSealedVaultEventDate,
   usePreviewSealedVaultDateChange,
+  useUpdateVaultGuestLayout,
   getGetSealedVaultDateInfoQueryKey,
+  getGetVaultHealthReportQueryKey,
   type RevealSlotPreview,
+  type GuestLayoutInputGuestLayout,
 } from "@workspace/api-client-react";
 import type { OperatorVaultListVaultsItem } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -165,6 +168,7 @@ export function OperatorReveal({ vaultId }: { vaultId: string }) {
       <div className="flex justify-center px-3 sm:px-4 pt-3">
         <div className="w-full max-w-lg">
           <EventDateChangeSection vaultId={vaultId} />
+          {healthData && <GuestLayoutChangeSection vaultId={vaultId} guestLayout={healthData.guestLayout} />}
         </div>
       </div>
 
@@ -328,6 +332,58 @@ function formatAnchorDate(value: string): string {
 
 /** Flow1 Build Stages 3.5: the sealed-vault event date control. Lives on the
  * vault's live page, not in setup, since setup is draft-only. */
+const SEALED_GUEST_LAYOUT_OPTIONS: { value: GuestLayoutInputGuestLayout; name: string }[] = [
+  { value: "one_at_a_time", name: "One prompt at a time" },
+  { value: "all_prompts", name: "All on one page" },
+];
+
+/** Sealed-page copy of the guest-layout control from the setup screen (see CoverSection's sibling GuestLayoutSection in vault-setup.tsx). Kept as a separate small component rather than a shared one, since the two pages compose it differently. */
+function GuestLayoutChangeSection({ vaultId, guestLayout }: { vaultId: string; guestLayout: GuestLayoutInputGuestLayout }) {
+  const queryClient = useQueryClient();
+  const update = useUpdateVaultGuestLayout();
+  const [open, setOpen] = useState(false);
+
+  function choose(next: GuestLayoutInputGuestLayout) {
+    update.mutate(
+      { vaultId, data: { guestLayout: next } },
+      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetVaultHealthReportQueryKey(vaultId) }) },
+    );
+  }
+
+  const currentLabel = SEALED_GUEST_LAYOUT_OPTIONS.find((o) => o.value === guestLayout)?.name ?? guestLayout;
+
+  return (
+    <div className="mb-2 bg-card border border-border rounded-lg px-3 py-2">
+      <button
+        type="button"
+        data-testid="button-toggle-guest-layout"
+        className="flex items-center justify-between w-full text-xs font-bold text-ink"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>Guest layout: {currentLabel}</span>
+        <span className="text-bronze">{open ? "Close" : "Change"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-2">
+          {SEALED_GUEST_LAYOUT_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              data-testid={`button-guest-layout-${option.value}`}
+              disabled={update.isPending}
+              onClick={() => choose(option.value)}
+              className={`block w-full text-left text-xs rounded-md px-3 py-2 border ${guestLayout === option.value ? "border-vault-accent bg-bronze-wash/40 font-bold text-ink" : "border-border text-text-2 hover:bg-muted/50"}`}
+            >
+              {option.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EventDateChangeSection({ vaultId }: { vaultId: string }) {
   const queryClient = useQueryClient();
   const info = useGetSealedVaultDateInfo(vaultId);

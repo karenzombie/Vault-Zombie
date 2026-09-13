@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GuestTiming } from './guestTiming';
+import type { VaultHealthReportGuestLayout } from './vaultHealthReportGuestLayout';
 import type { VaultHealthReportPlanTier } from './vaultHealthReportPlanTier';
 
 export interface VaultHealthReport {
@@ -23,4 +24,8 @@ export interface VaultHealthReport {
      * @nullable
      */
   referralCount: number | null;
+  vaultTypeSlug: string;
+  /** @nullable */
+  coverObjectKey: string | null;
+  guestLayout: VaultHealthReportGuestLayout;
 }

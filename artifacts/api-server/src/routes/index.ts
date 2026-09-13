@@ -15,11 +15,13 @@ import adminExportRouter from "./admin-export";
 import adminContentRouter from "./admin-content";
 import adminBackupRouter from "./admin-backup";
 import legalRouter from "./legal";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(legalRouter);
+router.use(storageRouter);
 router.use(authRouter);
 router.use(guestRouter);
 router.use(operatorRevealRouter);

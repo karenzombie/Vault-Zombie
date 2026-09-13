@@ -775,6 +775,45 @@ paths:
         "400": { description: "Invalid schedule for this plan, or vault is not a draft" }
         "401": { description: Authentication required }
         "404": { description: "Vault not found or not owned by this host" }
+  /operator/vaults/{vaultId}/cover:
+    post:
+      operationId: uploadVaultCover
+      tags: [operator]
+      summary: Upload a vault's cover photo (paid tiers only); replaces any existing photo
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content:
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+      responses:
+        "200": { description: Cover uploaded, content: { application/json: { schema: { $ref: "#/components/schemas/VaultCoverInfo" } } } }
+        "400": { description: "File is not a valid JPEG/PNG, or exceeds the size limit" }
+        "401": { description: Authentication required }
+        "403": { description: Lockbox vaults cannot upload a cover photo }
+        "404": { description: "Vault not found or not owned by this host" }
+    delete:
+      operationId: removeVaultCover
+      tags: [operator]
+      summary: Remove a vault's uploaded cover photo, reverting to the vault type's silhouette
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      responses:
+        "200": { description: Cover removed, content: { application/json: { schema: { $ref: "#/components/schemas/VaultCoverInfo" } } } }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
+  /operator/vaults/{vaultId}/guest-layout:
+    patch:
+      operationId: updateVaultGuestLayout
+      tags: [operator]
+      summary: Change how guests see the prompt list; allowed at any vault status
+      parameters: [{ $ref: "#/components/parameters/VaultId" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/GuestLayoutInput" } } }
+      responses:
+        "200": { description: Guest layout saved, content: { application/json: { schema: { $ref: "#/components/schemas/GuestLayoutInfo" } } } }
+        "401": { description: Authentication required }
+        "404": { description: "Vault not found or not owned by this host" }
   /operator/vaults/{vaultId}/setup/schedule-preview:
     post:
       operationId: previewVaultSchedule
@@ -1256,7 +1295,7 @@ components:
         requiredSubjectTokens: { type: array, items: { type: string } }
     VaultSetupDetail:
       type: object
-      required: [id, name, status, planTier, entitledPlanTier, vaultTypeId, vaultTypeName, revealSchedule, anchorDate, milestoneDate, milestoneLabel]
+      required: [id, name, status, planTier, entitledPlanTier, vaultTypeId, vaultTypeName, vaultTypeSlug, revealSchedule, anchorDate, milestoneDate, milestoneLabel, coverObjectKey, guestLayout]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -1265,10 +1304,13 @@ components:
         entitledPlanTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
         vaultTypeId: { type: string, format: uuid }
         vaultTypeName: { type: string }
+        vaultTypeSlug: { type: string }
         revealSchedule: { type: ["string", "null"], enum: [weekly_sprint, monthly_x3, monthly_year, half_then_annual, annual_keepsake, null] }
         anchorDate: { type: ["string", "null"], format: date }
         milestoneDate: { type: ["string", "null"], format: date }
         milestoneLabel: { type: ["string", "null"], maxLength: 60 }
+        coverObjectKey: { type: ["string", "null"] }
+        guestLayout: { type: string, enum: [one_at_a_time, all_prompts] }
     UpdateVaultSetupInput:
       type: object
       required: [planTier]
@@ -1334,6 +1376,21 @@ components:
       required: [orderedVaultQuestionIds]
       properties:
         orderedVaultQuestionIds: { type: array, items: { type: string, format: uuid }, minItems: 1 }
+    VaultCoverInfo:
+      type: object
+      required: [coverObjectKey]
+      properties:
+        coverObjectKey: { type: ["string", "null"], description: "Object storage path for the uploaded cover photo, or null to use the vault type's silhouette." }
+    GuestLayoutInput:
+      type: object
+      required: [guestLayout]
+      properties:
+        guestLayout: { type: string, enum: [one_at_a_time, all_prompts] }
+    GuestLayoutInfo:
+      type: object
+      required: [guestLayout]
+      properties:
+        guestLayout: { type: string, enum: [one_at_a_time, all_prompts] }
     SealedVaultDateInfo:
       type: object
       required: [anchorDate, revealSchedule, locked]
@@ -2099,7 +2156,7 @@ components:
         scored: { type: integer }
     VaultHealthReport:
       type: object
-      required: [vaultId, planTier, status, predictionCount, guestCount, revealSlots, completedRevealCount, nextRevealDate, referralCount]
+      required: [vaultId, planTier, status, predictionCount, guestCount, revealSlots, completedRevealCount, nextRevealDate, referralCount, vaultTypeSlug, coverObjectKey, guestLayout]
       properties:
         vaultId: { type: string, format: uuid }
         planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
@@ -2110,6 +2167,9 @@ components:
         completedRevealCount: { type: integer }
         nextRevealDate: { type: ["string", "null"], format: date }
         referralCount: { type: ["integer", "null"], description: "Accounts referred by this vault's link; null for Lockbox, which never sees referral counts." }
+        vaultTypeSlug: { type: string }
+        coverObjectKey: { type: ["string", "null"] }
+        guestLayout: { type: string, enum: [one_at_a_time, all_prompts] }
     ReportAnswer:
       allOf:
         - $ref: "#/components/schemas/AnswerValue"

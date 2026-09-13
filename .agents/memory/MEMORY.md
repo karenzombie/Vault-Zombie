@@ -3,3 +3,4 @@
 - [Prelaunch email constraints](prelaunch-email-constraints.md) — development now sends real transactional email like production; do not bypass authentication to inspect protected admin screens.
 - [Versioned legal consent](versioned-legal-consent.md) — bind signup consent to server-signed one-time intents; never trust Clerk unsafe metadata as evidence.
 - [Refund audit phases](refund-audit-phases.md) — audit refund intent and completion separately around Stripe, retaining a monotonic succeeded recovery state.
+- [Server-side upload processing](server-side-upload-processing.md) — raw-body + sharp on the server, not presigned direct-to-GCS, whenever an upload needs resize/reencode/EXIF-strip before storage.

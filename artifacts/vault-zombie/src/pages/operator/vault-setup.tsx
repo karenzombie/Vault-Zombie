@@ -23,11 +23,15 @@ import {
   useAddCustomPrompt,
   useToggleVaultPrompt,
   useReorderVaultPrompts,
+  useUploadVaultCover,
+  useRemoveVaultCover,
+  useUpdateVaultGuestLayout,
   getListVaultPromptsQueryKey,
   getGetVaultSetupDetailQueryKey,
   type VaultPrompt,
   type RevealSlotPreview,
   type SchedulePreviewInputSchedule,
+  type GuestLayoutInputGuestLayout,
 } from "@workspace/api-client-react";
 import { PLAN_POLICY, type RevealSchedule } from "@workspace/db/schedule";
 import { useQueryClient } from "@tanstack/react-query";
@@ -40,6 +44,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronDown, ChevronRight, GripVertical, Plus } from "lucide-react";
 import { getTierLabel } from "@/lib/utils";
+import { VAULT_ART } from "./operator-page";
 
 /**
  * /operator/vaults/:vaultId/setup (Flow1 Build Stages 3.1-3.4). Draft-only
@@ -99,6 +104,8 @@ export default function VaultSetupPage({ vaultId }: { vaultId: string }) {
 
         <EventDateSection vaultId={vaultId} detail={detail.data} />
         {detail.data.planTier === "deep_vault" && <MilestoneSection vaultId={vaultId} detail={detail.data} />}
+        <CoverSection vaultId={vaultId} detail={detail.data} />
+        <GuestLayoutSection vaultId={vaultId} guestLayout={detail.data.guestLayout} />
         <ScheduleSection vaultId={vaultId} detail={detail.data} />
         <PromptsSection vaultId={vaultId} />
 
@@ -231,6 +238,130 @@ function MilestoneSection({ vaultId, detail }: { vaultId: string; detail: { anch
           />
         </div>
       </div>
+    </SectionCard>
+  );
+}
+
+const ACCEPTED_COVER_TYPES = "image/jpeg,image/png";
+
+/**
+ * Stage 4.1. Every vault has a cover: the vault type's silhouette by
+ * default, or an uploaded photo on a paid tier. Lockbox gets no upload
+ * control at all, not even a disabled one, so it only ever sees the
+ * silhouette here.
+ */
+function CoverSection({ vaultId, detail }: { vaultId: string; detail: { planTier: any; vaultTypeSlug: string; coverObjectKey: string | null } }) {
+  const queryClient = useQueryClient();
+  const upload = useUploadVaultCover();
+  const remove = useRemoveVaultCover();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState<string | null>(null);
+  const isLockbox = detail.planTier === "lockbox";
+  const silhouette = VAULT_ART[detail.vaultTypeSlug];
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) });
+  }
+
+  function handleFile(file: File | undefined) {
+    setError(null);
+    if (!file) return;
+    upload.mutate(
+      { vaultId, data: file },
+      {
+        onSuccess: invalidate,
+        onError: (err: any) => setError(err?.message ?? "Could not upload that photo."),
+      },
+    );
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function handleRemove() {
+    setError(null);
+    remove.mutate({ vaultId }, { onSuccess: invalidate, onError: (err: any) => setError(err?.message ?? "Could not remove the photo.") });
+  }
+
+  const coverSrc = detail.coverObjectKey
+    ? `/api/storage${detail.coverObjectKey}`
+    : silhouette
+      ? `${import.meta.env.BASE_URL}vault-art/${silhouette}`
+      : null;
+
+  return (
+    <SectionCard title="Your cover">
+      <div className="flex items-center gap-5">
+        <div className="w-24 h-24 rounded-xl border border-border bg-bronze-wash/40 flex items-center justify-center overflow-hidden shrink-0">
+          {coverSrc ? (
+            <img src={coverSrc} alt="" className="w-full h-full object-cover" data-testid="img-vault-cover" />
+          ) : (
+            <span className="text-xs text-gray">No image</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          {isLockbox ? (
+            <p className="text-sm text-text-2">This is your vault's cover. Photo uploads are available on paid plans.</p>
+          ) : (
+            <>
+              <p className="text-sm text-text-2 mb-3">{detail.coverObjectKey ? "Your uploaded photo." : "Your vault type's default cover."}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept={ACCEPTED_COVER_TYPES}
+                  data-testid="input-cover-file"
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                  disabled={upload.isPending}
+                />
+                {detail.coverObjectKey && (
+                  <Button type="button" variant="secondary" size="sm" data-testid="button-remove-cover" disabled={remove.isPending} onClick={handleRemove}>
+                    {remove.isPending ? "Removing…" : "Remove photo"}
+                  </Button>
+                )}
+              </div>
+              {upload.isPending && <p className="text-xs text-text-2 mt-2">Uploading…</p>}
+              {error && <p className="text-sm text-destructive mt-2" data-testid="text-cover-error">{error}</p>}
+            </>
+          )}
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
+
+const GUEST_LAYOUT_OPTIONS: { value: GuestLayoutInputGuestLayout; name: string; desc: string }[] = [
+  { value: "one_at_a_time", name: "One prompt at a time", desc: "One prompt per screen with a progress indicator. Best for phones at an event." },
+  { value: "all_prompts", name: "All on one page", desc: "Every prompt on one scrolling page with a single submit. Best for a laptop." },
+];
+
+/** Stage 4.2. Changeable at any time, including after the vault is sealed (see the sealed-page copy of this control in operator-page.tsx). */
+function GuestLayoutSection({ vaultId, guestLayout }: { vaultId: string; guestLayout: GuestLayoutInputGuestLayout }) {
+  const queryClient = useQueryClient();
+  const update = useUpdateVaultGuestLayout();
+
+  function choose(next: GuestLayoutInputGuestLayout) {
+    update.mutate(
+      { vaultId, data: { guestLayout: next } },
+      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) }) },
+    );
+  }
+
+  return (
+    <SectionCard title="How your guests see the prompts">
+      <RadioGroup value={guestLayout} onValueChange={(v) => choose(v as GuestLayoutInputGuestLayout)} className="gap-3">
+        {GUEST_LAYOUT_OPTIONS.map((option) => (
+          <label
+            key={option.value}
+            data-testid={`option-guest-layout-${option.value}`}
+            className={`flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-colors ${guestLayout === option.value ? "border-vault-accent bg-bronze-wash/30" : "border-border hover:bg-muted/50"}`}
+          >
+            <RadioGroupItem value={option.value} id={`guest-layout-${option.value}`} className="mt-1" />
+            <div>
+              <p className="font-bold text-ink">{option.name}</p>
+              <p className="text-sm text-text-2">{option.desc}</p>
+            </div>
+          </label>
+        ))}
+      </RadioGroup>
     </SectionCard>
   );
 }

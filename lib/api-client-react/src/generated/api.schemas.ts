@@ -293,6 +293,14 @@ export const VaultSetupDetailRevealSchedule = {
   annual_keepsake: 'annual_keepsake',
 } as const;
 
+export type VaultSetupDetailGuestLayout = typeof VaultSetupDetailGuestLayout[keyof typeof VaultSetupDetailGuestLayout];
+
+
+export const VaultSetupDetailGuestLayout = {
+  one_at_a_time: 'one_at_a_time',
+  all_prompts: 'all_prompts',
+} as const;
+
 export interface VaultSetupDetail {
   id: string;
   name: string;
@@ -301,6 +309,7 @@ export interface VaultSetupDetail {
   entitledPlanTier: VaultSetupDetailEntitledPlanTier;
   vaultTypeId: string;
   vaultTypeName: string;
+  vaultTypeSlug: string;
   /** @nullable */
   revealSchedule: VaultSetupDetailRevealSchedule;
   /** @nullable */
@@ -312,6 +321,9 @@ export interface VaultSetupDetail {
      * @nullable
      */
   milestoneLabel: string | null;
+  /** @nullable */
+  coverObjectKey: string | null;
+  guestLayout: VaultSetupDetailGuestLayout;
 }
 
 export type UpdateVaultSetupInputPlanTier = typeof UpdateVaultSetupInputPlanTier[keyof typeof UpdateVaultSetupInputPlanTier];
@@ -473,6 +485,38 @@ export interface TogglePromptInput {
 export interface ReorderPromptsInput {
   /** @minItems 1 */
   orderedVaultQuestionIds: string[];
+}
+
+export interface VaultCoverInfo {
+  /**
+     * Object storage path for the uploaded cover photo, or null to use the vault type's silhouette.
+     * @nullable
+     */
+  coverObjectKey: string | null;
+}
+
+export type GuestLayoutInputGuestLayout = typeof GuestLayoutInputGuestLayout[keyof typeof GuestLayoutInputGuestLayout];
+
+
+export const GuestLayoutInputGuestLayout = {
+  one_at_a_time: 'one_at_a_time',
+  all_prompts: 'all_prompts',
+} as const;
+
+export interface GuestLayoutInput {
+  guestLayout: GuestLayoutInputGuestLayout;
+}
+
+export type GuestLayoutInfoGuestLayout = typeof GuestLayoutInfoGuestLayout[keyof typeof GuestLayoutInfoGuestLayout];
+
+
+export const GuestLayoutInfoGuestLayout = {
+  one_at_a_time: 'one_at_a_time',
+  all_prompts: 'all_prompts',
+} as const;
+
+export interface GuestLayoutInfo {
+  guestLayout: GuestLayoutInfoGuestLayout;
 }
 
 /**
@@ -1993,6 +2037,14 @@ export const VaultHealthReportPlanTier = {
   deep_vault: 'deep_vault',
 } as const;
 
+export type VaultHealthReportGuestLayout = typeof VaultHealthReportGuestLayout[keyof typeof VaultHealthReportGuestLayout];
+
+
+export const VaultHealthReportGuestLayout = {
+  one_at_a_time: 'one_at_a_time',
+  all_prompts: 'all_prompts',
+} as const;
+
 export interface VaultHealthReport {
   vaultId: string;
   planTier: VaultHealthReportPlanTier;
@@ -2008,6 +2060,10 @@ export interface VaultHealthReport {
      * @nullable
      */
   referralCount: number | null;
+  vaultTypeSlug: string;
+  /** @nullable */
+  coverObjectKey: string | null;
+  guestLayout: VaultHealthReportGuestLayout;
 }
 
 /**

@@ -4,6 +4,7 @@ import { readUnlockedAnswers } from "./sealed-content";
 import { answerVerdictsTable, answersTable, guestsTable, questionOutcomesTable, submissionsTable } from "./schema/predictions";
 import { questionOptionsTable, questionsTable, subcategoriesTable } from "./schema/content";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
+import { vaultTypesTable } from "./schema/content";
 import { accountsTable } from "./schema/accounts";
 
 export class ReportError extends Error {
@@ -135,9 +136,11 @@ export async function getVaultHealthReport(vaultId: string, operatorId: string) 
     .from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vaultId)).orderBy(revealSlotsTable.displayOrder);
   const today = new Date().toISOString().slice(0, 10);
   const referralCount = vault.entitledPlanTier === "lockbox" ? null : Number((await db.select({ value: count() }).from(accountsTable).where(eq(accountsTable.referredByVaultId, vaultId)))[0]?.value ?? 0);
+  const [vaultType] = await db.select({ slug: vaultTypesTable.slug }).from(vaultTypesTable).where(eq(vaultTypesTable.id, vault.vaultTypeId)).limit(1);
   return { vaultId, planTier: vault.entitledPlanTier, status: vault.status, predictionCount: Number(predictions.value),
     guestCount: Number(guests.value), revealSlots: slots, completedRevealCount: slots.filter((s) => s.revealDate <= today).length,
-    nextRevealDate: slots.find((s) => s.revealDate > today)?.revealDate ?? null, referralCount };
+    nextRevealDate: slots.find((s) => s.revealDate > today)?.revealDate ?? null, referralCount,
+    vaultTypeSlug: vaultType?.slug ?? "", coverObjectKey: vault.coverObjectKey, guestLayout: vault.guestLayout };
 }
 export async function getQuestionReport(vaultId: string, operatorId: string, questionId: string) {
   const data = await reportData(vaultId, operatorId);

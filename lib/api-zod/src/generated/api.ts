@@ -1689,10 +1689,13 @@ export const GetVaultSetupDetailResponse = zod.object({
   "entitledPlanTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
   "vaultTypeId": zod.string().uuid(),
   "vaultTypeName": zod.string(),
+  "vaultTypeSlug": zod.string(),
   "revealSchedule": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullable(),
   "anchorDate": zod.coerce.date().nullable(),
   "milestoneDate": zod.coerce.date().nullable(),
-  "milestoneLabel": zod.string().max(getVaultSetupDetailResponseMilestoneLabelMax).nullable()
+  "milestoneLabel": zod.string().max(getVaultSetupDetailResponseMilestoneLabelMax).nullable(),
+  "coverObjectKey": zod.string().nullable(),
+  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
 })
 
 
@@ -1727,10 +1730,53 @@ export const UpdateVaultSetupResponse = zod.object({
   "entitledPlanTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
   "vaultTypeId": zod.string().uuid(),
   "vaultTypeName": zod.string(),
+  "vaultTypeSlug": zod.string(),
   "revealSchedule": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullable(),
   "anchorDate": zod.coerce.date().nullable(),
   "milestoneDate": zod.coerce.date().nullable(),
-  "milestoneLabel": zod.string().max(updateVaultSetupResponseMilestoneLabelMax).nullable()
+  "milestoneLabel": zod.string().max(updateVaultSetupResponseMilestoneLabelMax).nullable(),
+  "coverObjectKey": zod.string().nullable(),
+  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
+})
+
+
+/**
+ * @summary Upload a vault's cover photo (paid tiers only); replaces any existing photo
+ */
+export const UploadVaultCoverParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const UploadVaultCoverResponse = zod.object({
+  "coverObjectKey": zod.string().nullable().describe('Object storage path for the uploaded cover photo, or null to use the vault type\'s silhouette.')
+})
+
+
+/**
+ * @summary Remove a vault's uploaded cover photo, reverting to the vault type's silhouette
+ */
+export const RemoveVaultCoverParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const RemoveVaultCoverResponse = zod.object({
+  "coverObjectKey": zod.string().nullable().describe('Object storage path for the uploaded cover photo, or null to use the vault type\'s silhouette.')
+})
+
+
+/**
+ * @summary Change how guests see the prompt list; allowed at any vault status
+ */
+export const UpdateVaultGuestLayoutParams = zod.object({
+  "vaultId": zod.coerce.string().uuid()
+})
+
+export const UpdateVaultGuestLayoutBody = zod.object({
+  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
+})
+
+export const UpdateVaultGuestLayoutResponse = zod.object({
+  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
 })
 
 
@@ -2086,7 +2132,10 @@ export const GetVaultHealthReportResponse = zod.object({
 })),
   "completedRevealCount": zod.number().int(),
   "nextRevealDate": zod.coerce.date().nullable(),
-  "referralCount": zod.number().int().nullable().describe('Accounts referred by this vault\'s link; null for Lockbox, which never sees referral counts.')
+  "referralCount": zod.number().int().nullable().describe('Accounts referred by this vault\'s link; null for Lockbox, which never sees referral counts.'),
+  "vaultTypeSlug": zod.string(),
+  "coverObjectKey": zod.string().nullable(),
+  "guestLayout": zod.enum(['one_at_a_time', 'all_prompts'])
 })
 
 
