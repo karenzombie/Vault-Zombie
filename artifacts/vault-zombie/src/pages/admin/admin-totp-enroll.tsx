@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useUser } from "@clerk/react";
-import { isClerkAPIResponseError } from "@clerk/shared/error";
+import { useReverification, useUser } from "@clerk/react";
+import { isClerkAPIResponseError, isReverificationCancelledError } from "@clerk/react/errors";
 import { useLocation } from "wouter";
 import QRCode from "qrcode";
 
@@ -65,6 +65,22 @@ export default function AdminTotpEnrollPage() {
     };
   }, []);
 
+  // Clerk classifies adding/removing a second factor (TOTP, backup codes) as
+  // a sensitive operation requiring the session to be freshly verified at
+  // its strongest available level. createTOTP() only creates an unconfirmed
+  // draft secret and is not gated by this. verifyTOTP() and createBackupCode()
+  // both are: useReverification wraps each so Clerk can show its own
+  // verification prompt and retry the call once satisfied, instead of the
+  // call failing outright with a 403 that nothing prompts for.
+  const verifyTOTPReverified = useReverification((totpCode: string) => {
+    if (!user) throw new Error("Not signed in.");
+    return user.verifyTOTP({ code: totpCode });
+  });
+  const createBackupCodeReverified = useReverification(() => {
+    if (!user) throw new Error("Not signed in.");
+    return user.createBackupCode();
+  });
+
   useEffect(() => {
     if (!user) return;
     if (startedAttempt.current === attempt) return;
@@ -95,12 +111,16 @@ export default function AdminTotpEnrollPage() {
     setStage("verifying");
     setError(null);
     try {
-      await user.verifyTOTP({ code: code.trim() });
-      const backupCodeResource = await user.createBackupCode();
+      await verifyTOTPReverified(code.trim());
+      const backupCodeResource = await createBackupCodeReverified();
       setBackupCodes(backupCodeResource.codes ?? []);
       setStage("backup-codes");
     } catch (err) {
-      setError(describeSetupError(err));
+      if (isReverificationCancelledError(err)) {
+        setError("Verification was cancelled. Try again to finish setup.");
+      } else {
+        setError(describeSetupError(err));
+      }
       setStage("scan");
     }
   }
