@@ -150,7 +150,7 @@ export async function getQuestionReport(vaultId: string, operatorId: string, que
   const data = await reportData(vaultId, operatorId);
   const context = data.contexts.find((q) => q.id === questionId);
   if (!context) throw new ReportError("Unlocked question not found.");
-  return questionDto(context, data.answers, data.options, data.outcomes, data.verdictByAnswer);
+  return { ...questionDto(context, data.answers, data.options, data.outcomes, data.verdictByAnswer), vaultSubjectValues: data.vault.subjectValues };
 }
 export async function getRevealReport(vaultId: string, operatorId: string, slotId: string) {
   const data = await reportData(vaultId, operatorId);
@@ -158,7 +158,7 @@ export async function getRevealReport(vaultId: string, operatorId: string, slotI
     .from(revealSlotsTable).where(and(eq(revealSlotsTable.id, slotId), eq(revealSlotsTable.vaultId, vaultId))).limit(1);
   if (!slot) throw new ReportError("Reveal slot not found.");
   if (!data.answers.some((answer) => answer.revealSlotId === slotId)) throw new ReportError("No unlocked answers exist for this reveal slot.");
-  return { revealSlotId: slot.id, label: slot.label, revealDate: slot.revealDate,
+  return { revealSlotId: slot.id, label: slot.label, revealDate: slot.revealDate, vaultSubjectValues: data.vault.subjectValues,
     questions: data.contexts.filter((q) => data.answers.some((a) => a.vaultQuestionId === q.id && a.revealSlotId === slotId))
       .map((q) => questionDto(q, data.answers.filter((a) => a.revealSlotId === slotId), data.options, data.outcomes, data.verdictByAnswer)) };
 }
@@ -172,7 +172,7 @@ export async function getTimelineReport(vaultId: string, operatorId: string) {
 }
 export async function getAnswersArchive(vaultId: string, operatorId: string) {
   const data = await reportData(vaultId, operatorId); assertPaid(data.vault.entitledPlanTier);
-  return { questions: data.contexts.map((q) => questionDto(q, data.answers, data.options, data.outcomes, data.verdictByAnswer)) };
+  return { vaultSubjectValues: data.vault.subjectValues, questions: data.contexts.map((q) => questionDto(q, data.answers, data.options, data.outcomes, data.verdictByAnswer)) };
 }
 export async function getGuestPersonalReport(vaultId: string, operatorId: string, guestId: string) {
   const data = await reportData(vaultId, operatorId);
@@ -190,11 +190,13 @@ export async function getGuestPersonalReport(vaultId: string, operatorId: string
     scores.set(answer.guestId, (scores.get(answer.guestId) ?? 0) + ({ full: 1, half: .5, zero: 0 }[verdict.tier]));
   }
   const rank = score.scored ? [...scores.entries()].sort((a, b) => b[1] - a[1]).findIndex(([id]) => id === guestId) + 1 : null;
-  return { guestId, displayName: guest.displayName, rank, guestCount: scores.size, score, answers: own.map((a) => ({ answerId: a.id, guestId: a.guestId,
+  return { guestId, displayName: guest.displayName, rank, guestCount: scores.size, score, vaultSubjectValues: data.vault.subjectValues,
+    answers: own.map((a) => ({ answerId: a.id, guestId: a.guestId,
     guestDisplayName: a.guestDisplayName, textValue: a.textValue, numberValue: a.numberValue, optionId: a.optionId,
     optionLabel: a.optionId ? data.options.find((option) => option.id === a.optionId)?.label ?? null : null,
     numberUnit: data.contexts.find((question) => question.id === a.vaultQuestionId)!.numberUnit,
-    revealSlotId: a.revealSlotId, outcomeTier: data.contexts.find((question) => question.id === a.vaultQuestionId)!.freeTextMode === "keepsake" ? null : (outcomeForPair(data.outcomes, a.vaultQuestionId, a.revealSlotId) ? data.verdictByAnswer.get(a.id)?.tier ?? null : null),
+    revealSlotId: a.revealSlotId, revealDate: data.slots.find((slot) => slot.id === a.revealSlotId)?.revealDate ?? null,
+    outcomeTier: data.contexts.find((question) => question.id === a.vaultQuestionId)!.freeTextMode === "keepsake" ? null : (outcomeForPair(data.outcomes, a.vaultQuestionId, a.revealSlotId) ? data.verdictByAnswer.get(a.id)?.tier ?? null : null),
     prompt: data.contexts.find((question) => question.id === a.vaultQuestionId)!.prompt,
     operatorNote: outcomeForPair(data.outcomes, a.vaultQuestionId, a.revealSlotId)?.operatorNote ?? null,
     freeTextMode: data.contexts.find((question) => question.id === a.vaultQuestionId)!.freeTextMode })) };
@@ -227,7 +229,8 @@ export async function getVaultResultsSummary(vaultId: string, operatorId: string
     if (!answer) return null;
     const question = data.contexts.find((item) => item.id === answer.vaultQuestionId);
     const outcome = outcomeByPair.get(`${answer.vaultQuestionId}:${answer.revealSlotId}`);
-    return question && outcome ? { vaultQuestionId: question.id, prompt: question.prompt, outcomeTier: tier, operatorNote: outcome.operatorNote } : null;
+    return question && outcome ? { vaultQuestionId: question.id, prompt: question.prompt, outcomeTier: tier, operatorNote: outcome.operatorNote,
+      revealSlotId: answer.revealSlotId, revealDate: data.slots.find((slot) => slot.id === answer.revealSlotId)?.revealDate ?? null } : null;
   };
   const base = { vaultId, planTier: data.vault.entitledPlanTier, vault: { name: data.vault.name, subjectValues: data.vault.subjectValues,
     status: data.vault.status, sealedAt: data.vault.sealedAt?.toISOString() ?? null }, outcomes, questions,
@@ -272,11 +275,13 @@ export async function getFinaleReport(vaultId: string, operatorId: string) {
     if (!answer) return null;
     const question = data.contexts.find((item) => item.id === answer.vaultQuestionId);
     const outcome = outcomeByPair.get(`${answer.vaultQuestionId}:${answer.revealSlotId}`);
-    return question && outcome ? { vaultQuestionId: question.id, prompt: question.prompt, outcomeTier: tier, operatorNote: outcome.operatorNote } : null;
+    return question && outcome ? { vaultQuestionId: question.id, prompt: question.prompt, outcomeTier: tier, operatorNote: outcome.operatorNote,
+      revealSlotId: answer.revealSlotId, revealDate: data.slots.find((slot) => slot.id === answer.revealSlotId)?.revealDate ?? null } : null;
   };
   const scoreboard = scoreboardFromData(data);
   const completionReady = await isVaultFullyResolved(vaultId, operatorId);
-  return { vaultId, planTier: data.vault.entitledPlanTier, outcomeCounts: counts(scoreableAnswers.map((answer) => data.verdictByAnswer.get(answer.id)?.tier)),
+  return { vaultId, planTier: data.vault.entitledPlanTier, vaultSubjectValues: data.vault.subjectValues,
+    outcomeCounts: counts(scoreableAnswers.map((answer) => data.verdictByAnswer.get(answer.id)?.tier)),
     certificate: data.vault.entitledPlanTier === "deep_vault", scoreboard, winner: scoreboard[0] ?? null,
     areas: areasFromData(data), timeline: timelineFromData(data),
     standouts: [standout("full"), standout("zero")].filter((item): item is NonNullable<typeof item> => Boolean(item)),

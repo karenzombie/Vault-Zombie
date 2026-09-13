@@ -30,7 +30,7 @@ export default function RevealReportPage() {
         
         <div className="space-y-6 mt-6">
           {revealWorkQuestions.map((q) => (
-            <QuestionResolver key={q.vaultQuestionId} question={q} vaultId={vaultId} />
+            <QuestionResolver key={q.vaultQuestionId} question={q} vaultId={vaultId} subjectValues={data.vaultSubjectValues} revealDate={data.revealDate} />
           ))}
           {revealWorkQuestions.length === 0 && (
             <div className="text-center text-gray py-8 italic bg-muted/20 rounded-xl">

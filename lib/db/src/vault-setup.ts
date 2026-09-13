@@ -127,7 +127,7 @@ export async function createDraftVault(input: {
       dedupeKey: `vault-created:${vault.id}`, eventType: "vault_created", recipientEmail: operator.email,
       vaultId: vault.id,
       payload: { vaultId: vault.id },
-    });
+    }, dbClient);
   }
   return { vault, guestToken };
 }
@@ -195,6 +195,7 @@ export async function getVaultSetupDetail(vaultId: string, operatorId: string) {
     // operatorId match above, so only this vault's own host can ever see it. Never
     // selected by any guest-facing or unauthenticated read.
     guestToken: vaultsTable.guestToken,
+    subjectValues: vaultsTable.subjectValues,
   }).from(vaultsTable)
     .innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id))
     .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId)))
@@ -229,7 +230,7 @@ export async function getSealReadiness(vaultId: string, operatorId: string) {
     .limit(1);
   if (!vault) throw new Error("Vault not found.");
 
-  const [vaultType] = await db.select({ requiredSubjectTokens: vaultTypesTable.requiredSubjectTokens })
+  const [vaultType] = await db.select({ requiredSubjectTokens: vaultTypesTable.requiredSubjectTokens, slug: vaultTypesTable.slug })
     .from(vaultTypesTable).where(eq(vaultTypesTable.id, vault.vaultTypeId)).limit(1);
 
   const enabledPrompts = await db.select({ id: vaultQuestionsTable.id }).from(vaultQuestionsTable)
@@ -245,7 +246,11 @@ export async function getSealReadiness(vaultId: string, operatorId: string) {
     reasons.push("Set a milestone date and label before sealing a Deep Vault.");
   }
   if (!enabledPrompts.length) reasons.push("Select at least one prompt before sealing.");
+  // On the New Baby vault type (slug "baby"), the [Baby] subject name may stay blank
+  // permanently (the baby has no name yet, possibly forever). Every other subject
+  // token on every vault type, including [Baby] on any other vault type, stays required.
   const missingSubjects = (vaultType?.requiredSubjectTokens ?? [])
+    .filter((token) => !(token === "[Baby]" && vaultType?.slug === "baby"))
     .some((token) => !vault.subjectValues?.[token]?.trim());
   if (missingSubjects) reasons.push("Fill in every subject name before sealing.");
 

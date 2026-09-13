@@ -12,6 +12,7 @@ import {
 import { TIER_ORDER, findStripePrice, getStripeClient, type PaidTier } from "../stripe";
 import { daysBetween, formatEmailDate, formatEmailMoney, formatElapsedTime, formatPlanDuration } from "../format";
 import { Block, FooterOptions, escapeHtml, renderDoc, resultLabel, type ResultKind } from "./layout";
+import { substituteTokens } from "@workspace/shared";
 
 function appUrl() {
   const value = process.env.VAULT_ZOMBIE_APP_URL;
@@ -101,9 +102,10 @@ function f1GiftDelivery(p: Record<string, unknown>): Doc {
   blocks.push(
     { kind: "sectionHeading", text: "How they redeem it" },
     { kind: "numberedSteps", steps: [
-      `Go to ${linkTag(giftRedeemUrl())}`,
-      "Sign up for a free account, or sign in",
-      `Enter the code, and their ${escapeHtml(tierName)} vault is ready to set up`,
+      `They go to ${linkTag(giftRedeemUrl())}`,
+      "They enter the code",
+      "They sign in, or sign up for a free account",
+      `Their ${escapeHtml(tierName)} vault is ready to set up`,
     ] },
     { kind: "paragraph", text: "We'll email you when they redeem it." },
     { kind: "darkBand", children: [
@@ -149,8 +151,9 @@ function f2GiftRecipientDelivery(p: Record<string, unknown>): Doc {
       { kind: "sectionHeading", text: "How to redeem it" },
       { kind: "numberedSteps", steps: [
         `Go to ${linkTag(giftRedeemUrl())}`,
-        "Sign up for a free account, or sign in if you already have one",
-        `Enter your code, and your ${escapeHtml(tierName)} vault is ready to set up`,
+        "Enter your code",
+        "Sign in, or sign up for a free account",
+        `Your ${escapeHtml(tierName)} vault is ready to set up`,
       ] },
       { kind: "paragraph", text: "Your code never expires, so redeem it whenever you're ready." },
       { kind: "darkBand", children: [
@@ -629,7 +632,7 @@ async function buildG2(row: EmailDelivery): Promise<Doc> {
     return "keepsake";
   };
   const rows = answers.map((answer) => ({
-    prompt: answer.prompt,
+    prompt: substituteTokens(answer.prompt, { subjectValues: report.vaultSubjectValues, revealDate: answer.revealDate }),
     said: String(answer.textValue ?? answer.optionLabel ?? (answer.numberValue !== null && answer.numberValue !== undefined ? `${answer.numberValue}${answer.numberUnit ? ` ${answer.numberUnit}` : ""}` : "")),
     note: answer.operatorNote ?? null,
     result: outcomeKind(answer.outcomeTier, null),

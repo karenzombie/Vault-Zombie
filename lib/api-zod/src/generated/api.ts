@@ -1696,6 +1696,7 @@ export const GetVaultSetupDetailResponse = zod.object({
   "milestoneLabel": zod.string().max(getVaultSetupDetailResponseMilestoneLabelMax).nullable(),
   "coverObjectKey": zod.string().nullable(),
   "guestLayout": zod.enum(['one_at_a_time', 'all_prompts']),
+  "subjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, keyed by the literal bracketed token (e.g. \"[Baby]\"), as the host entered them.'),
   "guestToken": zod.string().describe('The raw guest link token. Only ever returned to this vault\'s own authenticated host on this read; never exposed to a guest or an unauthenticated request.')
 })
 
@@ -1738,6 +1739,7 @@ export const UpdateVaultSetupResponse = zod.object({
   "milestoneLabel": zod.string().max(updateVaultSetupResponseMilestoneLabelMax).nullable(),
   "coverObjectKey": zod.string().nullable(),
   "guestLayout": zod.enum(['one_at_a_time', 'all_prompts']),
+  "subjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, keyed by the literal bracketed token (e.g. \"[Baby]\"), as the host entered them.'),
   "guestToken": zod.string().describe('The raw guest link token. Only ever returned to this vault\'s own authenticated host on this read; never exposed to a guest or an unauthenticated request.')
 })
 
@@ -2218,8 +2220,10 @@ export const GetRevealReportResponse = zod.object({
   "trueOptionId": zod.string().uuid().nullish(),
   "trueOptionLabel": zod.string().nullish(),
   "operatorNote": zod.string().nullable()
-}))
-}))
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in this question\'s prompt\/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values. Combined with this single revealDate, [Year] is fully resolvable here.')
 })
 
 
@@ -2264,7 +2268,8 @@ export const GetQuestionReportResponse = zod.object({
   "trueOptionId": zod.string().uuid().nullish(),
   "trueOptionLabel": zod.string().nullish(),
   "operatorNote": zod.string().nullable()
-}))
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in this question\'s prompt\/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
 })
 
 
@@ -2286,6 +2291,7 @@ export const GetGuestPersonalReportResponse = zod.object({
   "zero": zod.number().int(),
   "scored": zod.number().int()
 }),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in each answer\'s prompt text.'),
   "answers": zod.array(zod.object({
   "answerId": zod.string().uuid(),
   "guestId": zod.string().uuid(),
@@ -2300,7 +2306,8 @@ export const GetGuestPersonalReportResponse = zod.object({
 })).and(zod.object({
   "prompt": zod.string(),
   "operatorNote": zod.string().nullable(),
-  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable()
+  "freeTextMode": zod.union([zod.literal('scoreable'),zod.literal('keepsake'),zod.literal(null)]).nullable(),
+  "revealDate": zod.coerce.date().nullable().describe('The reveal date of this specific answer\'s slot, for resolving [Year] in its prompt.')
 })))
 })
 
@@ -2322,6 +2329,7 @@ export const GetVaultResultsSummaryResponse = zod.object({
   "status": zod.string(),
   "sealedAt": zod.coerce.date().nullable()
 }),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('Same values as vault.subjectValues, provided directly for token substitution convenience.'),
   "outcomes": zod.object({
   "full": zod.number().int(),
   "half": zod.number().int(),
@@ -2342,7 +2350,9 @@ export const GetVaultResultsSummaryResponse = zod.object({
   "vaultQuestionId": zod.string().uuid(),
   "prompt": zod.string(),
   "outcomeTier": zod.enum(['full', 'half', 'zero']),
-  "operatorNote": zod.string().nullable()
+  "operatorNote": zod.string().nullable(),
+  "revealSlotId": zod.string().uuid(),
+  "revealDate": zod.coerce.date().nullable()
 })),
   "areas": zod.array(zod.object({
 
@@ -2446,8 +2456,10 @@ export const GetAnswersArchiveResponse = zod.object({
   "trueOptionId": zod.string().uuid().nullish(),
   "trueOptionLabel": zod.string().nullish(),
   "operatorNote": zod.string().nullable()
-}))
-}))
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in this question\'s prompt\/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in each question\'s prompt\/option text. This archive spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
 })
 
 
@@ -2492,8 +2504,10 @@ export const GetFinaleReportResponse = zod.object({
   "trueOptionId": zod.string().uuid().nullish(),
   "trueOptionLabel": zod.string().nullish(),
   "operatorNote": zod.string().nullable()
-}))
-}))
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in this question\'s prompt\/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in each question\'s prompt\/option text. This archive spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
 }).and(zod.object({
   "vaultId": zod.string().uuid(),
   "planTier": zod.enum(['safe', 'vault', 'deep_vault']),
@@ -2550,7 +2564,9 @@ export const GetFinaleReportResponse = zod.object({
   "vaultQuestionId": zod.string().uuid(),
   "prompt": zod.string(),
   "outcomeTier": zod.enum(['full', 'half', 'zero']),
-  "operatorNote": zod.string().nullable()
+  "operatorNote": zod.string().nullable(),
+  "revealSlotId": zod.string().uuid(),
+  "revealDate": zod.coerce.date().nullable()
 })),
   "guestCount": zod.number().int(),
   "predictionCount": zod.number().int(),
@@ -2599,8 +2615,10 @@ export const GetPrintArchiveResponse = zod.object({
   "trueOptionId": zod.string().uuid().nullish(),
   "trueOptionLabel": zod.string().nullish(),
   "operatorNote": zod.string().nullable()
-}))
-}))
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in this question\'s prompt\/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
+})),
+  "vaultSubjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, for substituting [Token] placeholders in each question\'s prompt\/option text. This archive spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.')
 }).and(zod.object({
   "vaultId": zod.string().uuid(),
   "planTier": zod.enum(['safe', 'vault', 'deep_vault']),
@@ -2657,7 +2675,9 @@ export const GetPrintArchiveResponse = zod.object({
   "vaultQuestionId": zod.string().uuid(),
   "prompt": zod.string(),
   "outcomeTier": zod.enum(['full', 'half', 'zero']),
-  "operatorNote": zod.string().nullable()
+  "operatorNote": zod.string().nullable(),
+  "revealSlotId": zod.string().uuid(),
+  "revealDate": zod.coerce.date().nullable()
 })),
   "guestCount": zod.number().int(),
   "predictionCount": zod.number().int(),

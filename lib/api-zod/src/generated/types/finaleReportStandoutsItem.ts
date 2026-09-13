@@ -13,4 +13,7 @@ export type FinaleReportStandoutsItem = {
   outcomeTier: FinaleReportStandoutsItemOutcomeTier;
   /** @nullable */
   operatorNote: string | null;
+  revealSlotId: string;
+  /** @nullable */
+  revealDate: Date | null;
 };

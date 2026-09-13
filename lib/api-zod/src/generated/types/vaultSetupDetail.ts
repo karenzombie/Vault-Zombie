@@ -10,6 +10,7 @@ import type { VaultSetupDetailGuestLayout } from './vaultSetupDetailGuestLayout'
 import type { VaultSetupDetailPlanTier } from './vaultSetupDetailPlanTier';
 import type { VaultSetupDetailRevealSchedule } from './vaultSetupDetailRevealSchedule';
 import type { VaultSetupDetailStatus } from './vaultSetupDetailStatus';
+import type { VaultSetupDetailSubjectValues } from './vaultSetupDetailSubjectValues';
 
 export interface VaultSetupDetail {
   id: string;
@@ -34,6 +35,8 @@ export interface VaultSetupDetail {
   /** @nullable */
   coverObjectKey: string | null;
   guestLayout: VaultSetupDetailGuestLayout;
+  /** The vault's subject-name token values, keyed by the literal bracketed token (e.g. "[Baby]"), as the host entered them. */
+  subjectValues: VaultSetupDetailSubjectValues;
   /** The raw guest link token. Only ever returned to this vault's own authenticated host on this read; never exposed to a guest or an unauthenticated request. */
   guestToken: string;
 }

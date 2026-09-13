@@ -13,4 +13,7 @@ export type VaultResultsSummaryStandoutsItem = {
   outcomeTier: VaultResultsSummaryStandoutsItemOutcomeTier;
   /** @nullable */
   operatorNote: string | null;
+  revealSlotId: string;
+  /** @nullable */
+  revealDate: Date | null;
 };

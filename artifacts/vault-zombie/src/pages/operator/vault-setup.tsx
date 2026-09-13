@@ -36,6 +36,7 @@ import {
   type GuestLayoutInputGuestLayout,
 } from "@workspace/api-client-react";
 import { PLAN_POLICY, type RevealSchedule } from "@workspace/db/schedule";
+import { substituteTokens } from "@workspace/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { SiteHeader } from "@/components/site-header";
@@ -122,7 +123,7 @@ export default function VaultSetupPage({ vaultId }: { vaultId: string }) {
         <CoverSection vaultId={vaultId} detail={detail.data} />
         <GuestLayoutSection vaultId={vaultId} guestLayout={detail.data.guestLayout} />
         <ScheduleSection vaultId={vaultId} detail={detail.data} />
-        <PromptsSection vaultId={vaultId} />
+        <PromptsSection vaultId={vaultId} subjectValues={detail.data.subjectValues} />
         <SealSection vaultId={vaultId} vaultName={detail.data.name} />
 
         <div className="flex justify-end mt-10">
@@ -586,7 +587,7 @@ function ScheduleSection({ vaultId, detail }: { vaultId: string; detail: { ancho
   );
 }
 
-function SortablePromptRow({ prompt, onToggle }: { prompt: VaultPrompt; onToggle: (id: string, enabled: boolean) => void }) {
+function SortablePromptRow({ prompt, onToggle, subjectValues }: { prompt: VaultPrompt; onToggle: (id: string, enabled: boolean) => void; subjectValues?: Record<string, string> }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: prompt.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
@@ -601,7 +602,7 @@ function SortablePromptRow({ prompt, onToggle }: { prompt: VaultPrompt; onToggle
         <GripVertical className="w-4 h-4" />
       </button>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-ink truncate">{prompt.prompt}</p>
+        <p className="text-sm text-ink truncate">{substituteTokens(prompt.prompt, { subjectValues })}</p>
         {prompt.isCustom && (
           <p className="text-xs text-gray">{prompt.freeTextMode === "scoreable" ? "Scoreable" : "Keepsake"}</p>
         )}
@@ -659,11 +660,13 @@ function PromptGroupBlock({
   onToggle,
   isOpen,
   onToggleOpen,
+  subjectValues,
 }: {
   group: PromptGroup;
   onToggle: (id: string, enabled: boolean) => void;
   isOpen: boolean;
   onToggleOpen: (() => void) | null;
+  subjectValues?: Record<string, string>;
 }) {
   const enabledCount = group.prompts.filter((p) => p.enabled).length;
 
@@ -694,7 +697,7 @@ function PromptGroupBlock({
         <SortableContext items={group.prompts.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
             {group.prompts.map((p) => (
-              <SortablePromptRow key={p.id} prompt={p} onToggle={onToggle} />
+              <SortablePromptRow key={p.id} prompt={p} onToggle={onToggle} subjectValues={subjectValues} />
             ))}
           </div>
         </SortableContext>
@@ -703,7 +706,7 @@ function PromptGroupBlock({
   );
 }
 
-function PromptsSection({ vaultId }: { vaultId: string }) {
+function PromptsSection({ vaultId, subjectValues }: { vaultId: string; subjectValues?: Record<string, string> }) {
   const queryClient = useQueryClient();
   const list = useListVaultPrompts(vaultId);
   const toggle = useToggleVaultPrompt();
@@ -849,6 +852,7 @@ function PromptsSection({ vaultId }: { vaultId: string }) {
               onToggle={handleToggle}
               isOpen={group.key === "custom" ? true : openGroupKeys.has(group.key)}
               onToggleOpen={group.key === "custom" ? null : () => toggleGroupOpen(group.key)}
+              subjectValues={subjectValues}
             />
           ))}
         </DndContext>

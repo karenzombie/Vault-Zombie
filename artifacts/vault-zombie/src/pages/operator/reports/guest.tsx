@@ -4,6 +4,7 @@ import { ReportLayout } from "@/components/report/report-layout";
 import { SectionHeader, StatCallout, OperatorNote } from "@/components/report/components";
 import { OutcomeBadge } from "@/components/report/icons";
 import { LockedReport } from "@/components/report/locked-report";
+import { substituteTokens } from "@workspace/shared";
 
 export default function GuestPersonalReportPage() {
   const [, params] = useRoute("/operator/vaults/:vaultId/reports/guests/:guestId");
@@ -54,7 +55,7 @@ export default function GuestPersonalReportPage() {
             return (
               <div key={a.answerId} className="arow p-4 border border-border/50 rounded-xl bg-muted/20">
                 <div className="flex justify-between items-start mb-2">
-                  <div className="font-bold text-ink text-sm flex-1">{a.prompt}</div>
+                  <div className="font-bold text-ink text-sm flex-1">{substituteTokens(a.prompt, { subjectValues: data.vaultSubjectValues, revealDate: a.revealDate })}</div>
                   <div className="shrink-0 ml-4">
                     {a.outcomeTier ? (
                       <div className="flex items-center gap-1" title={a.outcomeTier.charAt(0).toUpperCase() + a.outcomeTier.slice(1)}>

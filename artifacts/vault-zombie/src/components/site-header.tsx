@@ -4,6 +4,7 @@ import { useAuth, useClerk } from "@clerk/react";
 import { Menu, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getPendingGiftCode } from "@/pages/operator/gift-redeem";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
 
@@ -40,8 +41,17 @@ function SiteHeaderChrome({ isSignedIn, onSignOut }: { isSignedIn: boolean; onSi
     await onSignOut();
   }
 
+  // A signed-in host who arrived here mid-redemption (code entered while
+  // signed out, then signed up) still needs the redeem link until their
+  // pending code is actually redeemed, or it looks like it vanished.
+  const hasPendingGiftCode = isSignedIn && !!getPendingGiftCode();
+
   const links = isSignedIn
-    ? [{ href: "/operator", label: "My vaults" }, { href: "/gifts/purchase", label: "Gift a vault" }]
+    ? [
+        { href: "/operator", label: "My vaults" },
+        { href: "/gifts/purchase", label: "Gift a vault" },
+        ...(hasPendingGiftCode ? [{ href: "/gifts/redeem", label: "Redeem a gift code" }] : []),
+      ]
     : [
         { href: "/gifts/redeem", label: "Redeem a gift code" },
         { href: "/gifts/purchase", label: "Gift a vault" },

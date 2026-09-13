@@ -12,8 +12,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2 } from "lucide-react";
+import { substituteTokens } from "@workspace/shared";
 
-export function QuestionResolver({ question, vaultId }: { question: RevealQuestionWork; vaultId: string }) {
+export function QuestionResolver({ question, vaultId, subjectValues, revealDate }: { question: RevealQuestionWork; vaultId: string; subjectValues?: Record<string, string>; revealDate?: string | null }) {
   const resolveOutcome = useResolveRevealQuestionOutcome();
   const queryClient = useQueryClient();
   
@@ -64,7 +65,7 @@ export function QuestionResolver({ question, vaultId }: { question: RevealQuesti
     <div className="bg-card border border-border rounded-xl p-5 shadow-sm space-y-5 transition-all hover-elevate">
       <div className="space-y-1.5">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-display text-[22px] text-ink leading-tight">{question.prompt}</h3>
+          <h3 className="font-display text-[22px] text-ink leading-tight">{substituteTokens(question.prompt, { subjectValues, revealDate })}</h3>
           {isResolved && <CheckCircle2 className="w-6 h-6 text-ok shrink-0 mt-0.5" />}
         </div>
         <div className="text-[11px] font-bold text-bronze uppercase tracking-widest">
@@ -151,7 +152,7 @@ export function QuestionResolver({ question, vaultId }: { question: RevealQuesti
                 ).map(([id, label]) => (
                   <div key={id as string} className="flex items-center space-x-3 bg-muted/30 hover:bg-muted/60 transition-colors p-3.5 rounded-lg border border-border/60">
                     <RadioGroupItem value={id as string} id={`opt-${id}`} className="w-5 h-5 text-pop" />
-                    <Label htmlFor={`opt-${id}`} className="flex-1 cursor-pointer text-base font-medium text-ink leading-none">{label as string}</Label>
+                    <Label htmlFor={`opt-${id}`} className="flex-1 cursor-pointer text-base font-medium text-ink leading-none">{substituteTokens(label as string, { subjectValues, revealDate })}</Label>
                   </div>
                 ))}
               </RadioGroup>

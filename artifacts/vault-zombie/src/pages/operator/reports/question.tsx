@@ -5,6 +5,7 @@ import { SectionHeader, OperatorNote } from "@/components/report/components";
 import { OutcomeBadge } from "@/components/report/icons";
 import { NumberSpread, OptionSplit } from "@/components/report/charts";
 import { LockedReport } from "@/components/report/locked-report";
+import { substituteTokens } from "@workspace/shared";
 
 export default function QuestionReportPage() {
   const [, params] = useRoute("/operator/vaults/:vaultId/reports/questions/:questionId");
@@ -23,7 +24,7 @@ export default function QuestionReportPage() {
     <ReportLayout 
       vaultId={vaultId}
       title="Question Detail"
-      subtitle={data.prompt}
+      subtitle={substituteTokens(data.prompt, { subjectValues: data.vaultSubjectValues })}
       eyebrow="In-depth"
       backUrl={`/operator/vaults/${vaultId}/reports/summary`}
       backLabel="Back to Summary"
@@ -45,7 +46,7 @@ export default function QuestionReportPage() {
                 return (
                   <OptionSplit 
                     key={oc.optionId} 
-                    label={oc.label}
+                    label={substituteTokens(oc.label, { subjectValues: data.vaultSubjectValues })}
                     isWinner={data.outcomes.some(o => o.trueOptionId === oc.optionId || o.trueTextValue === oc.optionId)} 
                     count={oc.count} 
                     maxCount={Math.max(...(data.optionCounts?.map(o => o.count) || [0]))} 

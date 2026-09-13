@@ -6,6 +6,7 @@ import { OutcomeBadge } from "@/components/report/icons";
 import { NumberSpread, OptionSplit } from "@/components/report/charts";
 import { OperatorNote } from "@/components/report/components";
 import { LockedReport } from "@/components/report/locked-report";
+import { substituteTokens } from "@workspace/shared";
 
 export default function ArchiveReportPage() {
   const [, params] = useRoute("/operator/vaults/:vaultId/reports/archive");
@@ -34,7 +35,7 @@ export default function ArchiveReportPage() {
           {data.questions.map((q) => (
             <div key={q.vaultQuestionId} className="q">
               <Link href={`/operator/vaults/${vaultId}/reports/questions/${q.vaultQuestionId}`} className="q-title hover:text-vault-accent hover:underline transition-colors block">
-                {q.prompt}
+                {substituteTokens(q.prompt, { subjectValues: data.vaultSubjectValues })}
               </Link>
               <div className="q-meta">{q.answerType.replace('_', ' ').toUpperCase()}</div>
               
@@ -53,7 +54,7 @@ export default function ArchiveReportPage() {
                     return (
                       <OptionSplit 
                         key={oc.optionId} 
-                        label={oc.label}
+                        label={substituteTokens(oc.label, { subjectValues: data.vaultSubjectValues })}
                         isWinner={q.outcomes.some(o => o.trueOptionId === oc.optionId || o.trueTextValue === oc.optionId)} 
                         count={oc.count} 
                         maxCount={Math.max(...(q.optionCounts?.map(o => o.count) || [0]))} 

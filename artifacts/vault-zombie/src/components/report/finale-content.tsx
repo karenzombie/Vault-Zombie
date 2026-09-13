@@ -4,6 +4,7 @@ import { OutcomeBadge } from "@/components/report/icons";
 import { NumberSpread, OptionSplit, RingGauge, Pictograph, DivergingBar } from "@/components/report/charts";
 import { ScoreboardLollipop } from "@/components/report/scoreboard-lollipop";
 import { TimelineNode } from "@/components/report/timeline-node";
+import { substituteTokens } from "@workspace/shared";
 
 export function FinaleContent({ data, vaultId }: { data: FinaleReport, vaultId: string }) {
   const showCertFrame = data.certificate && data.completionReady;
@@ -117,7 +118,7 @@ export function FinaleContent({ data, vaultId }: { data: FinaleReport, vaultId: 
                     <OutcomeBadge outcome={so.outcomeTier} className="w-4 h-4" /> 
                     {so.outcomeTier === 'full' ? 'Nailed it' : 'Missed it'}
                   </div>
-                  <div className="so-pr text-ink font-medium leading-tight">{so.prompt}</div>
+                  <div className="so-pr text-ink font-medium leading-tight">{substituteTokens(so.prompt, { subjectValues: data.vaultSubjectValues, revealDate: so.revealDate })}</div>
                   {so.operatorNote && (
                     <div className="mt-3">
                       <OperatorNote note={so.operatorNote} />
@@ -134,7 +135,7 @@ export function FinaleContent({ data, vaultId }: { data: FinaleReport, vaultId: 
           
           {data.questions.map((q) => (
             <div key={q.vaultQuestionId} className="q border-t border-hairline pt-4">
-              <div className="q-title font-bold text-lg text-ink">{q.prompt}</div>
+              <div className="q-title font-bold text-lg text-ink">{substituteTokens(q.prompt, { subjectValues: data.vaultSubjectValues })}</div>
               <div className="q-meta text-xs text-gray uppercase tracking-wider mt-1">{q.answerType.replace('_', ' ')}</div>
 
               {q.answerType === "number" && q.outcomes[0]?.trueNumberValue !== undefined && (
@@ -150,7 +151,7 @@ export function FinaleContent({ data, vaultId }: { data: FinaleReport, vaultId: 
                     return (
                       <OptionSplit 
                         key={oc.optionId} 
-                        label={oc.label}
+                        label={substituteTokens(oc.label, { subjectValues: data.vaultSubjectValues })}
                         isWinner={q.outcomes.some(o => o.trueOptionId === oc.optionId || o.trueTextValue === oc.optionId)} 
                         count={oc.count} 
                         maxCount={Math.max(...(q.optionCounts?.map(o => o.count) || [0]))} 

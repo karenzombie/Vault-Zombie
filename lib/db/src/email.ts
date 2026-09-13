@@ -11,13 +11,20 @@ export type EmailEventType =
   | "host_welcome" | "vault_created" | "host_receipt" | "unmarked_reveal_nudge"
   | "gift_recipient_delivery" | "gift_redeemed";
 
+/**
+ * Enqueues an email delivery row. Accepts an optional transaction handle so callers that
+ * enqueue an email referencing a row inserted earlier in the same transaction (e.g. a
+ * freshly created vault) can pass that transaction through; otherwise the foreign key on
+ * the referenced row is checked against a separate connection that cannot see the
+ * uncommitted insert yet, and the enqueue (and the whole transaction) fails.
+ */
 export async function enqueueEmail(input: {
   dedupeKey: string; eventType: EmailEventType; recipientEmail: string;
   recipientGuestId?: string | null; vaultId?: string | null; revealSlotId?: string | null;
   giftId?: string | null;
   payload?: Record<string, unknown>;
-}) {
-  const [row] = await db.insert(emailDeliveriesTable).values({
+}, dbClient: Pick<typeof db, "insert"> = db) {
+  const [row] = await dbClient.insert(emailDeliveriesTable).values({
     ...input, recipientGuestId: input.recipientGuestId ?? null, vaultId: input.vaultId ?? null,
     revealSlotId: input.revealSlotId ?? null, giftId: input.giftId ?? null, payload: input.payload ?? {},
   }).onConflictDoNothing({ target: emailDeliveriesTable.dedupeKey }).returning();

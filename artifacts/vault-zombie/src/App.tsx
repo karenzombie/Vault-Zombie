@@ -71,6 +71,18 @@ function VaultShareRoute() {
   return <VaultSharePage vaultId={vaultId} />;
 }
 
+// Gift redemption (2.5) must accept a code with no account, so it is not
+// gated by requireOperator. Once signed in it still needs the same consent
+// gate every other operator page enforces.
+function GiftRedeemRoute() {
+  const { isLoaded, isSignedIn } = useAuth();
+  if (PUBLISHABLE_KEY && !isLoaded) {
+    return <div className="min-h-[100dvh] grid place-items-center bg-background text-text-2">Checking your session…</div>;
+  }
+  if (PUBLISHABLE_KEY && isSignedIn) return <ConsentGate><GiftRedeemPage /></ConsentGate>;
+  return <GiftRedeemPage />;
+}
+
 const AuthenticatedOperator = requireOperator(OperatorPage);
 const AuthenticatedOperatorReveal = requireOperator(OperatorRevealRoute);
 const AuthenticatedVaultSetup = requireOperator(VaultSetupRoute);
@@ -86,7 +98,6 @@ const AuthenticatedFinaleReport = requireOperator(FinaleReportPage);
 const AuthenticatedRevealReport = requireOperator(RevealReportPage);
 const AuthenticatedQuestionReport = requireOperator(QuestionReportPage);
 const AuthenticatedGuestReport = requireOperator(GuestPersonalReportPage);
-const AuthenticatedGiftRedeem = requireOperator(GiftRedeemPage);
 const AuthenticatedVaultNew = requireOperator(VaultNewPage);
 function MissingAdminConfiguration() {
   return <div className="min-h-[100dvh] grid place-items-center bg-background p-6 text-center text-destructive">Administrator access is unavailable because authentication is not configured.</div>;
@@ -121,7 +132,7 @@ function Router() {
         <Route path="/gifts/success" component={GiftSuccessPage} />
         <Route path="/gifts/checkout/cancelled" component={GiftCancelPage} />
         <Route path="/gifts/cancel" component={GiftCancelPage} />
-        <Route path="/gifts/redeem" component={AuthenticatedGiftRedeem} />
+        <Route path="/gifts/redeem" component={GiftRedeemRoute} />
 
         {/* Operator Reports Routes */}
         <Route path="/operator/vaults/:vaultId/reports/health" component={AuthenticatedHealthReport} />
@@ -142,7 +153,7 @@ function Router() {
         <Route path="/operator/vaults/:vaultId/setup" component={AuthenticatedVaultSetup} />
         <Route path="/operator/vaults/:vaultId/share" component={AuthenticatedVaultShare} />
         <Route path="/operator/vaults/:vaultId" component={AuthenticatedOperatorReveal} />
-        <Route path="/operator/gifts/redeem" component={AuthenticatedGiftRedeem} />
+        <Route path="/operator/gifts/redeem" component={GiftRedeemRoute} />
 
         {/* Admin Routes */}
         <Route path="/admin" component={AuthenticatedAdmin} />

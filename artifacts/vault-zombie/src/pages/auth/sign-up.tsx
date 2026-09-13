@@ -19,16 +19,21 @@ export default function SignUpPage() {
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
   const [referrerCode] = useState(() => new URLSearchParams(window.location.search).get("ref") ?? undefined);
+  // A pending gift code redemption (2.5) sends the visitor here with redirect_url
+  // so they land back on the redeem page, not the default operator dashboard,
+  // once sign-up (including email verification or Google SSO) finishes.
+  const [redirectUrl] = useState(() => new URLSearchParams(window.location.search).get("redirect_url") || "/operator");
 
   useEffect(() => {
     if (window.location.pathname.endsWith("/sso-callback")) {
-      void clerk.handleRedirectCallback({ signUpFallbackRedirectUrl: "/operator" }).catch(() => setError("Google sign-up could not be completed."));
+      void clerk.handleRedirectCallback({ signUpFallbackRedirectUrl: redirectUrl }).catch(() => setError("Google sign-up could not be completed."));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clerk]);
 
   useEffect(() => {
-    if (authLoaded && isSignedIn) setLocation("/operator");
-  }, [authLoaded, isSignedIn, setLocation]);
+    if (authLoaded && isSignedIn) setLocation(redirectUrl);
+  }, [authLoaded, isSignedIn, setLocation, redirectUrl]);
 
   async function signupMetadata() {
     if (!legal.data || !accepted) throw new Error("Explicit legal acceptance is required.");
@@ -57,7 +62,7 @@ export default function SignUpPage() {
       if (result.error) throw result.error;
       const finalized = await signUp.finalize();
       if (finalized.error) throw finalized.error;
-      setLocation("/operator");
+      setLocation(redirectUrl);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "The verification code is invalid."); }
     finally { setPending(false); }
   }
@@ -65,7 +70,7 @@ export default function SignUpPage() {
     if (!signUp || !accepted || !legal.data) return;
     setError(undefined); setPending(true);
     try {
-      const result = await signUp.sso({ strategy: "oauth_google", redirectUrl: "/operator", redirectCallbackUrl: "/sign-up/sso-callback", unsafeMetadata: await signupMetadata(), legalAccepted: true });
+      const result = await signUp.sso({ strategy: "oauth_google", redirectUrl, redirectCallbackUrl: "/sign-up/sso-callback", unsafeMetadata: await signupMetadata(), legalAccepted: true });
       if (result.error) throw result.error;
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Google sign-up could not be started."); setPending(false); }
   }

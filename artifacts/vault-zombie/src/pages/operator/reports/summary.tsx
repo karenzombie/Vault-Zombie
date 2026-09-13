@@ -7,6 +7,7 @@ import { TimelineNode } from "@/components/report/timeline-node";
 import { ScoreboardLollipop } from "@/components/report/scoreboard-lollipop";
 import { OutcomeBadge } from "@/components/report/icons";
 import { LockedReport } from "@/components/report/locked-report";
+import { substituteTokens } from "@workspace/shared";
 
 export default function SummaryReportPage() {
   const [, params] = useRoute("/operator/vaults/:vaultId/reports/summary");
@@ -69,7 +70,7 @@ export default function SummaryReportPage() {
                   <OutcomeBadge outcome={so.outcomeTier} className="w-4 h-4" /> 
                   {so.outcomeTier === 'full' ? 'Nailed it' : 'Missed it'}
                 </div>
-                <div className="so-pr text-ink font-medium leading-tight">{so.prompt}</div>
+                <div className="so-pr text-ink font-medium leading-tight">{substituteTokens(so.prompt, { subjectValues: data.vaultSubjectValues, revealDate: so.revealDate })}</div>
                 {so.operatorNote && (
                   <div className="mt-3">
                     <OperatorNote note={so.operatorNote} />
@@ -88,7 +89,7 @@ export default function SummaryReportPage() {
           <div className="space-y-4 mt-4">
             {data.questions.map(q => (
               <div key={q.vaultQuestionId} className="flex justify-between items-center p-4 border border-border/50 bg-muted/20 rounded-xl hover:border-vault-accent transition-colors">
-                <div className="font-medium text-ink line-clamp-1 mr-4">{q.prompt}</div>
+                <div className="font-medium text-ink line-clamp-1 mr-4">{substituteTokens(q.prompt, { subjectValues: data.vaultSubjectValues })}</div>
                 <Link href={`/operator/vaults/${vaultId}/reports/questions/${q.vaultQuestionId}`} className="shrink-0 bg-white border border-border text-xs font-bold text-vault-accent px-3 py-1.5 rounded-lg hover:bg-bronze-wash transition-colors">
                   View Detail
                 </Link>

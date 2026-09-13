@@ -14,12 +14,15 @@ import type { VaultResultsSummaryQuestionsItem } from './vaultResultsSummaryQues
 import type { VaultResultsSummaryStandoutsItem } from './vaultResultsSummaryStandoutsItem';
 import type { VaultResultsSummaryTimelineItem } from './vaultResultsSummaryTimelineItem';
 import type { VaultResultsSummaryVault } from './vaultResultsSummaryVault';
+import type { VaultResultsSummaryVaultSubjectValues } from './vaultResultsSummaryVaultSubjectValues';
 
 export interface VaultResultsSummary {
   vaultId: string;
   planTier: VaultResultsSummaryPlanTier;
   depth: VaultResultsSummaryDepth;
   vault: VaultResultsSummaryVault;
+  /** Same values as vault.subjectValues, provided directly for token substitution convenience. */
+  vaultSubjectValues: VaultResultsSummaryVaultSubjectValues;
   outcomes: OutcomeCounts;
   questions: VaultResultsSummaryQuestionsItem[];
   standouts: VaultResultsSummaryStandoutsItem[];

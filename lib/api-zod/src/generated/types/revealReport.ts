@@ -6,10 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { QuestionReport } from './questionReport';
+import type { RevealReportVaultSubjectValues } from './revealReportVaultSubjectValues';
 
 export interface RevealReport {
   revealSlotId: string;
   label: string;
   revealDate: Date;
   questions: QuestionReport[];
+  /** The vault's subject-name token values. Combined with this single revealDate, [Year] is fully resolvable here. */
+  vaultSubjectValues: RevealReportVaultSubjectValues;
 }

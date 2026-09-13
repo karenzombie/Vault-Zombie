@@ -301,6 +301,11 @@ export const VaultSetupDetailGuestLayout = {
   all_prompts: 'all_prompts',
 } as const;
 
+/**
+ * The vault's subject-name token values, keyed by the literal bracketed token (e.g. "[Baby]"), as the host entered them.
+ */
+export type VaultSetupDetailSubjectValues = {[key: string]: string};
+
 export interface VaultSetupDetail {
   id: string;
   name: string;
@@ -324,6 +329,8 @@ export interface VaultSetupDetail {
   /** @nullable */
   coverObjectKey: string | null;
   guestLayout: VaultSetupDetailGuestLayout;
+  /** The vault's subject-name token values, keyed by the literal bracketed token (e.g. "[Baby]"), as the host entered them. */
+  subjectValues: VaultSetupDetailSubjectValues;
   /** The raw guest link token. Only ever returned to this vault's own authenticated host on this read; never exposed to a guest or an unauthenticated request. */
   guestToken: string;
 }
@@ -2167,6 +2174,11 @@ export type QuestionReportOutcomesItem = {
   operatorNote: string | null;
 };
 
+/**
+ * The vault's subject-name token values, for substituting [Token] placeholders in this question's prompt/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.
+ */
+export type QuestionReportVaultSubjectValues = {[key: string]: string};
+
 export interface QuestionReport {
   vaultQuestionId: string;
   prompt: string;
@@ -2177,14 +2189,28 @@ export interface QuestionReport {
   options: QuestionReportOptionsItem[];
   optionCounts: QuestionReportOptionCountsItem[];
   outcomes: QuestionReportOutcomesItem[];
+  /** The vault's subject-name token values, for substituting [Token] placeholders in this question's prompt/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token. */
+  vaultSubjectValues: QuestionReportVaultSubjectValues;
 }
+
+/**
+ * The vault's subject-name token values. Combined with this single revealDate, [Year] is fully resolvable here.
+ */
+export type RevealReportVaultSubjectValues = {[key: string]: string};
 
 export interface RevealReport {
   revealSlotId: string;
   label: string;
   revealDate: string;
   questions: QuestionReport[];
+  /** The vault's subject-name token values. Combined with this single revealDate, [Year] is fully resolvable here. */
+  vaultSubjectValues: RevealReportVaultSubjectValues;
 }
+
+/**
+ * The vault's subject-name token values, for substituting [Token] placeholders in each answer's prompt text.
+ */
+export type GuestPersonalReportVaultSubjectValues = {[key: string]: string};
 
 /**
  * @nullable
@@ -2203,6 +2229,11 @@ export type GuestPersonalReportAnswersItem = ReportAnswer & ({
   operatorNote: string | null;
   /** @nullable */
   freeTextMode: GuestPersonalReportAnswersItemFreeTextMode;
+  /**
+     * The reveal date of this specific answer's slot, for resolving [Year] in its prompt.
+     * @nullable
+     */
+  revealDate: string | null;
 });
 
 export interface GuestPersonalReport {
@@ -2211,6 +2242,8 @@ export interface GuestPersonalReport {
   /** @nullable */
   rank: number | null;
   score: OutcomeCounts;
+  /** The vault's subject-name token values, for substituting [Token] placeholders in each answer's prompt text. */
+  vaultSubjectValues: GuestPersonalReportVaultSubjectValues;
   answers: GuestPersonalReportAnswersItem[];
 }
 
@@ -2236,8 +2269,15 @@ export interface TimelineReport {
   reveals: TimelineReportRevealsItem[];
 }
 
+/**
+ * The vault's subject-name token values, for substituting [Token] placeholders in each question's prompt/option text. This archive spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.
+ */
+export type AnswersArchiveVaultSubjectValues = {[key: string]: string};
+
 export interface AnswersArchive {
   questions: QuestionReport[];
+  /** The vault's subject-name token values, for substituting [Token] placeholders in each question's prompt/option text. This archive spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token. */
+  vaultSubjectValues: AnswersArchiveVaultSubjectValues;
 }
 
 export type VaultResultsSummaryPlanTier = typeof VaultResultsSummaryPlanTier[keyof typeof VaultResultsSummaryPlanTier];
@@ -2309,6 +2349,9 @@ export type VaultResultsSummaryStandoutsItem = {
   outcomeTier: VaultResultsSummaryStandoutsItemOutcomeTier;
   /** @nullable */
   operatorNote: string | null;
+  revealSlotId: string;
+  /** @nullable */
+  revealDate: string | null;
 };
 
 export type VaultResultsSummaryAreasItem = { [key: string]: unknown };
@@ -2320,6 +2363,8 @@ export interface VaultResultsSummary {
   planTier: VaultResultsSummaryPlanTier;
   depth: VaultResultsSummaryDepth;
   vault: VaultResultsSummaryVault;
+  /** Same values as vault.subjectValues, provided directly for token substitution convenience. */
+  vaultSubjectValues: VaultResultsSummaryVaultSubjectValues;
   outcomes: OutcomeCounts;
   questions: VaultResultsSummaryQuestionsItem[];
   standouts: VaultResultsSummaryStandoutsItem[];
@@ -2352,6 +2397,9 @@ export type FinaleReportStandoutsItem = {
   outcomeTier: FinaleReportStandoutsItemOutcomeTier;
   /** @nullable */
   operatorNote: string | null;
+  revealSlotId: string;
+  /** @nullable */
+  revealDate: string | null;
 };
 
 export type FinaleReport = AnswersArchive & ({

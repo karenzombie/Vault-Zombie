@@ -6,6 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { GuestAnswerInput, GuestQuestion, GuestTiming } from "@workspace/api-client-react";
+import { substituteTokens } from "@workspace/shared";
 
 export default function GuestFlow() {
   const { token } = useParams<{ token: string }>();
@@ -144,13 +145,13 @@ function AnswerPhase({ token, vault, onFinish }: { token: string, vault: any, on
   const questions = vault.questions || [];
   
   if (vault.layout === "all_prompts") {
-    return <AllPromptsLayout questions={questions} timings={vault.timings} draft={draft} saveDraft={saveDraft} onFinish={onFinish} />;
+    return <AllPromptsLayout questions={questions} timings={vault.timings} subjectValues={vault.subjectValues} draft={draft} saveDraft={saveDraft} onFinish={onFinish} />;
   }
   
-  return <OneAtATimeLayout questions={questions} timings={vault.timings} draft={draft} saveDraft={saveDraft} onFinish={onFinish} />;
+  return <OneAtATimeLayout questions={questions} timings={vault.timings} subjectValues={vault.subjectValues} draft={draft} saveDraft={saveDraft} onFinish={onFinish} />;
 }
 
-function OneAtATimeLayout({ questions, timings, draft, saveDraft, onFinish }: any) {
+function OneAtATimeLayout({ questions, timings, subjectValues, draft, saveDraft, onFinish }: any) {
   const currentIndex = draft.stepIndex || 0;
   const question = questions[currentIndex];
   
@@ -159,6 +160,8 @@ function OneAtATimeLayout({ questions, timings, draft, saveDraft, onFinish }: an
     revealSlotId: timings[0]?.id,
     answerType: question.answerType,
   };
+
+  const revealDate = timings.find((t: GuestTiming) => t.id === currentAnswer.revealSlotId)?.revealDate ?? null;
 
   const handleNext = () => {
     if (currentIndex < questions.length - 1) {
@@ -198,11 +201,11 @@ function OneAtATimeLayout({ questions, timings, draft, saveDraft, onFinish }: an
       </div>
 
       <h2 className="text-[24px] font-bold leading-[1.25] mt-8 text-ink px-1">
-        {question.prompt}
+        {substituteTokens(question.prompt, { subjectValues, revealDate })}
       </h2>
 
       <div className="mt-8 flex-1 px-1">
-        <QuestionInput question={question} value={currentAnswer} onChange={updateAnswer} />
+        <QuestionInput question={question} value={currentAnswer} onChange={updateAnswer} subjectValues={subjectValues} revealDate={revealDate} />
         
         {timings && timings.length > 0 && (
           <div className="mt-10">
@@ -239,7 +242,7 @@ function OneAtATimeLayout({ questions, timings, draft, saveDraft, onFinish }: an
   );
 }
 
-function AllPromptsLayout({ questions, timings, draft, saveDraft, onFinish }: any) {
+function AllPromptsLayout({ questions, timings, subjectValues, draft, saveDraft, onFinish }: any) {
   const updateAnswer = (qId: string, qType: string, updates: Partial<GuestAnswerInput>) => {
     const current = draft.answers[qId] || {
       vaultQuestionId: qId,
@@ -266,14 +269,15 @@ function AllPromptsLayout({ questions, timings, draft, saveDraft, onFinish }: an
             revealSlotId: timings[0]?.id,
             answerType: question.answerType,
           };
+          const revealDate = timings.find((t: GuestTiming) => t.id === currentAnswer.revealSlotId)?.revealDate ?? null;
           
           return (
             <div key={question.id} className="bg-white p-6 rounded-[16px] border border-hairline shadow-sm relative overflow-hidden">
               <div className="absolute top-0 left-0 w-1 h-full bg-bronze-wash"></div>
               <div className="text-[11px] font-bold text-pop uppercase tracking-wider mb-2">Prompt {i+1}</div>
-              <h3 className="text-[18px] font-bold leading-snug mb-5">{question.prompt}</h3>
+              <h3 className="text-[18px] font-bold leading-snug mb-5">{substituteTokens(question.prompt, { subjectValues, revealDate })}</h3>
               
-              <QuestionInput question={question} value={currentAnswer} onChange={(u) => updateAnswer(question.id, question.answerType, u)} />
+              <QuestionInput question={question} value={currentAnswer} onChange={(u) => updateAnswer(question.id, question.answerType, u)} subjectValues={subjectValues} revealDate={revealDate} />
               
               {timings && timings.length > 0 && (
                 <div className="mt-6 pt-5 border-t border-hairline/60">
@@ -309,7 +313,7 @@ function AllPromptsLayout({ questions, timings, draft, saveDraft, onFinish }: an
   );
 }
 
-function QuestionInput({ question, value, onChange }: { question: GuestQuestion, value: any, onChange: (v: any) => void }) {
+function QuestionInput({ question, value, onChange, subjectValues, revealDate }: { question: GuestQuestion, value: any, onChange: (v: any) => void, subjectValues?: Record<string, string>, revealDate?: string | null }) {
   if (question.answerType === "free_text" || question.answerType === "name_pick") {
     return (
       <Input 
@@ -351,7 +355,7 @@ function QuestionInput({ question, value, onChange }: { question: GuestQuestion,
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${value.optionId === opt.id ? 'border-pop' : 'border-gray'}`}>
               {value.optionId === opt.id && <div className="w-2.5 h-2.5 bg-pop rounded-full" />}
             </div>
-            <span className="text-[16px] font-semibold text-ink">{opt.label}</span>
+            <span className="text-[16px] font-semibold text-ink">{substituteTokens(opt.label, { subjectValues, revealDate })}</span>
           </label>
         ))}
       </div>

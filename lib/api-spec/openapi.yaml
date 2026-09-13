@@ -1316,7 +1316,7 @@ components:
         requiredSubjectTokens: { type: array, items: { type: string } }
     VaultSetupDetail:
       type: object
-      required: [id, name, status, planTier, entitledPlanTier, vaultTypeId, vaultTypeName, vaultTypeSlug, revealSchedule, anchorDate, milestoneDate, milestoneLabel, coverObjectKey, guestLayout, guestToken]
+      required: [id, name, status, planTier, entitledPlanTier, vaultTypeId, vaultTypeName, vaultTypeSlug, revealSchedule, anchorDate, milestoneDate, milestoneLabel, coverObjectKey, guestLayout, guestToken, subjectValues]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -1332,6 +1332,10 @@ components:
         milestoneLabel: { type: ["string", "null"], maxLength: 60 }
         coverObjectKey: { type: ["string", "null"] }
         guestLayout: { type: string, enum: [one_at_a_time, all_prompts] }
+        subjectValues:
+          type: object
+          additionalProperties: { type: string }
+          description: The vault's subject-name token values, keyed by the literal bracketed token (e.g. "[Baby]"), as the host entered them.
         guestToken:
           type: string
           description: >-
@@ -2226,7 +2230,7 @@ components:
             optionLabel: { type: ["string", "null"] }
     QuestionReport:
       type: object
-      required: [vaultQuestionId, prompt, answerType, freeTextMode, answers, options, optionCounts, outcomes]
+      required: [vaultQuestionId, prompt, answerType, freeTextMode, answers, options, optionCounts, outcomes, vaultSubjectValues]
       properties:
         vaultQuestionId: { type: string, format: uuid }
         prompt: { type: string }
@@ -2236,33 +2240,46 @@ components:
         options: { type: array, items: { type: object, required: [id, label], properties: { id: { type: string, format: uuid }, label: { type: string } } } }
         optionCounts: { type: array, items: { type: object, required: [optionId, label, count], properties: { optionId: { type: string, format: uuid }, label: { type: string }, count: { type: integer } } } }
         outcomes: { type: array, items: { type: object, required: [revealSlotId, operatorNote], properties: { revealSlotId: { type: string, format: uuid }, trueTextValue: { type: ["string", "null"] }, trueNumberValue: { type: ["number", "null"] }, trueOptionId: { type: ["string", "null"], format: uuid }, trueOptionLabel: { type: ["string", "null"] }, operatorNote: { type: ["string", "null"] } } } }
+        vaultSubjectValues:
+          type: object
+          additionalProperties: { type: string }
+          description: The vault's subject-name token values, for substituting [Token] placeholders in this question's prompt/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.
     RevealReport:
       type: object
-      required: [revealSlotId, label, revealDate, questions]
+      required: [revealSlotId, label, revealDate, questions, vaultSubjectValues]
       properties:
         revealSlotId: { type: string, format: uuid }
         label: { type: string }
         revealDate: { type: string, format: date }
         questions: { type: array, items: { $ref: "#/components/schemas/QuestionReport" } }
+        vaultSubjectValues:
+          type: object
+          additionalProperties: { type: string }
+          description: The vault's subject-name token values. Combined with this single revealDate, [Year] is fully resolvable here.
     GuestPersonalReport:
       type: object
-      required: [guestId, displayName, rank, score, answers]
+      required: [guestId, displayName, rank, score, answers, vaultSubjectValues]
       properties:
         guestId: { type: string, format: uuid }
         displayName: { type: string }
         rank: { type: ["integer", "null"] }
         score: { $ref: "#/components/schemas/OutcomeCounts" }
+        vaultSubjectValues:
+          type: object
+          additionalProperties: { type: string }
+          description: The vault's subject-name token values, for substituting [Token] placeholders in each answer's prompt text.
         answers:
           type: array
           items:
             allOf:
               - $ref: "#/components/schemas/ReportAnswer"
               - type: object
-                required: [prompt, operatorNote, freeTextMode]
+                required: [prompt, operatorNote, freeTextMode, revealDate]
                 properties:
                   prompt: { type: string }
                   operatorNote: { type: ["string", "null"] }
                   freeTextMode: { type: ["string", "null"], enum: [scoreable, keepsake, null] }
+                  revealDate: { type: ["string", "null"], format: date, description: "The reveal date of this specific answer's slot, for resolving [Year] in its prompt." }
     AreaReport:
       type: object
       required: [areas]
@@ -2275,11 +2292,16 @@ components:
         reveals: { type: array, items: { type: object, required: [revealSlotId, label, revealDate, outcomes], properties: { revealSlotId: { type: string, format: uuid }, label: { type: string }, revealDate: { type: string, format: date }, outcomes: { $ref: "#/components/schemas/OutcomeCounts" } } } }
     AnswersArchive:
       type: object
-      required: [questions]
-      properties: { questions: { type: array, items: { $ref: "#/components/schemas/QuestionReport" } } }
+      required: [questions, vaultSubjectValues]
+      properties:
+        questions: { type: array, items: { $ref: "#/components/schemas/QuestionReport" } }
+        vaultSubjectValues:
+          type: object
+          additionalProperties: { type: string }
+          description: The vault's subject-name token values, for substituting [Token] placeholders in each question's prompt/option text. This archive spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token.
     VaultResultsSummary:
       type: object
-      required: [vaultId, planTier, depth, vault, outcomes, questions, standouts]
+      required: [vaultId, planTier, depth, vault, outcomes, questions, standouts, vaultSubjectValues]
       properties:
         vaultId: { type: string, format: uuid }
         planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
@@ -2292,6 +2314,10 @@ components:
             subjectValues: { type: object, additionalProperties: { type: string } }
             status: { type: string }
             sealedAt: { type: ["string", "null"], format: date-time }
+        vaultSubjectValues:
+          type: object
+          additionalProperties: { type: string }
+          description: Same values as vault.subjectValues, provided directly for token substitution convenience.
         outcomes: { $ref: "#/components/schemas/OutcomeCounts" }
         questions:
           type: array
@@ -2308,12 +2334,14 @@ components:
           type: array
           items:
             type: object
-            required: [vaultQuestionId, prompt, outcomeTier, operatorNote]
+            required: [vaultQuestionId, prompt, outcomeTier, operatorNote, revealSlotId, revealDate]
             properties:
               vaultQuestionId: { type: string, format: uuid }
               prompt: { type: string }
               outcomeTier: { type: string, enum: [full, half, zero] }
               operatorNote: { type: ["string", "null"] }
+              revealSlotId: { type: string, format: uuid }
+              revealDate: { type: ["string", "null"], format: date }
         areas: { type: array, items: { type: object } }
         timeline: { type: array, items: { type: object } }
         scoreboard: { type: array, items: { $ref: "#/components/schemas/ScoreboardEntry" } }
@@ -2335,12 +2363,14 @@ components:
               type: array
               items:
                 type: object
-                required: [vaultQuestionId, prompt, outcomeTier, operatorNote]
+                required: [vaultQuestionId, prompt, outcomeTier, operatorNote, revealSlotId, revealDate]
                 properties:
                   vaultQuestionId: { type: string, format: uuid }
                   prompt: { type: string }
                   outcomeTier: { type: string, enum: [full, half, zero] }
                   operatorNote: { type: ["string", "null"] }
+                  revealSlotId: { type: string, format: uuid }
+                  revealDate: { type: ["string", "null"], format: date }
             guestCount: { type: integer }
             predictionCount: { type: integer }
             completionReady: { type: boolean }

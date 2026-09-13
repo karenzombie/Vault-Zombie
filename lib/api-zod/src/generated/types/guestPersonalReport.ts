@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { GuestPersonalReportAnswersItem } from './guestPersonalReportAnswersItem';
+import type { GuestPersonalReportVaultSubjectValues } from './guestPersonalReportVaultSubjectValues';
 import type { OutcomeCounts } from './outcomeCounts';
 
 export interface GuestPersonalReport {
@@ -14,5 +15,7 @@ export interface GuestPersonalReport {
   /** @nullable */
   rank: number | null;
   score: OutcomeCounts;
+  /** The vault's subject-name token values, for substituting [Token] placeholders in each answer's prompt text. */
+  vaultSubjectValues: GuestPersonalReportVaultSubjectValues;
   answers: GuestPersonalReportAnswersItem[];
 }

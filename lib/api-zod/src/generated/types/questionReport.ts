@@ -9,6 +9,7 @@ import type { QuestionReportFreeTextMode } from './questionReportFreeTextMode';
 import type { QuestionReportOptionCountsItem } from './questionReportOptionCountsItem';
 import type { QuestionReportOptionsItem } from './questionReportOptionsItem';
 import type { QuestionReportOutcomesItem } from './questionReportOutcomesItem';
+import type { QuestionReportVaultSubjectValues } from './questionReportVaultSubjectValues';
 import type { ReportAnswer } from './reportAnswer';
 
 export interface QuestionReport {
@@ -21,4 +22,6 @@ export interface QuestionReport {
   options: QuestionReportOptionsItem[];
   optionCounts: QuestionReportOptionCountsItem[];
   outcomes: QuestionReportOutcomesItem[];
+  /** The vault's subject-name token values, for substituting [Token] placeholders in this question's prompt/option text. This view spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token. */
+  vaultSubjectValues: QuestionReportVaultSubjectValues;
 }

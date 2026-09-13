@@ -5,8 +5,11 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AnswersArchiveVaultSubjectValues } from './answersArchiveVaultSubjectValues';
 import type { QuestionReport } from './questionReport';
 
 export interface AnswersArchive {
   questions: QuestionReport[];
+  /** The vault's subject-name token values, for substituting [Token] placeholders in each question's prompt/option text. This archive spans potentially many reveal dates, so [Year] is not resolvable here and is left as the literal token. */
+  vaultSubjectValues: AnswersArchiveVaultSubjectValues;
 }

@@ -14,4 +14,9 @@ export type GuestPersonalReportAnswersItem = ReportAnswer & ({
   operatorNote: string | null;
   /** @nullable */
   freeTextMode: GuestPersonalReportAnswersItemFreeTextMode;
+  /**
+     * The reveal date of this specific answer's slot, for resolving [Year] in its prompt.
+     * @nullable
+     */
+  revealDate: Date | null;
 });
