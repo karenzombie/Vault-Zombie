@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useReverification, useUser } from "@clerk/react";
 import { isClerkAPIResponseError, isReverificationCancelledError } from "@clerk/react/errors";
-import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import { getGetAdminDashboardQueryKey } from "@workspace/api-client-react";
 import QRCode from "qrcode";
 
 type Stage = "loading" | "scan" | "verifying" | "backup-codes" | "error";
@@ -38,7 +39,7 @@ function describeSetupError(err: unknown): string {
  */
 export default function AdminTotpEnrollPage() {
   const { user } = useUser();
-  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const [stage, setStage] = useState<Stage>("loading");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
@@ -157,7 +158,17 @@ export default function AdminTotpEnrollPage() {
         </div>
         <button
           className="bg-ink text-brass-lt font-semibold px-5 py-3 rounded-lg hover:bg-ink-2 w-full"
-          onClick={() => setLocation("/admin")}
+          onClick={() => {
+            // The browser is already at /admin; AdminAccess rendered this
+            // screen because its dashboard query failed with
+            // ADMIN_TOTP_REQUIRED. Navigating to the current location is a
+            // no-op, so instead invalidate that query on the same
+            // QueryClient AdminAccess reads from. That marks it stale and
+            // triggers an immediate refetch; now that TOTP is enrolled the
+            // request succeeds, dashboard.isError flips to false, and
+            // AdminAccess re-renders AdminPage in place of this screen.
+            void queryClient.invalidateQueries({ queryKey: getGetAdminDashboardQueryKey() });
+          }}
         >
           I saved my backup codes, continue
         </button>
