@@ -3,22 +3,22 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
- * Stage 5. Built from the `m-legal` screen of the marketing mockup. The
- * "Sealed means sealed" paragraph uses the replacement copy the Build
- * Stages document supplies rather than the mockup's wording, for the
- * same Build Brief section 13 reason as the About page.
+ * Stage 5, corrected by Addendum 5. Built from the `m-legal` screen of
+ * the marketing mockup. The "Sealed means sealed" paragraph uses the
+ * replacement copy the Build Stages document supplies rather than the
+ * mockup's wording, for the same Build Brief section 13 reason as the
+ * About page.
  *
- * "Read full Terms" and "Read full Privacy Policy" open the two v2 PDFs
- * copied into `public/` in a new tab (`target="_blank"` with
- * `rel="noopener noreferrer"`), never the outdated pair. The footer's
- * Terms and Privacy links point at the same two files, also new-tab.
+ * "Read full Terms" and "Read full Privacy Policy" open the server
+ * routes `/terms` and `/privacy` in a new tab (`target="_blank"` with
+ * `rel="noopener noreferrer"`). Those routes serve the configured
+ * documents from `Policy_Documents/` (Addendum 5) rather than static
+ * copies under `public/`, which Addendum 5 withdrew as a second,
+ * driftable source for the same files.
  *
  * The card shadow matches the treatment already used on /pricing and the
  * home page (Addendum 1 section 3).
  */
-const TERMS_HREF = `${import.meta.env.BASE_URL}VaultZombie-Terms-and-Conditions-v2.pdf`;
-const PRIVACY_HREF = `${import.meta.env.BASE_URL}VaultZombie-Privacy-Policy-v2.pdf`;
-
 const SUMMARY = [
   {
     heading: "What we store",
@@ -60,7 +60,7 @@ export default function LegalPage() {
 
           <div className="mt-10 flex flex-wrap gap-4">
             <a
-              href={TERMS_HREF}
+              href="/terms"
               target="_blank"
               rel="noopener noreferrer"
               data-testid="link-read-terms"
@@ -69,7 +69,7 @@ export default function LegalPage() {
               Read full Terms
             </a>
             <a
-              href={PRIVACY_HREF}
+              href="/privacy"
               target="_blank"
               rel="noopener noreferrer"
               data-testid="link-read-privacy"

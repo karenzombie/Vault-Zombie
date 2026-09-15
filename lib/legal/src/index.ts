@@ -16,16 +16,17 @@ function configuredPdf(name: string, value: string | undefined, root: string): {
   const document = value?.trim();
   if (!document) throw new LegalConfigurationError(`${name} is required.`);
   if (basename(document) !== document || !document.toLowerCase().endsWith(".pdf")) {
-    throw new LegalConfigurationError(`${name} must name a root-level PDF document.`);
+    throw new LegalConfigurationError(`${name} must name a PDF document in Policy_Documents.`);
   }
-  const path = resolve(root, document);
+  const policyDocumentsDir = resolve(root, "Policy_Documents");
+  const path = resolve(policyDocumentsDir, document);
   try {
-    if (dirname(path) !== root || !statSync(path).isFile() || !realpathSync(path).startsWith(`${root}/`)) {
-      throw new LegalConfigurationError(`${name} must reference an existing root-level PDF document.`);
+    if (dirname(path) !== policyDocumentsDir || !statSync(path).isFile() || !realpathSync(path).startsWith(`${policyDocumentsDir}/`)) {
+      throw new LegalConfigurationError(`${name} must reference an existing PDF document in Policy_Documents.`);
     }
   } catch (error) {
     if (error instanceof LegalConfigurationError) throw error;
-    throw new LegalConfigurationError(`${name} must reference an existing root-level PDF document.`);
+    throw new LegalConfigurationError(`${name} must reference an existing PDF document in Policy_Documents.`);
   }
   return { document, path };
 }

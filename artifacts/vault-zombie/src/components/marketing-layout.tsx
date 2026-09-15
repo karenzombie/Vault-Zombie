@@ -26,11 +26,10 @@ const FOOTER_LINKS = [
   { href: "/about", label: "About" },
 ];
 
-// Stage 5: the two v2 policy PDFs, copied into `public/` by that stage.
-// Both the footer's Terms/Privacy links and the Legal page's "Read full"
-// buttons point at these same files, each opening in a new tab.
-const TERMS_HREF = `${import.meta.env.BASE_URL}VaultZombie-Terms-and-Conditions-v2.pdf`;
-const PRIVACY_HREF = `${import.meta.env.BASE_URL}VaultZombie-Privacy-Policy-v2.pdf`;
+// Stage 5, corrected by Addendum 5: the footer's Terms/Privacy links and
+// the Legal page's "Read full" buttons point at the server routes
+// `/terms` and `/privacy`, which serve the configured documents from
+// `Policy_Documents/`, rather than static copies under `public/`.
 
 function MarketingHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -133,7 +132,7 @@ function MarketingFooter() {
             Contact
           </a>
           <a
-            href={TERMS_HREF}
+            href="/terms"
             target="_blank"
             rel="noopener noreferrer"
             data-testid="link-footer-terms"
@@ -142,7 +141,7 @@ function MarketingFooter() {
             Terms
           </a>
           <a
-            href={PRIVACY_HREF}
+            href="/privacy"
             target="_blank"
             rel="noopener noreferrer"
             data-testid="link-footer-privacy"
