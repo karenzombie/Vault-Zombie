@@ -42,9 +42,10 @@ function Pricing() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center max-w-2xl mx-auto mb-20">
           <h2 className="text-sm font-bold tracking-widest uppercase text-bronze mb-3">Pricing</h2>
-          <h1 className="font-display text-4xl md:text-5xl text-ink mb-6">One payment. Yours to keep.</h1>
+          <h1 className="font-display text-4xl md:text-5xl text-ink mb-6">Four Plans to Choose From. Even More Memories to Keep.</h1>
           <p className="text-lg text-text-2">
-            No subscriptions, ever. Every plan is a one-time payment, and every plan can be given as a gift.
+            No subscriptions, ever. Lockbox is free, and every paid plan is a one-time payment that can be
+            given as a gift.
           </p>
         </div>
 
