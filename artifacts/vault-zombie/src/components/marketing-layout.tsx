@@ -26,6 +26,12 @@ const FOOTER_LINKS = [
   { href: "/about", label: "About" },
 ];
 
+// Stage 5: the two v2 policy PDFs, copied into `public/` by that stage.
+// Both the footer's Terms/Privacy links and the Legal page's "Read full"
+// buttons point at these same files, each opening in a new tab.
+const TERMS_HREF = `${import.meta.env.BASE_URL}VaultZombie-Terms-and-Conditions-v2.pdf`;
+const PRIVACY_HREF = `${import.meta.env.BASE_URL}VaultZombie-Privacy-Policy-v2.pdf`;
+
 function MarketingHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
@@ -126,9 +132,24 @@ function MarketingFooter() {
           <a href="mailto:info@zombieplatforms.com" data-testid="link-contact" className="rounded-md transition-colors hover:text-bronze focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             Contact
           </a>
-          {/* Terms and Privacy are added in Stage 5, once the policy PDFs
-              are in place. Left out entirely until then rather than linked
-              to a placeholder. */}
+          <a
+            href={TERMS_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="link-footer-terms"
+            className="rounded-md transition-colors hover:text-bronze focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Terms
+          </a>
+          <a
+            href={PRIVACY_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="link-footer-privacy"
+            className="rounded-md transition-colors hover:text-bronze focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Privacy
+          </a>
         </nav>
       </div>
       <div className="mx-auto mt-12 max-w-6xl pt-8 text-center text-xs text-text-2">
