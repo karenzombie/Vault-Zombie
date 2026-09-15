@@ -21,4 +21,6 @@ export interface UpdateVaultSetupInput {
      * @nullable
      */
   milestoneLabel?: string | null;
+  /** @nullable */
+  timeZone?: string | null;
 }

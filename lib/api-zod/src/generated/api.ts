@@ -1694,6 +1694,7 @@ export const GetVaultSetupDetailResponse = zod.object({
   "anchorDate": zod.coerce.date().nullable(),
   "milestoneDate": zod.coerce.date().nullable(),
   "milestoneLabel": zod.string().max(getVaultSetupDetailResponseMilestoneLabelMax).nullable(),
+  "timeZone": zod.string().nullable(),
   "coverObjectKey": zod.string().nullable(),
   "guestLayout": zod.enum(['one_at_a_time', 'all_prompts']),
   "subjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, keyed by the literal bracketed token (e.g. \"[Baby]\"), as the host entered them.'),
@@ -1717,7 +1718,8 @@ export const UpdateVaultSetupBody = zod.object({
   "revealSchedule": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullish(),
   "anchorDate": zod.coerce.date().nullish(),
   "milestoneDate": zod.coerce.date().nullish(),
-  "milestoneLabel": zod.string().max(updateVaultSetupBodyMilestoneLabelMax).nullish()
+  "milestoneLabel": zod.string().max(updateVaultSetupBodyMilestoneLabelMax).nullish(),
+  "timeZone": zod.string().nullish()
 })
 
 export const updateVaultSetupResponseMilestoneLabelMax = 60;
@@ -1737,6 +1739,7 @@ export const UpdateVaultSetupResponse = zod.object({
   "anchorDate": zod.coerce.date().nullable(),
   "milestoneDate": zod.coerce.date().nullable(),
   "milestoneLabel": zod.string().max(updateVaultSetupResponseMilestoneLabelMax).nullable(),
+  "timeZone": zod.string().nullable(),
   "coverObjectKey": zod.string().nullable(),
   "guestLayout": zod.enum(['one_at_a_time', 'all_prompts']),
   "subjectValues": zod.record(zod.string(), zod.string()).describe('The vault\'s subject-name token values, keyed by the literal bracketed token (e.g. \"[Baby]\"), as the host entered them.'),
@@ -1795,6 +1798,7 @@ export const GetSealReadinessResponse = zod.object({
   "ready": zod.boolean(),
   "reasons": zod.array(zod.string()),
   "promptCount": zod.number().int(),
+  "timeZoneLabel": zod.string().nullable().describe('The chosen time zone\'s exact dropdown label, or null if none is chosen yet.'),
   "scheduleName": zod.union([zod.literal('weekly_sprint'),zod.literal('monthly_x3'),zod.literal('monthly_year'),zod.literal('half_then_annual'),zod.literal('annual_keepsake'),zod.literal(null)]).nullable(),
   "tierName": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
   "firstRevealDate": zod.coerce.date().nullable(),

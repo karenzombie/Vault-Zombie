@@ -15,6 +15,7 @@ import {
 } from "@workspace/db";
 import { Router, type IRouter, type Response } from "express";
 import { requireOperator } from "../middlewares/auth";
+import { sendGuestReportIfEligible } from "../lib/mail";
 
 const operatorRevealRouter: IRouter = Router();
 
@@ -40,7 +41,13 @@ operatorRevealRouter.put("/operator/vaults/:vaultId/reveals/:revealSlotId/questi
   try {
     const { vaultId, revealSlotId, vaultQuestionId } = ResolveRevealQuestionOutcomeParams.parse(req.params);
     const input = ResolveRevealQuestionOutcomeBody.parse(req.body);
-    return res.json(await resolveRevealQuestionOutcome(vaultId, req.account!.id, revealSlotId, vaultQuestionId, input));
+    const result = await resolveRevealQuestionOutcome(vaultId, req.account!.id, revealSlotId, vaultQuestionId, input);
+    // G2: results, to each affected guest — the verdict write above has committed, so
+    // for each guest just marked, check whether this was their last unmarked scoreable
+    // prediction in this reveal and send immediately if so (build brief addendum 2,
+    // section 6.1).
+    for (const guestId of result.affectedGuestIds) void sendGuestReportIfEligible(vaultId, req.account!.id, guestId, revealSlotId);
+    return res.json(result);
   } catch (error) {
     if (revealError(error, res)) return;
     return next(error);
@@ -51,7 +58,11 @@ operatorRevealRouter.put("/operator/vaults/:vaultId/reveals/:revealSlotId/questi
   try {
     const { vaultId, revealSlotId, vaultQuestionId, clusterKey } = OverrideRevealTextClusterVerdictParams.parse(req.params);
     const { tier } = OverrideRevealTextClusterVerdictBody.parse(req.body);
-    return res.json(await overrideRevealTextClusterVerdict(vaultId, req.account!.id, revealSlotId, vaultQuestionId, clusterKey, tier));
+    const result = await overrideRevealTextClusterVerdict(vaultId, req.account!.id, revealSlotId, vaultQuestionId, clusterKey, tier);
+    // G2, same as above: an override can also be the action that completes a guest's
+    // reveal.
+    for (const guestId of result.affectedGuestIds) void sendGuestReportIfEligible(vaultId, req.account!.id, guestId, revealSlotId);
+    return res.json(result);
   } catch (error) {
     if (revealError(error, res)) return;
     return next(error);

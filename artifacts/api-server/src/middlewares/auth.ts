@@ -3,6 +3,7 @@ import { accountsTable, db, enqueueEmail, legalConsentsTable, legalSignupIntents
 import { and, eq, sql } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
 import { currentLegalConfiguration, legalSignupIntentHash, verifyLegalSignupIntent } from "../lib/legal";
+import { sendEmailNow } from "../lib/mail";
 
 /** Looks up the vault a referral code points to. Never throws on a stale/invalid code. */
 async function resolveReferrerVaultId(referrerCode: unknown): Promise<string | null> {
@@ -11,12 +12,18 @@ async function resolveReferrerVaultId(referrerCode: unknown): Promise<string | n
   return vault?.id ?? null;
 }
 
+/**
+ * H1: welcome, to the host — queued and sent immediately (build brief addendum 2,
+ * section 6.1). Called only after the account-creation transaction has committed, so a
+ * failed or slow send never affects account creation.
+ */
 async function sendWelcomeEmail(account: Account) {
   if (!account.email) return;
-  await enqueueEmail({
+  const row = await enqueueEmail({
     dedupeKey: `host-welcome:${account.id}`, eventType: "host_welcome", recipientEmail: account.email,
     payload: {},
   });
+  if (row) void sendEmailNow(row.id, "host_welcome");
 }
 
 const ADMIN_IDLE_LIMIT_MS = 30 * 60 * 1000;

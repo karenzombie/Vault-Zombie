@@ -1,6 +1,7 @@
 import { GetGuestVaultParams, SubmitGuestPredictionBody, SubmitGuestPredictionParams } from "@workspace/api-zod";
 import { readGuestForm, submitGuestAnswers } from "@workspace/db";
 import { enqueueEmail } from "@workspace/db";
+import { sendEmailNow } from "../lib/mail";
 import { Router, type IRouter } from "express";
 
 const guestRouter: IRouter = Router();
@@ -40,10 +41,22 @@ guestRouter.post("/guest/:token/submissions", async (req, res, next) => {
       limited(`write-source:${req.ip}`, 8, 60 * 60_000)
     ) return res.status(429).json({ error: "Too many attempts. Try again later." });
     const result = await submitGuestAnswers(token, input);
+    // G1: predictions sealed, to the guest — queued and sent immediately (build brief
+    // addendum 2, section 6.1). The submission itself is already committed above, so a
+    // failed or slow send here never affects the guest's response.
     if (result.guestEmail) {
       try {
-        await enqueueEmail({ dedupeKey: `guest-submission:${result.submissionId}`, eventType: "guest_submission_confirmation", recipientEmail: result.guestEmail, recipientGuestId: result.guestId, vaultId: result.vaultId, payload: { vaultName: result.vaultName } });
+        const row = await enqueueEmail({ dedupeKey: `guest-submission:${result.submissionId}`, eventType: "guest_submission_confirmation", recipientEmail: result.guestEmail, recipientGuestId: result.guestId, vaultId: result.vaultId, payload: { vaultName: result.vaultName } });
+        if (row) void sendEmailNow(row.id, "guest_submission_confirmation");
       } catch (error) { req.log.error({ err: error, submissionId: result.submissionId }, "Guest confirmation email enqueue failed"); }
+    }
+    // H7: guest limit reached, to the host — only on the submission that first takes the
+    // vault over its cap (see submitGuestAnswers' newOverageEventId).
+    if (result.newOverageEventId && result.operatorEmail) {
+      try {
+        const row = await enqueueEmail({ dedupeKey: `overage-initial:${result.newOverageEventId}`, eventType: "operator_overage_initial", recipientEmail: result.operatorEmail, vaultId: result.vaultId, payload: { vaultName: result.vaultName } });
+        if (row) void sendEmailNow(row.id, "operator_overage_initial");
+      } catch (error) { req.log.error({ err: error, vaultId: result.vaultId }, "Guest limit reached email enqueue failed"); }
     }
     return res.status(201).json({
       accepted: true,

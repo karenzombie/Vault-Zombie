@@ -201,7 +201,7 @@ export async function resolveRevealQuestionOutcome(
         clusterKey: sql`case when ${answerVerdictsTable.wasOverridden} then ${answerVerdictsTable.clusterKey} else excluded.cluster_key end`,
       },
     });
-    return { outcomeId: outcome.id, vaultQuestionId, revealSlotId, verdictCount: rows.length };
+    return { outcomeId: outcome.id, vaultQuestionId, revealSlotId, verdictCount: rows.length, affectedGuestIds: [...new Set(answers.map((answer) => answer.guestId))] };
   });
 }
 
@@ -224,7 +224,7 @@ export async function overrideRevealTextClusterVerdict(
     if (!outcome || !answers.length) throw new RevealScoringError("Resolved unlocked text cluster not found.", 404);
     await tx.update(answerVerdictsTable).set({ tier, wasOverridden: true })
       .where(and(eq(answerVerdictsTable.questionOutcomeId, outcome.id), inArray(answerVerdictsTable.answerId, answers.map((answer) => answer.id))));
-    return { clusterKey: normalizedKey, tier, affectedAnswers: answers.length };
+    return { clusterKey: normalizedKey, tier, affectedAnswers: answers.length, affectedGuestIds: [...new Set(answers.map((answer) => answer.guestId))] };
   });
 }
 

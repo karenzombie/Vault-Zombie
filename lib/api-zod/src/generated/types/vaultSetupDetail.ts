@@ -33,6 +33,8 @@ export interface VaultSetupDetail {
      */
   milestoneLabel: string | null;
   /** @nullable */
+  timeZone: string | null;
+  /** @nullable */
   coverObjectKey: string | null;
   guestLayout: VaultSetupDetailGuestLayout;
   /** The vault's subject-name token values, keyed by the literal bracketed token (e.g. "[Baby]"), as the host entered them. */

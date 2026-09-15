@@ -3,6 +3,7 @@ import { db } from "./index";
 import { isVaultFullyResolved } from "./reports";
 import { revealSlotsTable, vaultsTable } from "./schema/vaults";
 import { vaultTypesTable } from "./schema/content";
+import { todayInTimeZone } from "./timezone";
 
 export type OperatorVaultCardStatus = "draft" | "sealed" | "partially_unlocked" | "fully_unlocked" | "completed";
 
@@ -21,8 +22,10 @@ export async function syncVaultLifecycleStatus(vault: { id: string; status: stri
   if (vault.status !== "sealed" && vault.status !== "active") return vault.status;
   let status = vault.status;
   if (status === "sealed") {
+    const [row] = await db.select({ timeZone: vaultsTable.timeZone }).from(vaultsTable).where(eq(vaultsTable.id, vault.id)).limit(1);
     const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vault.id));
-    const today = new Date().toISOString().slice(0, 10);
+    // "Today" for a sealed vault is always its own time zone (section 7.8).
+    const today = todayInTimeZone(new Date(), row?.timeZone ?? null);
     if (slots.some((slot) => slot.revealDate <= today)) {
       await db.update(vaultsTable).set({ status: "active" }).where(and(eq(vaultsTable.id, vault.id), eq(vaultsTable.status, "sealed")));
       status = "active";
@@ -49,8 +52,9 @@ export async function operatorVaultCardStatus(vault: { id: string; status: strin
   if (vault.status === "sealed") return "sealed";
   if (vault.status === "completed") return "completed";
   if (vault.status === "active") {
+    const [row] = await db.select({ timeZone: vaultsTable.timeZone }).from(vaultsTable).where(eq(vaultsTable.id, vault.id)).limit(1);
     const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vault.id));
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayInTimeZone(new Date(), row?.timeZone ?? null);
     const allOpen = slots.length > 0 && slots.every((slot) => slot.revealDate <= today);
     return allOpen ? "fully_unlocked" : "partially_unlocked";
   }

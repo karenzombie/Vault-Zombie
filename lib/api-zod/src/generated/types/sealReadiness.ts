@@ -12,6 +12,11 @@ export interface SealReadiness {
   ready: boolean;
   reasons: string[];
   promptCount: number;
+  /**
+     * The chosen time zone's exact dropdown label, or null if none is chosen yet.
+     * @nullable
+     */
+  timeZoneLabel: string | null;
   /** @nullable */
   scheduleName: SealReadinessScheduleName;
   tierName: SealReadinessTierName;

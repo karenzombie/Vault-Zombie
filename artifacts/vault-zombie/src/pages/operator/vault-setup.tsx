@@ -36,6 +36,7 @@ import {
   type GuestLayoutInputGuestLayout,
 } from "@workspace/api-client-react";
 import { PLAN_POLICY, type RevealSchedule } from "@workspace/db/schedule";
+import { VAULT_TIMEZONES } from "@workspace/db/timezone";
 import { substituteTokens } from "@workspace/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
@@ -44,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -222,6 +224,7 @@ function SealSection({ vaultId, vaultName }: { vaultId: string; vaultName: strin
                     Your reveal dates: {r?.firstRevealDate ? formatSlotDate(r.firstRevealDate) : "—"} through{" "}
                     {r?.lastRevealDate ? formatSlotDate(r.lastRevealDate) : "—"}
                   </li>
+                  <li>Your time zone, {r?.timeZoneLabel ?? "—"}</li>
                 </ul>
                 <p>You can still change your event date, your cover, and how guests see the prompts.</p>
                 <p>Guests can start answering the moment you seal.</p>
@@ -255,20 +258,25 @@ function SectionCard({ title, helper, children }: { title: string; helper?: stri
   );
 }
 
-function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anchorDate: string | null; planTier: any; revealSchedule: string | null; milestoneDate: string | null; milestoneLabel: string | null } }) {
+function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anchorDate: string | null; planTier: any; revealSchedule: string | null; milestoneDate: string | null; milestoneLabel: string | null; timeZone: string | null; status: string } }) {
   const queryClient = useQueryClient();
   const update = useUpdateVaultSetup();
   const [anchorDate, setAnchorDate] = useState(detail.anchorDate ?? "");
+  const [timeZone, setTimeZone] = useState(detail.timeZone ?? "");
   const seeded = useRef(false);
+  // Section 7.6: once sealed, the time zone is immutable, but this section still
+  // renders it (as a disabled control) rather than hiding it.
+  const isSealed = detail.status !== "draft";
 
   useEffect(() => {
     if (!seeded.current) {
       setAnchorDate(detail.anchorDate ?? "");
+      setTimeZone(detail.timeZone ?? "");
       seeded.current = true;
     }
-  }, [detail.anchorDate]);
+  }, [detail.anchorDate, detail.timeZone]);
 
-  function save(nextAnchorDate: string) {
+  function save(nextAnchorDate: string, nextTimeZone: string) {
     update.mutate(
       {
         vaultId,
@@ -278,6 +286,7 @@ function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anch
           anchorDate: nextAnchorDate || null,
           milestoneDate: detail.milestoneDate ?? null,
           milestoneLabel: detail.milestoneLabel ?? null,
+          timeZone: nextTimeZone || null,
         },
       },
       { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) }) },
@@ -286,7 +295,7 @@ function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anch
 
   return (
     <SectionCard title="When's the big day?" helper="Your reveal dates count forward from this day. Leave it blank and they count from the day you seal.">
-      <div className="max-w-xs">
+      <div className="max-w-xs mb-5">
         <Label htmlFor="event-date">Event date</Label>
         <Input
           id="event-date"
@@ -295,9 +304,32 @@ function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anch
           value={anchorDate}
           onChange={(e) => {
             setAnchorDate(e.target.value);
-            save(e.target.value);
+            save(e.target.value, timeZone);
           }}
         />
+      </div>
+      <div className="max-w-xs">
+        <Label htmlFor="vault-time-zone">Time zone</Label>
+        <Select
+          value={timeZone || undefined}
+          disabled={isSealed}
+          onValueChange={(next) => {
+            setTimeZone(next);
+            save(anchorDate, next);
+          }}
+        >
+          <SelectTrigger id="vault-time-zone" data-testid="select-time-zone">
+            <SelectValue placeholder="Choose a time zone" />
+          </SelectTrigger>
+          <SelectContent>
+            {VAULT_TIMEZONES.map((zone) => (
+              <SelectItem key={zone.identifier} value={zone.identifier} data-testid={`option-time-zone-${zone.identifier}`}>
+                {zone.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-sm text-text-2 mt-2">Your big day and every reveal date begin at midnight in this time zone.</p>
       </div>
     </SectionCard>
   );

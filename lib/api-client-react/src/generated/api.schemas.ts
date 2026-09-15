@@ -327,6 +327,8 @@ export interface VaultSetupDetail {
      */
   milestoneLabel: string | null;
   /** @nullable */
+  timeZone: string | null;
+  /** @nullable */
   coverObjectKey: string | null;
   guestLayout: VaultSetupDetailGuestLayout;
   /** The vault's subject-name token values, keyed by the literal bracketed token (e.g. "[Baby]"), as the host entered them. */
@@ -363,6 +365,11 @@ export interface SealReadiness {
   ready: boolean;
   reasons: string[];
   promptCount: number;
+  /**
+     * The chosen time zone's exact dropdown label, or null if none is chosen yet.
+     * @nullable
+     */
+  timeZoneLabel: string | null;
   /** @nullable */
   scheduleName: SealReadinessScheduleName;
   tierName: SealReadinessTierName;
@@ -415,6 +422,8 @@ export interface UpdateVaultSetupInput {
      * @nullable
      */
   milestoneLabel?: string | null;
+  /** @nullable */
+  timeZone?: string | null;
 }
 
 export type RevealSlotPreviewKind = typeof RevealSlotPreviewKind[keyof typeof RevealSlotPreviewKind];

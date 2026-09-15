@@ -1,11 +1,15 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, min, or } from "drizzle-orm";
-import { accountsTable, answerVerdictsTable, answersTable, db, enqueueEmail, getGuestRevealReportEligibility, guestsTable, overageEventsTable, questionsTable, revealSlotsTable, submissionsTable, vaultQuestionsTable, vaultsTable } from "@workspace/db";
+import { and, eq, gte, isNotNull, isNull, lte, min, or } from "drizzle-orm";
+import { accountsTable, answerVerdictsTable, answersTable, db, enqueueEmail, getGuestRevealReportEligibility, guestsTable, overageEventsTable, questionsTable, revealSlotsTable, submissionsTable, todayInTimeZone, vaultQuestionsTable, vaultsTable } from "@workspace/db";
 import { daysBetween, formatElapsedTime } from "./format";
 import { logger } from "./logger";
 
-/** DB-derived recurring work. Dedupe keys make this safe after downtime/restarts. */
+/**
+ * DB-derived recurring work. Dedupe keys make this safe after downtime/restarts.
+ * "Today" for every reveal-date comparison is each vault's own time zone (build brief
+ * addendum 2, section 7.8) rather than one global date, since sibling vaults can be
+ * sealed in different zones; a sealed vault always has one (sealing requires it).
+ */
 export async function evaluateEmailWork(now = new Date()) {
-  const today = now.toISOString().slice(0, 10);
   // This reads only identity/metadata to recover authorized early unlocks; it
   // deliberately never reads answer values.
   const overridden = await db.select({ revealSlotId: answersTable.revealSlotId, earliestOverrideAt: min(answersTable.unlockOverrideAt) })
@@ -26,18 +30,24 @@ export async function evaluateEmailWork(now = new Date()) {
   // F1/F2 (gift purchase delivery) and H3 (host receipt) are enqueued directly by the
   // verified Stripe webhook handler at the moment payment is confirmed (spec 5.2); this
   // evaluator does not duplicate them.
-  const slots = await db.select({
+  // Every vault's own timezone-aware today is unknown to SQL ahead of time (different
+  // sealed vaults can be in different zones), so the date comparison itself happens in
+  // JS below, once for each slot against its own vault's time zone.
+  const slots = (await db.select({
     id: revealSlotsTable.id, vaultId: vaultsTable.id, vaultName: vaultsTable.name, label: revealSlotsTable.label,
     revealDate: revealSlotsTable.revealDate, manualUnlockEmailsEnabled: revealSlotsTable.manualUnlockEmailsEnabled,
     operatorId: vaultsTable.operatorId, operatorEmail: accountsTable.email, sealedAt: vaultsTable.sealedAt,
+    timeZone: vaultsTable.timeZone,
   }).from(revealSlotsTable).innerJoin(vaultsTable, eq(revealSlotsTable.vaultId, vaultsTable.id))
     .innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id))
-    .where(and(eq(vaultsTable.status, "sealed"), overrideSlotIds.length
-      ? or(lte(revealSlotsTable.revealDate, today), inArray(revealSlotsTable.id, overrideSlotIds))
-      : lte(revealSlotsTable.revealDate, today)));
+    .where(eq(vaultsTable.status, "sealed"))).filter((slot) => {
+      const vaultToday = todayInTimeZone(now, slot.timeZone);
+      return slot.revealDate <= vaultToday || overrideSlotIds.includes(slot.id);
+    });
   // A reveal opened early by an admin is eligible only when the admin opted in; once its
-  // natural reveal date arrives it becomes eligible regardless (spec 5.1).
-  const eligibleSlots = slots.filter((slot) => slot.revealDate <= today || slot.manualUnlockEmailsEnabled === true);
+  // natural reveal date arrives it becomes eligible regardless (spec 5.1). "Today" is
+  // each slot's own vault's time zone.
+  const eligibleSlots = slots.filter((slot) => slot.revealDate <= todayInTimeZone(now, slot.timeZone) || slot.manualUnlockEmailsEnabled === true);
   for (const slot of eligibleSlots) {
     const guests = await db.select({ id: guestsTable.id, email: guestsTable.email }).from(guestsTable)
       .innerJoin(submissionsTable, eq(submissionsTable.guestId, guestsTable.id))
@@ -58,7 +68,7 @@ export async function evaluateEmailWork(now = new Date()) {
     // predictions still lacking a verdict. "Unmarked prediction" is approximated at
     // submission granularity (one guest's full answer bundle for this reveal), matching
     // the app's existing prediction-count convention elsewhere.
-    const openedAt = slot.revealDate <= today ? new Date(`${slot.revealDate}T00:00:00.000Z`) : overrideOpenedAt.get(slot.id) ?? null;
+    const openedAt = slot.revealDate <= todayInTimeZone(now, slot.timeZone) ? new Date(`${slot.revealDate}T00:00:00.000Z`) : overrideOpenedAt.get(slot.id) ?? null;
     if (openedAt && daysBetween(openedAt, now) >= 3) {
       const unscored = await db.selectDistinct({ submissionId: answersTable.submissionId }).from(answersTable)
         .innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
@@ -74,11 +84,15 @@ export async function evaluateEmailWork(now = new Date()) {
       if (unscored.length && await enqueueEmail({ dedupeKey: `reveal-nudge:${slot.id}`, eventType: "unmarked_reveal_nudge", recipientEmail: slot.operatorEmail, vaultId: slot.vaultId, revealSlotId: slot.id, payload: { vaultName: slot.vaultName, daysSinceOpened: daysBetween(openedAt, now), guestCount: uniqueGuests.length, unmarkedPredictionCount: unscored.length } })) queued++;
     }
   }
-  const events = await db.select({ id: overageEventsTable.id, vaultId: vaultsTable.id, vaultName: vaultsTable.name, email: accountsTable.email })
+  const events = await db.select({ id: overageEventsTable.id, vaultId: vaultsTable.id, vaultName: vaultsTable.name, email: accountsTable.email, timeZone: vaultsTable.timeZone })
     .from(overageEventsTable).innerJoin(vaultsTable, eq(overageEventsTable.vaultId, vaultsTable.id)).innerJoin(accountsTable, eq(vaultsTable.operatorId, accountsTable.id)).where(isNull(overageEventsTable.resolvedAt));
   for (const event of events) {
     if (await enqueueEmail({ dedupeKey: `overage-initial:${event.id}`, eventType: "operator_overage_initial", recipientEmail: event.email, vaultId: event.vaultId, payload: { vaultName: event.vaultName } })) queued++;
-    const [near] = await db.select({ id: revealSlotsTable.id }).from(revealSlotsTable).where(and(eq(revealSlotsTable.vaultId, event.vaultId), gte(revealSlotsTable.revealDate, today), lte(revealSlotsTable.revealDate, new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10)))).limit(1);
+    // "Within the next 7 days" is measured from this vault's own today (section 7.8); an
+    // overage event's vault may still be a draft with no time zone chosen yet, which
+    // falls back to UTC for this window only.
+    const eventToday = todayInTimeZone(now, event.timeZone);
+    const [near] = await db.select({ id: revealSlotsTable.id }).from(revealSlotsTable).where(and(eq(revealSlotsTable.vaultId, event.vaultId), gte(revealSlotsTable.revealDate, eventToday), lte(revealSlotsTable.revealDate, new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10)))).limit(1);
     if (near && await enqueueEmail({ dedupeKey: `overage-escalation:${event.id}`, eventType: "operator_overage_escalation", recipientEmail: event.email, vaultId: event.vaultId, payload: { vaultName: event.vaultName } })) queued++;
   }
   return { queued, dueSlots: slots.length };

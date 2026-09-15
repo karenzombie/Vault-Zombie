@@ -14,6 +14,7 @@ import {
   vaultsTable,
 } from "@workspace/db";
 import { getStripeClient, TIER_ORDER } from "../lib/stripe";
+import { sendEmailNow } from "../lib/mail";
 
 export const EXPECTED_STRIPE_EVENTS = [
   "checkout.session.completed",
@@ -353,27 +354,33 @@ export const stripeWebhookBoundary: RequestHandler = async (req, res) => {
         // F1: gift purchase receipt, to the gifter. Falls back to the Stripe buyer
         // email when the gift page's receipt-email field was left blank (spec 5.1).
         const f1Email = gift?.gifterEmail ?? gift?.stripeBuyerEmail;
-        if (gift && f1Email) await enqueueEmail({
-          dedupeKey: `gift-delivery:${gift.id}`, eventType: "gift_delivery", recipientEmail: f1Email,
-          giftId: gift.id,
-          payload: {
-            giftCode: gift.code, targetTier: gift.targetTier, amountCents: gift.amountCents, currency: gift.currency,
-            purchasedAt: gift.createdAt.toISOString(), stripePaymentIntentId: gift.stripePaymentIntentId,
-            fromLine: gift.fromLine, toLine: gift.toLine, recipientEmail: gift.recipientEmail,
-          },
-        });
+        if (gift && f1Email) {
+          const row = await enqueueEmail({
+            dedupeKey: `gift-delivery:${gift.id}`, eventType: "gift_delivery", recipientEmail: f1Email,
+            giftId: gift.id,
+            payload: {
+              giftCode: gift.code, targetTier: gift.targetTier, amountCents: gift.amountCents, currency: gift.currency,
+              purchasedAt: gift.createdAt.toISOString(), stripePaymentIntentId: gift.stripePaymentIntentId,
+              fromLine: gift.fromLine, toLine: gift.toLine, recipientEmail: gift.recipientEmail,
+            },
+          });
+          if (row) void sendEmailNow(row.id, "gift_delivery");
+        }
         // F2: gift for you, to the recipient — only if the gifter entered a recipient email.
-        if (gift?.recipientEmail) await enqueueEmail({
-          dedupeKey: `gift-recipient-delivery:${gift.id}`, eventType: "gift_recipient_delivery", recipientEmail: gift.recipientEmail,
-          giftId: gift.id,
-          payload: { giftCode: gift.code, targetTier: gift.targetTier, fromLine: gift.fromLine, toLine: gift.toLine },
-        });
+        if (gift?.recipientEmail) {
+          const row = await enqueueEmail({
+            dedupeKey: `gift-recipient-delivery:${gift.id}`, eventType: "gift_recipient_delivery", recipientEmail: gift.recipientEmail,
+            giftId: gift.id,
+            payload: { giftCode: gift.code, targetTier: gift.targetTier, fromLine: gift.fromLine, toLine: gift.toLine },
+          });
+          if (row) void sendEmailNow(row.id, "gift_recipient_delivery");
+        }
       } catch (error) { req.log.error({ err: error, stripeEventId: event.id }, "Gift delivery email enqueue failed"); }
     }
     // H3: host receipt for a verified plan purchase or upgrade.
     if (typeof result === "object" && result.result === "billing-activated" && result.operatorEmail) {
       try {
-        await enqueueEmail({
+        const row = await enqueueEmail({
           dedupeKey: `host-receipt:${result.billingRecordId}`, eventType: "host_receipt", recipientEmail: result.operatorEmail,
           vaultId: result.vaultId,
           payload: {
@@ -381,6 +388,7 @@ export const stripeWebhookBoundary: RequestHandler = async (req, res) => {
             currency: result.currency, stripePaymentIntentId: result.stripePaymentIntentId, paidAt: result.paidAt,
           },
         });
+        if (row) void sendEmailNow(row.id, "host_receipt");
       } catch (error) { req.log.error({ err: error, stripeEventId: event.id }, "Host receipt email enqueue failed"); }
     }
     res.status(200).json({ received: true, result });

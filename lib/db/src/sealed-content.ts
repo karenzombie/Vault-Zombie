@@ -5,7 +5,8 @@ import {
   guestsTable,
   submissionsTable,
 } from "./schema/predictions";
-import { revealSlotsTable } from "./schema/vaults";
+import { revealSlotsTable, vaultsTable } from "./schema/vaults";
+import { todayInTimeZone } from "./timezone";
 
 export interface UnlockedAnswerScope {
   vaultId: string;
@@ -31,8 +32,13 @@ export interface UnlockedAnswerScope {
  */
 export async function readUnlockedAnswers(scope: UnlockedAnswerScope) {
   const now = scope.now ?? new Date();
-  const today = now.toISOString().slice(0, 10);
   const database = scope.database ?? db;
+  // The sealed rule's "today" is the vault's own time zone (build brief addendum 2,
+  // section 7.8), computed through the one shared helper. A draft has no time zone yet,
+  // but a draft is never sealed and this function only ever reads sealed vaults'
+  // predictions in practice, so the UTC fallback in todayInTimeZone is not reached here.
+  const [vault] = await database.select({ timeZone: vaultsTable.timeZone }).from(vaultsTable).where(eq(vaultsTable.id, scope.vaultId)).limit(1);
+  const today = todayInTimeZone(now, vault?.timeZone ?? null);
   const conditions = [
     eq(submissionsTable.vaultId, scope.vaultId),
     isNull(submissionsTable.heldAt),

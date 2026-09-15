@@ -16,6 +16,7 @@ import {
   vaultsTable,
 } from "@workspace/db";
 import { requireAdmin, requireOperator, sensitiveAdminGuards } from "../middlewares/auth";
+import { sendManualUnlockEmails } from "../lib/mail";
 
 async function referralCount(vaultRowId: string) {
   const [row] = await db.select({ count: count(accountsTable.id) }).from(accountsTable)
@@ -192,9 +193,14 @@ adminVaultsRouter.post("/admin/vaults/:vaultId/unlock", ...sensitiveAdminGuards,
       // it never sends anything itself.
       const affectedSlotIds = slot ? [slot.id] : (await tx.select({ id: revealSlotsTable.id }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, id))).map((row) => row.id);
       if (affectedSlotIds.length) await tx.update(revealSlotsTable).set({ manualUnlockEmailsEnabled: sendEmails }).where(inArray(revealSlotsTable.id, affectedSlotIds));
-      return { scope, revealSlotId: slot?.id ?? null, ...counts, emailsEnabled: sendEmails };
+      return { scope, revealSlotId: slot?.id ?? null, ...counts, emailsEnabled: sendEmails, affectedSlotIds };
     });
-    res.json(result);
+    // H5 (reveal ready) and, for any guest already eligible, G2 (results) — the unlock
+    // transaction above has committed, so send immediately for each newly-opted-in slot
+    // (build brief addendum 2, section 6.2).
+    if (sendEmails) for (const slotId of result.affectedSlotIds) void sendManualUnlockEmails(slotId);
+    const { affectedSlotIds: _unused, ...response } = result;
+    res.json(response);
   } catch (error) { next(error); }
 });
 

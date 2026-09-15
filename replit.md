@@ -60,15 +60,18 @@ _Populate as you build — explicit user instructions worth remembering across s
   - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-v2.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-1-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Spec-Clarifications-2026-09-08.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-2-v1.md`
 
   - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Build-Stages.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-2-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-3-v1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-2-v1.md`
 
   - `Vault_Zombie_Initial_Build_Files/VaultZombie-Email-Spec.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Email-Spec-Addendum-1-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Email-Spec-Addendum-2-v1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-2-v1.md`
 
   - `Vault_Zombie_Initial_Build_Files/VaultZombie-Marketing-Site-Build-Stages-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Marketing-Site-Build-Stages-Addendum-1-v1.md`

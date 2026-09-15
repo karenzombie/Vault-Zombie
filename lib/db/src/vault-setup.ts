@@ -7,6 +7,7 @@ import { accountsTable } from "./schema/accounts";
 import { billingRecordsTable } from "./schema/billing";
 import { questionsTable, subcategoriesTable, vaultTypesTable } from "./schema/content";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
+import { isValidVaultTimeZone, todayInTimeZone, vaultTimeZoneLabel } from "./timezone";
 
 const tokenHash = (token: string) => createHash("sha256").update(token, "utf8").digest("hex");
 
@@ -120,16 +121,22 @@ export async function createDraftVault(input: {
     })));
   }
   const [operator] = await db.select({ email: accountsTable.email }).from(accountsTable).where(eq(accountsTable.id, input.operatorId)).limit(1);
+  // H2 (vault created): queued here inside the caller's transaction exactly as before.
+  // The row id is returned so the caller sends it immediately once its own transaction
+  // has committed (build brief addendum 2, section 6.1) — sending from inside this
+  // still-open transaction would deliver before the vault itself is durable.
+  let emailDeliveryId: string | null = null;
   if (operator?.email) {
     // H2's copy and checklist are built from the vault's live setup state at render time
     // (see buildH2 in render.ts), so the payload only needs to identify the vault.
-    await enqueueEmail({
+    const row = await enqueueEmail({
       dedupeKey: `vault-created:${vault.id}`, eventType: "vault_created", recipientEmail: operator.email,
       vaultId: vault.id,
       payload: { vaultId: vault.id },
     }, dbClient);
+    emailDeliveryId = row?.id ?? null;
   }
-  return { vault, guestToken };
+  return { vault, guestToken, emailDeliveryId };
 }
 
 /**
@@ -160,7 +167,7 @@ export async function spendEntitlementForNewVault(input: {
       .limit(1)
       .for("update");
     if (!billingRecord) return { kind: "unavailable" as const };
-    const { vault, guestToken } = await createDraftVault({
+    const { vault, guestToken, emailDeliveryId } = await createDraftVault({
       operatorId: input.operatorId,
       vaultTypeId: input.vaultTypeId,
       name: input.name,
@@ -171,7 +178,7 @@ export async function spendEntitlementForNewVault(input: {
       vaultId: vault.id,
       appliedAt: new Date(),
     }).where(eq(billingRecordsTable.id, billingRecord.id));
-    return { kind: "ok" as const, vault, guestToken };
+    return { kind: "ok" as const, vault, guestToken, emailDeliveryId };
   });
 }
 
@@ -189,6 +196,7 @@ export async function getVaultSetupDetail(vaultId: string, operatorId: string) {
     anchorDate: vaultsTable.anchorDate,
     milestoneDate: vaultsTable.milestoneDate,
     milestoneLabel: vaultsTable.milestoneLabel,
+    timeZone: vaultsTable.timeZone,
     coverObjectKey: vaultsTable.coverObjectKey,
     guestLayout: vaultsTable.guestLayout,
     // Raw guest token (Stage 5.1): only ever read here, behind requireOperator plus the
@@ -225,6 +233,7 @@ export async function getSealReadiness(vaultId: string, operatorId: string) {
     milestoneLabel: vaultsTable.milestoneLabel,
     subjectValues: vaultsTable.subjectValues,
     vaultTypeId: vaultsTable.vaultTypeId,
+    timeZone: vaultsTable.timeZone,
   }).from(vaultsTable)
     .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId)))
     .limit(1);
@@ -242,6 +251,7 @@ export async function getSealReadiness(vaultId: string, operatorId: string) {
     reasons.push("Complete payment before sealing a vault configured above its current entitlement.");
   }
   if (!vault.revealSchedule) reasons.push("Choose a reveal schedule before sealing.");
+  if (!vault.timeZone) reasons.push("Choose a time zone before sealing.");
   if (vault.planTier === "deep_vault" && (!vault.milestoneDate || !vault.milestoneLabel)) {
     reasons.push("Set a milestone date and label before sealing a Deep Vault.");
   }
@@ -257,7 +267,9 @@ export async function getSealReadiness(vaultId: string, operatorId: string) {
   let firstRevealDate: string | null = null;
   let lastRevealDate: string | null = null;
   if (vault.revealSchedule) {
-    const today = new Date().toISOString().slice(0, 10);
+    // A draft with no time zone yet may use the UTC date for this setup preview only
+    // (section 7.8); the readiness check above already blocks sealing without one.
+    const today = todayInTimeZone(new Date(), vault.timeZone);
     const preview = buildRevealSlots({
       anchorDate: vault.anchorDate ?? today,
       sealDate: today,
@@ -278,6 +290,7 @@ export async function getSealReadiness(vaultId: string, operatorId: string) {
     promptCount: enabledPrompts.length,
     scheduleName: vault.revealSchedule,
     tierName: vault.planTier,
+    timeZoneLabel: vault.timeZone ? vaultTimeZoneLabel(vault.timeZone) : null,
     firstRevealDate,
     lastRevealDate,
   };
@@ -339,9 +352,15 @@ export async function updateDraftVaultSetup(input: {
   anchorDate?: string | null;
   milestoneDate?: string | null;
   milestoneLabel?: string | null;
+  timeZone?: string | null;
 }) {
   if (input.revealSchedule && !PLAN_POLICY[input.planTier].schedules.includes(input.revealSchedule)) {
     throw new Error("That reveal schedule is not available on this plan.");
+  }
+  // The server rejects any value that is not one of the 40 identifiers (section 7.1);
+  // this also holds after sealing, since this function only ever updates a draft.
+  if (input.timeZone != null && !isValidVaultTimeZone(input.timeZone)) {
+    throw new Error("That time zone is not supported.");
   }
   const [updated] = await db
     .update(vaultsTable)
@@ -351,6 +370,7 @@ export async function updateDraftVaultSetup(input: {
       anchorDate: input.anchorDate ?? null,
       milestoneDate: input.milestoneDate ?? null,
       milestoneLabel: input.milestoneLabel?.trim() || null,
+      ...(input.timeZone !== undefined ? { timeZone: input.timeZone } : {}),
     })
     .where(and(
       eq(vaultsTable.id, input.vaultId),
@@ -398,6 +418,7 @@ export async function sealVault(input: {
       throw new Error("Complete payment before sealing a vault configured above its current entitlement.");
     }
     if (!vault.revealSchedule) throw new Error("Choose a reveal schedule before sealing.");
+    if (!vault.timeZone) throw new Error("Choose a time zone before sealing.");
     if (vault.planTier === "deep_vault" && (!vault.milestoneDate || !vault.milestoneLabel)) {
       throw new Error("Set a milestone date and label before sealing a Deep Vault.");
     }
@@ -570,7 +591,8 @@ export async function changeSealedVaultEventDate(input: {
     if (!vault || vault.status === "draft" || vault.status === "deleted") throw new Error("Vault not found or not sealed.");
     if (!vault.revealSchedule) throw new Error("This vault has no reveal schedule to recalculate.");
 
-    const today = new Date().toISOString().slice(0, 10);
+    // A sealed vault always has a time zone (section 7.4/7.6).
+    const today = todayInTimeZone(new Date(), vault.timeZone);
     const existingSlots = await tx.select().from(revealSlotsTable)
       .where(eq(revealSlotsTable.vaultId, vault.id)).orderBy(asc(revealSlotsTable.displayOrder));
     const openedAlready = existingSlots.some((slot) => slot.revealDate <= today);
@@ -578,7 +600,7 @@ export async function changeSealedVaultEventDate(input: {
       throw new Error("Your first reveal has opened, so the date is set from here on.");
     }
 
-    const sealDate = vault.sealedAt ? vault.sealedAt.toISOString().slice(0, 10) : today;
+    const sealDate = vault.sealedAt ? todayInTimeZone(vault.sealedAt, vault.timeZone) : today;
     const newSlots = buildRevealSlots({
       anchorDate: input.newAnchorDate,
       sealDate,
@@ -612,10 +634,11 @@ export async function getSealedVaultDateInfo(vaultId: string, operatorId: string
     anchorDate: vaultsTable.anchorDate,
     revealSchedule: vaultsTable.revealSchedule,
     status: vaultsTable.status,
+    timeZone: vaultsTable.timeZone,
   }).from(vaultsTable)
     .where(and(eq(vaultsTable.id, vaultId), eq(vaultsTable.operatorId, operatorId))).limit(1);
   if (!vault || vault.status === "draft" || vault.status === "deleted") throw new Error("Vault not found or not sealed.");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInTimeZone(new Date(), vault.timeZone);
   const slots = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable)
     .where(eq(revealSlotsTable.vaultId, vaultId));
   const locked = slots.some((slot) => slot.revealDate <= today);
@@ -637,7 +660,7 @@ export async function previewSealedVaultEventDateChange(input: {
   if (!vault || vault.status === "draft" || vault.status === "deleted") throw new Error("Vault not found or not sealed.");
   if (!vault.revealSchedule) throw new Error("This vault has no reveal schedule to recalculate.");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInTimeZone(new Date(), vault.timeZone);
   const existingSlots = await db.select().from(revealSlotsTable)
     .where(eq(revealSlotsTable.vaultId, vault.id)).orderBy(asc(revealSlotsTable.displayOrder));
   const openedAlready = existingSlots.some((slot) => slot.revealDate <= today);
@@ -645,7 +668,7 @@ export async function previewSealedVaultEventDateChange(input: {
     throw new Error("Your first reveal has opened, so the date is set from here on.");
   }
 
-  const sealDate = vault.sealedAt ? vault.sealedAt.toISOString().slice(0, 10) : today;
+  const sealDate = vault.sealedAt ? todayInTimeZone(vault.sealedAt, vault.timeZone) : today;
   const newSlots = buildRevealSlots({
     anchorDate: input.newAnchorDate,
     sealDate,

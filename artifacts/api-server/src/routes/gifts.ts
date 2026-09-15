@@ -6,6 +6,7 @@ import {
   GetGiftCardResponse, GetGiftCardByCheckoutSessionParams, RedeemGiftBody, RedeemGiftResponse,
 } from "@workspace/api-zod";
 import { billingRecordsTable, db, enqueueEmail, findUnresolvedRefundReservation, giftsTable } from "@workspace/db";
+import { sendEmailNow } from "../lib/mail";
 import { findStripePrice, getStripeClient, type PaidTier } from "../lib/stripe";
 import { requireOperator } from "../middlewares/auth";
 import { getTrustedAppUrl } from "../lib/app-url";
@@ -131,11 +132,12 @@ giftRouter.post("/operator/gifts/redeem", requireOperator, async (req, res, next
     const f3Email = result.gift.gifterEmail ?? result.gift.stripeBuyerEmail;
     if (f3Email) {
       try {
-        await enqueueEmail({
+        const row = await enqueueEmail({
           dedupeKey: `gift-redeemed:${result.gift.id}`, eventType: "gift_redeemed", recipientEmail: f3Email,
           giftId: result.gift.id,
           payload: { giftCode: result.gift.code, targetTier: result.gift.targetTier, toLine: result.gift.toLine, purchasedAt: result.gift.createdAt?.toISOString?.() ?? null, redeemedAt: new Date().toISOString() },
         });
+        if (row) void sendEmailNow(row.id, "gift_redeemed");
       } catch (error) { req.log.error({ err: error, giftId: result.gift.id }, "Gift redeemed email enqueue failed"); }
     }
     return res.json(RedeemGiftResponse.parse({ billingRecordId: result.billing.id, tier: result.billing.targetTier }));

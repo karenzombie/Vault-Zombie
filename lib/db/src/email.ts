@@ -51,6 +51,31 @@ export async function claimEmailDeliveries(limit = 20) {
   });
 }
 
+/**
+ * Claims one specific row by id, under the same row lock and staleness rule as
+ * claimEmailDeliveries. Used for an action-triggered immediate send so it
+ * never races the recurring check's claim of the same row.
+ */
+export async function claimEmailDeliveryById(id: string) {
+  return db.transaction(async (tx) => {
+    const stale = new Date(Date.now() - 10 * 60_000);
+    const [row] = await tx.select().from(emailDeliveriesTable).where(and(
+      eq(emailDeliveriesTable.id, id),
+      or(
+        eq(emailDeliveriesTable.status, "queued"),
+        and(eq(emailDeliveriesTable.status, "sending"), lt(emailDeliveriesTable.claimedAt, stale)),
+      ),
+    )).limit(1).for("update", { skipLocked: true });
+    if (!row) return null;
+    const claimToken = randomUUID();
+    const [claimed] = await tx.update(emailDeliveriesTable).set({
+      status: "sending", claimedAt: new Date(), claimToken,
+      attempts: sql`${emailDeliveriesTable.attempts} + 1`,
+    }).where(eq(emailDeliveriesTable.id, row.id)).returning();
+    return claimed ?? null;
+  });
+}
+
 export async function markEmailSent(id: string, claimToken: string, providerId: string) {
   const rows = await db.update(emailDeliveriesTable).set({ status: "sent", providerId, sentAt: new Date(), lastError: null }).where(and(eq(emailDeliveriesTable.id, id), eq(emailDeliveriesTable.claimToken, claimToken), eq(emailDeliveriesTable.status, "sending"))).returning({ id: emailDeliveriesTable.id });
   return rows.length === 1;

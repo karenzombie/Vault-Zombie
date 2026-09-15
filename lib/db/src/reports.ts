@@ -6,6 +6,7 @@ import { questionOptionsTable, questionsTable, subcategoriesTable } from "./sche
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
 import { vaultTypesTable } from "./schema/content";
 import { accountsTable } from "./schema/accounts";
+import { todayInTimeZone } from "./timezone";
 
 export class ReportError extends Error {
   constructor(message: string, public readonly status: 403 | 404 = 404) {
@@ -138,7 +139,7 @@ export async function getVaultHealthReport(vaultId: string, operatorId: string) 
   const [guests] = await db.select({ value: count() }).from(guestsTable).innerJoin(submissionsTable, eq(submissionsTable.guestId, guestsTable.id)).where(and(eq(guestsTable.vaultId, vaultId), isNull(submissionsTable.heldAt), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
   const slots = await db.select({ id: revealSlotsTable.id, label: revealSlotsTable.label, revealDate: revealSlotsTable.revealDate })
     .from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, vaultId)).orderBy(revealSlotsTable.displayOrder);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInTimeZone(new Date(), vault.timeZone);
   const referralCount = vault.entitledPlanTier === "lockbox" ? null : Number((await db.select({ value: count() }).from(accountsTable).where(eq(accountsTable.referredByVaultId, vaultId)))[0]?.value ?? 0);
   const [vaultType] = await db.select({ slug: vaultTypesTable.slug }).from(vaultTypesTable).where(eq(vaultTypesTable.id, vault.vaultTypeId)).limit(1);
   return { vaultId, planTier: vault.entitledPlanTier, status, predictionCount: Number(predictions.value),

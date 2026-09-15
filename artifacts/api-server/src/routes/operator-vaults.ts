@@ -23,10 +23,12 @@ import {
   UpdateVaultSetupBody,
 } from "@workspace/api-zod";
 import {
+  accountsTable,
   addCustomPrompt,
   changeSealedVaultEventDate,
   db,
   deleteOperatorVault,
+  enqueueEmail,
   getSealedVaultDateInfo,
   getSealReadiness,
   getVaultSetupDetail,
@@ -41,12 +43,15 @@ import {
   setVaultGuestLayout,
   spendEntitlementForNewVault,
   toggleVaultPrompt,
+  todayInTimeZone,
   updateDraftVaultSetup,
+  vaultsTable,
   vaultTypesTable,
 } from "@workspace/db";
 import express, { Router, type IRouter } from "express";
 import { requireOperator } from "../middlewares/auth";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { sendEmailNow } from "../lib/mail";
 
 const operatorVaultsRouter: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
@@ -92,6 +97,9 @@ operatorVaultsRouter.post("/operator/vaults", requireOperator, async (req, res, 
       res.status(409).json({ error: "This entitlement is missing, already spent, or not paid." });
       return;
     }
+    // H2: vault created, to the host — the transaction above has committed by now, so
+    // it is safe to attempt immediate delivery (build brief addendum 2, section 6.1).
+    if (result.emailDeliveryId) void sendEmailNow(result.emailDeliveryId, "vault_created");
     res.status(201).json(CreateOperatorVaultResponse.parse({ vaultId: result.vault.id }));
   } catch (error) { next(error); }
 });
@@ -149,6 +157,7 @@ operatorVaultsRouter.patch("/operator/vaults/:vaultId/setup", requireOperator, a
     const detail = await updateDraftVaultSetup({
       vaultId, operatorId: req.account!.id, planTier: body.planTier, revealSchedule: body.revealSchedule,
       anchorDate: dateStr(body.anchorDate), milestoneDate: dateStr(body.milestoneDate), milestoneLabel: body.milestoneLabel,
+      timeZone: body.timeZone,
     });
     res.json(detail);
   } catch (error) {
@@ -254,8 +263,20 @@ operatorVaultsRouter.get("/operator/vaults/:vaultId/seal-readiness", requireOper
 operatorVaultsRouter.post("/operator/vaults/:vaultId/seal", requireOperator, async (req, res, next) => {
   try {
     const { vaultId } = SealVaultActionParams.parse(req.params);
-    const sealDate = new Date().toISOString().slice(0, 10);
+    // "Today" for the seal date is the vault's own time zone (section 7.4); sealVault
+    // itself rejects a vault with no time zone chosen yet.
+    const [vaultRow] = await db.select({ timeZone: vaultsTable.timeZone }).from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1);
+    const sealDate = todayInTimeZone(new Date(), vaultRow?.timeZone ?? null);
     const { vault } = await sealVault({ vaultId, operatorId: req.account!.id, sealDate });
+    // H4: vault sealed, to the host — the seal transaction has committed by now, so
+    // this queues and sends exactly like the other action-triggered emails in build
+    // brief addendum 2 section 6.1 (previously found only by the recurring check).
+    const [operator] = await db.select({ email: accountsTable.email }).from(accountsTable)
+      .where(eq(accountsTable.id, req.account!.id)).limit(1);
+    if (operator?.email) {
+      const row = await enqueueEmail({ dedupeKey: `vault-sealed:${vault.id}`, eventType: "operator_vault_sealed", recipientEmail: operator.email, vaultId: vault.id, payload: { vaultName: vault.name } });
+      if (row) void sendEmailNow(row.id, "operator_vault_sealed");
+    }
     res.json({ vaultId: vault.id, guestToken: vault.guestToken, sealedAt: (vault.sealedAt as Date).toISOString() });
   } catch (error) {
     if (error instanceof Error && error.message.toLowerCase().includes("missing or already sealed")) { res.status(404).json({ error: error.message }); return; }
@@ -266,13 +287,14 @@ operatorVaultsRouter.post("/operator/vaults/:vaultId/seal", requireOperator, asy
 operatorVaultsRouter.post("/operator/vaults/:vaultId/setup/schedule-preview", requireOperator, async (req, res, next) => {
   try {
     const { vaultId } = PreviewVaultScheduleParams.parse(req.params);
-    void vaultId;
     const body = PreviewVaultScheduleBody.parse(req.body);
     // Setup happens before the real seal date is known, so the preview is computed
     // against today's date as a stand-in seal date. This is a plumbing default, not
     // a product decision: previewVaultSchedule's proposedSealDate only affects which
-    // side of "already passed" a date falls on, not the schedule's cadence.
-    const proposedSealDate = new Date().toISOString().slice(0, 10);
+    // side of "already passed" a date falls on, not the schedule's cadence. A draft
+    // without a time zone chosen yet falls back to UTC for this preview only (7.8).
+    const [vaultRow] = await db.select({ timeZone: vaultsTable.timeZone }).from(vaultsTable).where(eq(vaultsTable.id, vaultId)).limit(1);
+    const proposedSealDate = todayInTimeZone(new Date(), vaultRow?.timeZone ?? null);
     const revealSlots = await previewVaultSchedule({
       anchorDate: dateStr(body.anchorDate), proposedSealDate, planTier: body.planTier, schedule: body.schedule,
       milestoneDate: dateStr(body.milestoneDate), milestoneLabel: body.milestoneLabel,

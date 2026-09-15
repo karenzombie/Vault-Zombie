@@ -6,6 +6,7 @@ import { questionOptionsTable, questionsTable } from "./schema/content";
 import { overageEventsTable } from "./schema/billing";
 import { answersTable, guestsTable, submissionsTable } from "./schema/predictions";
 import { revealSlotsTable, vaultQuestionsTable, vaultsTable } from "./schema/vaults";
+import { accountsTable } from "./schema/accounts";
 
 /**
  * A custom prompt (vaultQuestionsTable.questionId null) has no bank question row to
@@ -137,13 +138,24 @@ export async function submitGuestAnswers(token: string, input: {
       overGuestCap: held,
       heldAt: held ? new Date() : null,
     }).returning();
+    // H7 (guest limit reached) fires the moment this submission is the one that first
+    // takes the vault over its cap; a caller checks newOverageEventId to send it
+    // immediately (build brief addendum 2, section 6.1). An overage event already open
+    // for this vault means H7 already fired for it, so nothing new is queued.
+    let newOverageEventId: string | null = null;
     if (held) {
       const [openEvent] = await tx.select({ id: overageEventsTable.id }).from(overageEventsTable)
         .where(and(eq(overageEventsTable.vaultId, vault.id), isNull(overageEventsTable.resolvedAt))).limit(1);
-      if (!openEvent) await tx.insert(overageEventsTable).values({
-        vaultId: vault.id, guestCap: cap, submissionCount: Number(existingCount) + 1,
-      });
+      if (!openEvent) {
+        const [created] = await tx.insert(overageEventsTable).values({
+          vaultId: vault.id, guestCap: cap, submissionCount: Number(existingCount) + 1,
+        }).returning();
+        newOverageEventId = created.id;
+      }
     }
+    const [operator] = newOverageEventId
+      ? await tx.select({ email: accountsTable.email }).from(accountsTable).where(eq(accountsTable.id, vault.operatorId)).limit(1)
+      : [];
 
     for (const answer of input.answers) {
       const question = questionRows.find((row) => row.id === answer.vaultQuestionId)!;
@@ -184,7 +196,11 @@ export async function submitGuestAnswers(token: string, input: {
         optionId: answer.answerType === "multiple_choice" || answer.answerType === "name_pick" ? answer.optionId : null,
       });
     }
-    return { submissionId: submission.id, referrerCode: vault.referrerCode, vaultId: vault.id, vaultName: vault.name, guestId: guest.id, guestEmail: guest.email };
+    return {
+      submissionId: submission.id, referrerCode: vault.referrerCode, vaultId: vault.id, vaultName: vault.name,
+      guestId: guest.id, guestEmail: guest.email, newOverageEventId, guestCap: cap,
+      operatorEmail: operator?.email ?? null,
+    };
   });
 }
 

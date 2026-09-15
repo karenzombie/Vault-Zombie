@@ -51,6 +51,10 @@ export const vaultsTable = pgTable(
     anchorDate: date("anchor_date", { mode: "string" }),
     milestoneDate: date("milestone_date", { mode: "string" }),
     milestoneLabel: text("milestone_label"),
+    // The host-chosen IANA zone identifier from VAULT_TIMEZONES (see ../timezone.ts).
+    // Nullable until the host picks one; required before sealing and immutable after
+    // (VaultZombie-Build-Brief-Addendum-2-v1.md, section 7).
+    timeZone: text("time_zone"),
     sealedAt: timestamp("sealed_at", { withTimezone: true }),
     coverObjectKey: text("cover_object_key"),
     guestToken: text("guest_token").notNull(),
