@@ -10,7 +10,7 @@ import { MarketingLayout } from "@/components/marketing-layout";
 
 const STEPS = [
   { n: 1, name: "Create", desc: "Pick a vault type, set your event date, choose how often guesses unlock, and curate your prompts.", icon: PenLine },
-  { n: 2, name: "Share", desc: "Print the QR code on your invites or set it out at the venue. Guests scan and seal a guess in about a minute.", icon: QrCode },
+  { n: 2, name: "Share", desc: "Share the QR code however you like. Print it on your invites, set it out at the venue, or drop it into an email or text. Guests scan and seal a guess in about a minute.", icon: QrCode },
   { n: 3, name: "Reveal", desc: "On each date, that batch of guesses opens. You mark what really happened, and the scoreboard updates.", icon: Unlock },
 ];
 
@@ -36,7 +36,7 @@ export default function HowItWorksPage() {
           <h2 className="text-sm font-bold tracking-widest uppercase text-bronze mb-3">How it works</h2>
           <h1 className="font-display text-4xl md:text-5xl text-ink mb-6">Seal a guess today. Unlock it when it matters.</h1>
           <p className="text-lg text-text-2">
-            VaultZombie turns your event into a game that plays out over years. Here is the whole thing, start to finish.
+            Turn your event into a game that plays out over years. Here is the whole thing, start to finish.
           </p>
         </div>
       </section>
@@ -63,7 +63,7 @@ export default function HowItWorksPage() {
             <h2 className="text-sm font-bold tracking-widest uppercase text-bronze mb-3">The reveal schedule</h2>
             <h3 className="text-3xl md:text-4xl font-bold text-ink mb-4">You choose the tempo.</h3>
             <p className="text-lg text-text-2">
-              At setup you pick one schedule. It sets the exact dates guests choose from, and how the story unspools.
+              At setup you pick one schedule. It sets the exact dates guests choose from, and how the story unfolds.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -15,13 +15,13 @@ const VAULT_TYPES = [
   { name: "Marriage", count: 112, categories: 8, sample: "What anniversary will they make the biggest deal of?", icon: Heart },
   { name: "Couple", count: 104, categories: 8, sample: "Where will the proposal happen?", icon: Users },
   { name: "New Baby", count: 96, categories: 8, sample: "What will the baby's first word be?", icon: Baby },
-  { name: "Child Growth", count: 104, categories: 8, sample: "What instrument might [Child] pick up?", icon: Sprout },
-  { name: "College", count: 96, categories: 8, sample: "What will [Student] major in?", icon: GraduationCap },
-  { name: "Job", count: 96, categories: 8, sample: "What job title will [Person] hold in 5 years?", icon: Briefcase },
-  { name: "Travel", count: 96, categories: 8, sample: "What will be [Traveler]'s favorite destination?", icon: Plane },
-  { name: "Retirement", count: 96, categories: 8, sample: "What will [Retiree] finally have time for?", icon: Sunset },
-  { name: "New Business", count: 96, categories: 8, sample: "In how many years will [Business] turn a profit?", icon: Rocket },
-  { name: "New Year", count: 96, categories: 8, sample: "What resolution will [Person] actually keep in [Year]?", icon: PartyPopper },
+  { name: "Child Growth", count: 104, categories: 8, sample: "What instrument might Maya pick up?", icon: Sprout },
+  { name: "College", count: 96, categories: 8, sample: "What will Jordan major in?", icon: GraduationCap },
+  { name: "Job", count: 96, categories: 8, sample: "What job title will Sam hold in 5 years?", icon: Briefcase },
+  { name: "Travel", count: 96, categories: 8, sample: "What will be Priya's favorite destination?", icon: Plane },
+  { name: "Retirement", count: 96, categories: 8, sample: "What will Dave finally have time for?", icon: Sunset },
+  { name: "New Business", count: 96, categories: 8, sample: "In how many years will Corner Coffee turn a profit?", icon: Rocket },
+  { name: "New Year", count: 96, categories: 8, sample: "What resolution will Alex actually keep in 2027?", icon: PartyPopper },
 ];
 
 export default function VaultTypesPage() {

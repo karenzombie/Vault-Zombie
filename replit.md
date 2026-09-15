@@ -73,6 +73,7 @@ _Populate as you build — explicit user instructions worth remembering across s
   - `Vault_Zombie_Initial_Build_Files/VaultZombie-Marketing-Site-Build-Stages-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Marketing-Site-Build-Stages-Addendum-1-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Marketing-Site-Build-Stages-Addendum-2-v1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Marketing-Site-Build-Stages-Addendum-3-v1.md`
 
   More addendums will be added over time. If you find an addendum file in the workspace that is not on this list, follow it as well and report that the list is out of date. Never treat an original document as current where an addendum covers the same ground.
 
