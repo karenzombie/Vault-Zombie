@@ -26,11 +26,6 @@ const FOOTER_LINKS = [
   { href: "/about", label: "About" },
 ];
 
-// Stage 5, corrected by Addendum 5: the footer's Terms/Privacy links and
-// the Legal page's "Read full" buttons point at the server routes
-// `/terms` and `/privacy`, which serve the configured documents from
-// `Policy_Documents/`, rather than static copies under `public/`.
-
 function MarketingHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
@@ -130,24 +125,6 @@ function MarketingFooter() {
           ))}
           <a href="mailto:info@zombieplatforms.com" data-testid="link-contact" className="rounded-md transition-colors hover:text-bronze focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             Contact
-          </a>
-          <a
-            href="/terms"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="link-footer-terms"
-            className="rounded-md transition-colors hover:text-bronze focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Terms
-          </a>
-          <a
-            href="/privacy"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="link-footer-privacy"
-            className="rounded-md transition-colors hover:text-bronze focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Privacy
           </a>
         </nav>
       </div>
