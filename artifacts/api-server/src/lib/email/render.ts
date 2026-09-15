@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, count, eq } from "drizzle-orm";
 import {
   answersTable, db, getGuestPersonalReport, guestLinkUrl,
-  guestsTable, overageEventsTable, PLAN_POLICY, revealSlotsTable, submissionsTable,
+  guestsTable, overageEventsTable, PLAN_POLICY, revealSlotsTable, submissionsTable, todayInTimeZone,
   vaultQuestionsTable, vaultsTable, vaultTypesTable, type EmailDelivery, type PlanTier,
 } from "@workspace/db";
 import { TIER_ORDER, findStripePrice, getStripeClient, type PaidTier } from "../stripe";
@@ -582,13 +582,13 @@ async function buildH7(row: EmailDelivery, p: Record<string, unknown>): Promise<
 
 async function buildH8(row: EmailDelivery, p: Record<string, unknown>): Promise<Doc> {
   if (!row.vaultId) throw new Error("Guest-limit reminder email is missing its vault.");
-  const [vault] = await db.select({ tier: vaultsTable.entitledPlanTier }).from(vaultsTable).where(eq(vaultsTable.id, row.vaultId)).limit(1);
+  const [vault] = await db.select({ tier: vaultsTable.entitledPlanTier, timeZone: vaultsTable.timeZone }).from(vaultsTable).where(eq(vaultsTable.id, row.vaultId)).limit(1);
   if (!vault) throw new Error("Vault no longer exists.");
   const [event] = await db.select({ guestCap: overageEventsTable.guestCap, submissionCount: overageEventsTable.submissionCount })
     .from(overageEventsTable).where(eq(overageEventsTable.vaultId, row.vaultId)).limit(1);
   const guestLimit = event?.guestCap ?? PLAN_POLICY[vault.tier].guestCap;
   const overCount = Math.max(0, (event?.submissionCount ?? guestLimit) - guestLimit);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInTimeZone(new Date(), vault.timeZone);
   const [nextSlot] = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable)
     .where(and(eq(revealSlotsTable.vaultId, row.vaultId))).orderBy(revealSlotsTable.revealDate).limit(50);
   const upcoming = (await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable).where(eq(revealSlotsTable.vaultId, row.vaultId)))
@@ -617,7 +617,7 @@ async function buildG1(row: EmailDelivery, p: Record<string, unknown>): Promise<
 
 async function buildG2(row: EmailDelivery): Promise<Doc> {
   if (!row.recipientGuestId || !row.vaultId || !row.revealSlotId) throw new Error("Guest report email is missing vault, guest, or reveal identity.");
-  const [vault] = await db.select({ operatorId: vaultsTable.operatorId, name: vaultsTable.name, referrerCode: vaultsTable.referrerCode })
+  const [vault] = await db.select({ operatorId: vaultsTable.operatorId, name: vaultsTable.name, referrerCode: vaultsTable.referrerCode, timeZone: vaultsTable.timeZone })
     .from(vaultsTable).where(eq(vaultsTable.id, row.vaultId)).limit(1);
   if (!vault) throw new Error("Guest report vault no longer exists.");
   const [guest] = await db.select({ name: guestsTable.displayName }).from(guestsTable).where(eq(guestsTable.id, row.recipientGuestId)).limit(1);
@@ -640,7 +640,7 @@ async function buildG2(row: EmailDelivery): Promise<Doc> {
   const full = answers.filter((a) => a.outcomeTier === "full").length;
   const half = answers.filter((a) => a.outcomeTier === "half").length;
   const zero = answers.filter((a) => a.outcomeTier === "zero").length;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayInTimeZone(new Date(), vault.timeZone);
   const laterSlots = await db.select({ id: answersTable.revealSlotId, date: revealSlotsTable.revealDate }).from(answersTable)
     .innerJoin(revealSlotsTable, eq(answersTable.revealSlotId, revealSlotsTable.id)).innerJoin(submissionsTable, eq(answersTable.submissionId, submissionsTable.id))
     .where(and(eq(submissionsTable.vaultId, row.vaultId), eq(submissionsTable.guestId, row.recipientGuestId), eq(submissionsTable.id, submission?.id ?? "")));

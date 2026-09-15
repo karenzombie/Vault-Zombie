@@ -93,3 +93,16 @@ export function todayInTimeZone(instant: Date, timeZone: string | null | undefin
 export function isDateArrivedInTimeZone(dateString: string, timeZone: string | null | undefined, instant: Date = new Date()): boolean {
   return dateString <= todayInTimeZone(instant, timeZone);
 }
+
+/**
+ * Adds `days` calendar days to a `YYYY-MM-DD` date string, purely as date-string
+ * arithmetic (no time zone conversion). Used to measure the far end of a window
+ * from a "today" that was already computed with `todayInTimeZone`, so both ends
+ * of the window are anchored to the same vault-zone date.
+ */
+export function addDaysToDateString(dateString: string, days: number): string {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}

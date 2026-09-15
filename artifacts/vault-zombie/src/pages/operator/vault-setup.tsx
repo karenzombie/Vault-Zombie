@@ -36,7 +36,7 @@ import {
   type GuestLayoutInputGuestLayout,
 } from "@workspace/api-client-react";
 import { PLAN_POLICY, type RevealSchedule } from "@workspace/db/schedule";
-import { VAULT_TIMEZONES } from "@workspace/db/timezone";
+import { todayInTimeZone, VAULT_TIMEZONES } from "@workspace/db/timezone";
 import { substituteTokens } from "@workspace/shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
@@ -531,7 +531,7 @@ function GuestLayoutSection({ vaultId, guestLayout }: { vaultId: string; guestLa
   );
 }
 
-function ScheduleSection({ vaultId, detail }: { vaultId: string; detail: { anchorDate: string | null; planTier: any; revealSchedule: string | null; milestoneDate: string | null; milestoneLabel: string | null } }) {
+function ScheduleSection({ vaultId, detail }: { vaultId: string; detail: { anchorDate: string | null; planTier: any; revealSchedule: string | null; milestoneDate: string | null; milestoneLabel: string | null; timeZone: string | null } }) {
   const queryClient = useQueryClient();
   const update = useUpdateVaultSetup();
   const preview = usePreviewVaultSchedule();
@@ -553,13 +553,13 @@ function ScheduleSection({ vaultId, detail }: { vaultId: string; detail: { ancho
       data: {
         planTier: detail.planTier,
         schedule: schedule as SchedulePreviewInputSchedule,
-        anchorDate: detail.anchorDate ?? new Date().toISOString().slice(0, 10),
+        anchorDate: detail.anchorDate ?? todayInTimeZone(new Date(), detail.timeZone),
         milestoneDate: detail.milestoneDate ?? null,
         milestoneLabel: detail.milestoneLabel ?? null,
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [schedule, detail.anchorDate, detail.milestoneDate, detail.milestoneLabel]);
+  }, [schedule, detail.anchorDate, detail.milestoneDate, detail.milestoneLabel, detail.timeZone]);
 
   function choose(next: RevealSchedule) {
     setSchedule(next);

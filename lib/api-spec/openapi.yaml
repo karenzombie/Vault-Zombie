@@ -1463,12 +1463,13 @@ components:
         revealSlots: { type: array, items: { $ref: "#/components/schemas/RevealSlotPreview" } }
     OverageStatus:
       type: object
-      required: [vaultId, heldSubmissionCount, unresolved, nearestRevealDate]
+      required: [vaultId, heldSubmissionCount, unresolved, nearestRevealDate, nearestRevealWithinSevenDays]
       properties:
         vaultId: { type: string, format: uuid }
         heldSubmissionCount: { type: integer }
         unresolved: { type: boolean }
         nearestRevealDate: { type: ["string", "null"], format: date }
+        nearestRevealWithinSevenDays: { type: boolean, description: "True when nearestRevealDate falls within 7 days of the vault's own today, in the vault's time zone." }
     OverageDeclineResult:
       type: object
       required: [archivedSubmissionCount]

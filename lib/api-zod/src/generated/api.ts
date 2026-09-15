@@ -386,7 +386,8 @@ export const GetOperatorOverageStatusResponse = zod.object({
   "vaultId": zod.string().uuid(),
   "heldSubmissionCount": zod.number().int(),
   "unresolved": zod.boolean(),
-  "nearestRevealDate": zod.coerce.date().nullable()
+  "nearestRevealDate": zod.coerce.date().nullable(),
+  "nearestRevealWithinSevenDays": zod.boolean().describe('True when nearestRevealDate falls within 7 days of the vault\'s own today, in the vault\'s time zone.')
 })
 
 

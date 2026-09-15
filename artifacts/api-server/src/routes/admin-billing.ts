@@ -10,8 +10,8 @@ import {
   RefundBillingRecordResponse, GrantVaultCompResponse,
 } from "@workspace/api-zod";
 import {
-  accountsTable, answersTable, billingRecordsTable, db, declineGuestOverage, findUnresolvedRefundReservation, PLAN_POLICY, readUnlockedAnswers, refundAttemptsTable, runSensitiveAdminAction, UNRESOLVED_REFUND_STATUSES,
-  giftsTable, guestsTable, overageEventsTable, revealSlotsTable, submissionsTable, vaultTypesTable, vaultsTable, emailDeliveriesTable,
+  accountsTable, addDaysToDateString, answersTable, billingRecordsTable, db, declineGuestOverage, findUnresolvedRefundReservation, PLAN_POLICY, readUnlockedAnswers, refundAttemptsTable, runSensitiveAdminAction, UNRESOLVED_REFUND_STATUSES,
+  giftsTable, guestsTable, overageEventsTable, revealSlotsTable, submissionsTable, todayInTimeZone, vaultTypesTable, vaultsTable, emailDeliveriesTable,
 } from "@workspace/db";
 import { ListAdminEmailDeliveriesResponse, RetryAdminEmailDeliveryParams, RetryAdminEmailDeliveryBody, RetryAdminEmailDeliveryResponse, ResendAdminGiftParams, ResendAdminGiftBody, ResendAdminGiftResponse } from "@workspace/api-zod";
 import { getStripeClient, TIER_ORDER, type PaidTier } from "../lib/stripe";
@@ -76,7 +76,8 @@ adminBillingRouter.get("/admin/dashboard", requireOperator, requireAdmin, async 
       db.select({ id: accountsTable.id }).from(accountsTable).where(eq(accountsTable.role, "operator")),
       db.select({ status: vaultsTable.status, tier: vaultsTable.entitledPlanTier, type: vaultTypesTable.name }).from(vaultsTable).innerJoin(vaultTypesTable, eq(vaultsTable.vaultTypeId, vaultTypesTable.id)),
       db.select({ id: guestsTable.id }).from(guestsTable), db.select({ id: submissionsTable.id }).from(submissionsTable),
-      db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable), db.select({ revealDate: revealSlotsTable.revealDate, unlockOverrideAt: answersTable.unlockOverrideAt }).from(answersTable).innerJoin(revealSlotsTable, eq(answersTable.revealSlotId, revealSlotsTable.id)),
+      db.select({ revealDate: revealSlotsTable.revealDate, timeZone: vaultsTable.timeZone }).from(revealSlotsTable).innerJoin(vaultsTable, eq(revealSlotsTable.vaultId, vaultsTable.id)),
+      db.select({ revealDate: revealSlotsTable.revealDate, unlockOverrideAt: answersTable.unlockOverrideAt, timeZone: vaultsTable.timeZone }).from(answersTable).innerJoin(revealSlotsTable, eq(answersTable.revealSlotId, revealSlotsTable.id)).innerJoin(vaultsTable, eq(revealSlotsTable.vaultId, vaultsTable.id)),
       db.select({ id: overageEventsTable.id }).from(overageEventsTable).where(isNull(overageEventsTable.resolvedAt)),
       db.select({ id: overageEventsTable.id }).from(overageEventsTable),
       db.select({ id: emailDeliveriesTable.id }).from(emailDeliveriesTable).where(eq(emailDeliveriesTable.status, "failed")),
@@ -86,7 +87,7 @@ adminBillingRouter.get("/admin/dashboard", requireOperator, requireAdmin, async 
     return res.json(GetAdminDashboardResponse.parse({
       operatorCount: accounts.length, vaultCount: vaults.length, guestCount: guests.length, submissionCount: submissions.length,
       vaultsByState: buckets(vaults.map((row) => row.status)), vaultsByType: buckets(vaults.map((row) => row.type)), vaultsByTier: buckets(vaults.map((row) => row.tier)),
-      revealProgress: { slotsTotal: slots.length, slotsLanded: slots.filter((row) => row.revealDate <= now.toISOString().slice(0, 10)).length, answersTotal: answers.length, answersUnlocked: answers.filter((row) => row.unlockOverrideAt ? row.unlockOverrideAt <= now : row.revealDate <= now.toISOString().slice(0, 10)).length },
+      revealProgress: { slotsTotal: slots.length, slotsLanded: slots.filter((row) => row.revealDate <= todayInTimeZone(now, row.timeZone)).length, answersTotal: answers.length, answersUnlocked: answers.filter((row) => row.unlockOverrideAt ? row.unlockOverrideAt <= now : row.revealDate <= todayInTimeZone(now, row.timeZone)).length },
       guestMetrics: { averageGuestsPerVault: vaults.length ? guests.length / vaults.length : 0, capExceededEventCount: allOverages.length },
       unresolvedOverageCount: overages.length, failedEmailCount: emails.length,
     }));
@@ -117,13 +118,16 @@ adminBillingRouter.get("/operator/vaults/:vaultId/overage", requireOperator, asy
     if (!vault) return res.status(404).json({ error: "Vault not found." });
     const rows = await db.select({ id: submissionsTable.id, heldAt: submissionsTable.heldAt })
       .from(submissionsTable).where(and(eq(submissionsTable.vaultId, vaultId), isNull(submissionsTable.archivedAt), isNull(submissionsTable.culledAt)));
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayInTimeZone(new Date(), vault.timeZone);
     const [nearest] = await db.select({ revealDate: revealSlotsTable.revealDate }).from(revealSlotsTable)
       .where(and(eq(revealSlotsTable.vaultId, vaultId), gte(revealSlotsTable.revealDate, today))).orderBy(asc(revealSlotsTable.revealDate)).limit(1);
     return res.json(GetOperatorOverageStatusResponse.parse({
       vaultId,
       heldSubmissionCount: rows.filter((row) => row.heldAt).length, unresolved: rows.some((row) => row.heldAt !== null),
       nearestRevealDate: nearest?.revealDate ?? null,
+      // Measured from this vault's own today (section 7.8), not the reader's clock or a raw
+      // instant offset, so "within 7 days" agrees with the vault's own reveal-opening rule.
+      nearestRevealWithinSevenDays: nearest ? nearest.revealDate <= addDaysToDateString(today, 7) : false,
     }));
   } catch (error) { return next(error); }
 });

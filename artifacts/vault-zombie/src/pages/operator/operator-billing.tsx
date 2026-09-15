@@ -17,7 +17,7 @@ export function OperatorOverageWarning({ vaultId }: { vaultId: string }) {
 
   if (!data?.unresolved || data.heldSubmissionCount === 0) return null;
 
-  const isClose = data.nearestRevealDate && new Date(data.nearestRevealDate).getTime() < Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const isClose = data.nearestRevealWithinSevenDays;
 
   const handleDecline = () => {
     declineOverage.mutate(

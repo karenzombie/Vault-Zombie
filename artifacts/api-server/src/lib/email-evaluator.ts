@@ -1,5 +1,5 @@
 import { and, eq, gte, isNotNull, isNull, lte, min, or } from "drizzle-orm";
-import { accountsTable, answerVerdictsTable, answersTable, db, enqueueEmail, getGuestRevealReportEligibility, guestsTable, overageEventsTable, questionsTable, revealSlotsTable, submissionsTable, todayInTimeZone, vaultQuestionsTable, vaultsTable } from "@workspace/db";
+import { accountsTable, addDaysToDateString, answerVerdictsTable, answersTable, db, enqueueEmail, getGuestRevealReportEligibility, guestsTable, overageEventsTable, questionsTable, revealSlotsTable, submissionsTable, todayInTimeZone, vaultQuestionsTable, vaultsTable } from "@workspace/db";
 import { daysBetween, formatElapsedTime } from "./format";
 import { logger } from "./logger";
 
@@ -92,7 +92,7 @@ export async function evaluateEmailWork(now = new Date()) {
     // overage event's vault may still be a draft with no time zone chosen yet, which
     // falls back to UTC for this window only.
     const eventToday = todayInTimeZone(now, event.timeZone);
-    const [near] = await db.select({ id: revealSlotsTable.id }).from(revealSlotsTable).where(and(eq(revealSlotsTable.vaultId, event.vaultId), gte(revealSlotsTable.revealDate, eventToday), lte(revealSlotsTable.revealDate, new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10)))).limit(1);
+    const [near] = await db.select({ id: revealSlotsTable.id }).from(revealSlotsTable).where(and(eq(revealSlotsTable.vaultId, event.vaultId), gte(revealSlotsTable.revealDate, eventToday), lte(revealSlotsTable.revealDate, addDaysToDateString(eventToday, 7)))).limit(1);
     if (near && await enqueueEmail({ dedupeKey: `overage-escalation:${event.id}`, eventType: "operator_overage_escalation", recipientEmail: event.email, vaultId: event.vaultId, payload: { vaultName: event.vaultName } })) queued++;
   }
   return { queued, dueSlots: slots.length };

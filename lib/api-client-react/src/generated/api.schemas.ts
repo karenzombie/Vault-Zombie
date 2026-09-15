@@ -618,6 +618,8 @@ export interface OverageStatus {
   unresolved: boolean;
   /** @nullable */
   nearestRevealDate: string | null;
+  /** True when nearestRevealDate falls within 7 days of the vault's own today, in the vault's time zone. */
+  nearestRevealWithinSevenDays: boolean;
 }
 
 export interface OverageDeclineResult {
