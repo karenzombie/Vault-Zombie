@@ -27,6 +27,14 @@ import SignInPage from '@/pages/auth/sign-in';
 import SignUpPage from '@/pages/auth/sign-up';
 import AdminSignInPage from '@/pages/auth/admin-sign-in';
 
+/* Marketing site */
+import HowItWorksPage from '@/pages/public/how-it-works';
+import VaultTypesPage from '@/pages/public/vault-types';
+import PricingPage from '@/pages/public/pricing';
+import GiftPage from '@/pages/public/gift';
+import AboutPage from '@/pages/public/about';
+import LegalPage from '@/pages/public/legal';
+
 /* Reports */
 import HealthReportPage from '@/pages/operator/reports/health';
 import SummaryReportPage from '@/pages/operator/reports/summary';
@@ -149,6 +157,12 @@ function Router() {
     <RoutedErrorBoundary>
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/how-it-works" component={HowItWorksPage} />
+        <Route path="/vault-types" component={VaultTypesPage} />
+        <Route path="/pricing" component={PricingPage} />
+        <Route path="/gift" component={GiftPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/legal" component={LegalPage} />
         <Route path="/g/:token" component={GuestFlow} />
 
         {/* Gift Routes */}

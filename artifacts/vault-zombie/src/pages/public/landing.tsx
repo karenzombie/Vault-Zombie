@@ -4,7 +4,7 @@ import { cn, getTierLabel } from "@/lib/utils";
 import { useGetBillingPrices } from "@workspace/api-client-react";
 import { Shield, Clock, Users, Unlock, Gift, Check, Calendar, ArrowRight, Sparkles } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
-import { SiteHeader } from "@/components/site-header";
+import { MarketingLayout } from "@/components/marketing-layout";
 
 const fadeUp: any = {
   hidden: { opacity: 0, y: 20 },
@@ -295,40 +295,14 @@ function Pricing() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="border-t border-[#E4DED4] bg-[#F6F4F0] px-6 py-16 text-ink">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-        <Link href="/" aria-label="Vault Zombie home" className="flex items-center gap-2">
-          <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-12 w-auto shrink-0" />
-          <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-12 w-auto shrink-0" />
-        </Link>
-        <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium text-ink">
-          <Link href="/gifts/redeem" className="transition-colors hover:text-bronze">Redeem a gift code</Link>
-          <Link href="/gifts/purchase" className="transition-colors hover:text-bronze">Gift a vault</Link>
-          <Link href="/sign-in" className="transition-colors hover:text-bronze">Sign in</Link>
-          <Link href="/sign-up" className="transition-colors hover:text-bronze">Sign up</Link>
-        </div>
-      </div>
-      <div className="mx-auto mt-12 max-w-6xl pt-8 text-center text-xs text-text-2">
-        Sealed predictions, unlocked over time. A Zombie Platforms product.
-      </div>
-    </footer>
-  );
-}
-
 export default function Landing() {
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col font-sans">
-      <SiteHeader />
-      <main className="flex-1">
-        <Hero />
-        <HowItWorks />
-        <VaultTypes />
-        <Trust />
-        <Pricing />
-      </main>
-      <Footer />
-    </div>
+    <MarketingLayout>
+      <Hero />
+      <HowItWorks />
+      <VaultTypes />
+      <Trust />
+      <Pricing />
+    </MarketingLayout>
   );
 }
