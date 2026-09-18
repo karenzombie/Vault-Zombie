@@ -1,4 +1,5 @@
 import { useLocation, useSearch } from "wouter";
+import { useAuth } from "@clerk/react";
 import { useGetGiftCardByCheckoutSession, getGetGiftCardByCheckoutSessionQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Copy, Printer, CheckCircle2, AlertCircle } from "lucide-react";
@@ -7,7 +8,18 @@ import { SiteHeader } from "@/components/site-header";
 
 import { getTierLabel } from "@/lib/utils";
 
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
+
 export default function GiftSuccessPage() {
+  return PUBLISHABLE_KEY ? <AuthAwareGiftSuccessPage /> : <GiftSuccessPageBody home="/" />;
+}
+
+function AuthAwareGiftSuccessPage() {
+  const { isLoaded, isSignedIn } = useAuth();
+  return <GiftSuccessPageBody home={isLoaded && isSignedIn ? "/operator" : "/"} />;
+}
+
+function GiftSuccessPageBody({ home }: { home: string }) {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const sessionId = params.get("session_id");
@@ -33,7 +45,7 @@ export default function GiftSuccessPage() {
             <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
             <h1 className="font-display text-2xl">Missing Session</h1>
             <p className="text-text-2">No checkout session provided.</p>
-            <Button onClick={() => setLocation("/")} variant="outline">Return Home</Button>
+            <Button onClick={() => setLocation(home)} variant="outline">Return Home</Button>
           </div>
         </div>
       </div>
@@ -100,7 +112,7 @@ export default function GiftSuccessPage() {
             <Button onClick={copyUrl} variant="outline" className="gap-2 border-border">
               <Copy className="w-4 h-4" /> Copy Link
             </Button>
-            <Button onClick={() => setLocation("/")} variant="ghost" className="gap-2">
+            <Button onClick={() => setLocation(home)} variant="ghost" className="gap-2">
               Return Home
             </Button>
           </div>
@@ -145,7 +157,15 @@ export default function GiftSuccessPage() {
           <div className="text-center space-y-4">
             <p className="text-text-2 text-sm max-w-md mx-auto">{data.description}</p>
             <div className="text-sm font-bold text-ink">
-              Redeem at: <span className="underline decoration-hairline underline-offset-4">{data.redemptionUrl}</span>
+              Redeem at:{" "}
+              <a
+                href={`${import.meta.env.BASE_URL}gifts/redeem?code=${encodeURIComponent(data.code)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-hairline underline-offset-4"
+              >
+                {data.redemptionUrl}
+              </a>
             </div>
           </div>
         </div>

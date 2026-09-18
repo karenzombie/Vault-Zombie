@@ -61,7 +61,7 @@ function SiteHeaderChrome({ isSignedIn, onSignOut }: { isSignedIn: boolean; onSi
   return (
     <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-hairline">
       <div className="mx-auto flex h-24 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
-        <Link href="/" aria-label="Vault Zombie home" className="flex min-w-0 items-center gap-2">
+        <Link href={isSignedIn ? "/operator" : "/"} aria-label="Vault Zombie home" className="flex min-w-0 items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-16 w-auto shrink-0" />
           <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-16 w-auto shrink-0" />
         </Link>

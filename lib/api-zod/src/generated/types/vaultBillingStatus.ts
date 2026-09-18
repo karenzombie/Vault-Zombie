@@ -11,5 +11,6 @@ import type { VaultBillingStatusCurrentTier } from './vaultBillingStatusCurrentT
 export interface VaultBillingStatus {
   vaultId: string;
   currentTier: VaultBillingStatusCurrentTier;
+  vaultCreatedAt: Date;
   attempts: BillingAttempt[];
 }

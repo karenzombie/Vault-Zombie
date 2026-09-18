@@ -13,4 +13,5 @@ export const AdminVaultSupportDetailBillingRecordsItemSource = {
   stripe: 'stripe',
   gift: 'gift',
   comp: 'comp',
+  lockbox: 'lockbox',
 } as const;

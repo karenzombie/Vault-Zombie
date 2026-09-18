@@ -54,6 +54,7 @@ billingRouter.get("/operator/vaults/:vaultId/billing", requireOperator, async (r
   const [vault] = await db.select({
     id: vaultsTable.id,
     entitledPlanTier: vaultsTable.entitledPlanTier,
+    createdAt: vaultsTable.createdAt,
   }).from(vaultsTable).where(and(
     eq(vaultsTable.id, params.data.vaultId),
     eq(vaultsTable.operatorId, req.account!.id),
@@ -69,12 +70,14 @@ billingRouter.get("/operator/vaults/:vaultId/billing", requireOperator, async (r
     amountCents: billingRecordsTable.amountCents,
     currency: billingRecordsTable.currency,
     status: billingRecordsTable.status,
+    source: billingRecordsTable.source,
     createdAt: billingRecordsTable.createdAt,
   }).from(billingRecordsTable).where(eq(billingRecordsTable.vaultId, vault.id))
     .orderBy(desc(billingRecordsTable.createdAt));
   res.json(GetOperatorVaultBillingStatusResponse.parse({
     vaultId: vault.id,
     currentTier: vault.entitledPlanTier,
+    vaultCreatedAt: vault.createdAt.toISOString(),
     attempts,
   }));
 });

@@ -196,19 +196,22 @@ export const GetOperatorVaultBillingStatusParams = zod.object({
   "vaultId": zod.coerce.string().uuid()
 })
 
+export const getOperatorVaultBillingStatusResponseAttemptsItemAmountCentsMin = 0;
 
 
 
 export const GetOperatorVaultBillingStatusResponse = zod.object({
   "vaultId": zod.string().uuid(),
   "currentTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "vaultCreatedAt": zod.coerce.date(),
   "attempts": zod.array(zod.object({
   "id": zod.string().uuid(),
   "fromTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
-  "targetTier": zod.enum(['safe', 'vault', 'deep_vault']),
-  "amountCents": zod.number().int().min(1),
+  "targetTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
+  "amountCents": zod.number().int().min(getOperatorVaultBillingStatusResponseAttemptsItemAmountCentsMin),
   "currency": zod.enum(['usd']),
-  "status": zod.enum(['pending', 'paid', 'expired', 'failed', 'disputed']),
+  "status": zod.enum(['pending', 'paid', 'expired', 'failed', 'disputed', 'refunded', 'comped']),
+  "source": zod.enum(['stripe', 'gift', 'comp', 'lockbox']),
   "createdAt": zod.coerce.date()
 }))
 })
@@ -415,7 +418,7 @@ export const ListAdminBillingResponse = zod.object({
   "amountCents": zod.number().int(),
   "currency": zod.enum(['usd']),
   "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'refunded', 'disputed', 'comped']),
-  "source": zod.enum(['stripe', 'gift', 'comp']),
+  "source": zod.enum(['stripe', 'gift', 'comp', 'lockbox']),
   "stripeRefundId": zod.string().nullish(),
   "refundRequestId": zod.string().uuid().nullish(),
   "refundAttemptStatus": zod.string().nullish(),
@@ -572,7 +575,7 @@ export const GetAdminOperatorResponse = zod.object({
   "amountCents": zod.number().int(),
   "currency": zod.enum(['usd']),
   "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'refunded', 'disputed', 'comped']),
-  "source": zod.enum(['stripe', 'gift', 'comp']),
+  "source": zod.enum(['stripe', 'gift', 'comp', 'lockbox']),
   "stripeRefundId": zod.string().nullish(),
   "refundRequestId": zod.string().uuid().nullish(),
   "refundAttemptStatus": zod.string().nullish(),
@@ -1329,7 +1332,7 @@ export const GetAdminVaultSupportDetailResponse = zod.object({
   "amountCents": zod.number().int(),
   "currency": zod.enum(['usd']),
   "status": zod.enum(['pending', 'paid', 'failed', 'expired', 'refunded', 'disputed', 'comped']),
-  "source": zod.enum(['stripe', 'gift', 'comp']),
+  "source": zod.enum(['stripe', 'gift', 'comp', 'lockbox']),
   "stripeRefundId": zod.string().nullish(),
   "refundRequestId": zod.string().uuid().nullish(),
   "refundAttemptStatus": zod.string().nullish(),
@@ -2162,6 +2165,7 @@ export const GetVaultHealthReportParams = zod.object({
 
 export const GetVaultHealthReportResponse = zod.object({
   "vaultId": zod.string().uuid(),
+  "name": zod.string(),
   "planTier": zod.enum(['lockbox', 'safe', 'vault', 'deep_vault']),
   "status": zod.string(),
   "predictionCount": zod.number().int(),

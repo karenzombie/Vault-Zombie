@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
+import { useAuth } from "@clerk/react";
 import { useCreateGiftCheckout, useGetBillingPrices, GiftCheckoutInputTargetTier } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,18 @@ import { useToast } from "@/hooks/use-toast";
 
 import { getTierLabel } from "@/lib/utils";
 
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
+
 export default function GiftPurchasePage() {
+  return PUBLISHABLE_KEY ? <AuthAwareGiftPurchasePage /> : <GiftPurchasePageBody home="/" />;
+}
+
+function AuthAwareGiftPurchasePage() {
+  const { isLoaded, isSignedIn } = useAuth();
+  return <GiftPurchasePageBody home={isLoaded && isSignedIn ? "/operator" : "/"} />;
+}
+
+function GiftPurchasePageBody({ home }: { home: string }) {
   const [tier, setTier] = useState<GiftCheckoutInputTargetTier>(GiftCheckoutInputTargetTier.vault);
   const [fromLine, setFromLine] = useState("");
   const [toLine, setToLine] = useState("");
@@ -71,7 +83,7 @@ export default function GiftPurchasePage() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       <header className="flex items-center justify-between px-5 py-4 bg-ink text-primary-foreground border-b border-border sticky top-0 z-20">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={home} className="flex items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-14 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity" />
           <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-14 w-auto object-contain" />
         </Link>

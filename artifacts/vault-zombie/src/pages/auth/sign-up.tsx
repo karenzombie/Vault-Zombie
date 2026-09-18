@@ -38,7 +38,11 @@ export default function SignUpPage() {
   async function signupMetadata() {
     if (!legal.data || !accepted) throw new Error("Explicit legal acceptance is required.");
     const intent = await createIntent.mutateAsync({ data: { accepted: true, termsVersion: legal.data.termsVersion, privacyVersion: legal.data.privacyVersion } });
-    return { legalSignupIntent: intent.token, ...(referrerCode ? { referrerCode } : {}) };
+    // findOrCreateAccount (auth.ts) requires legalAccepted: true inside unsafeMetadata, in
+    // addition to the top-level legalAccepted parameter that sets Clerk's own
+    // legalAcceptedAt. The signed intent above remains the evidence of acceptance; this
+    // flag only satisfies that same-metadata check.
+    return { legalSignupIntent: intent.token, legalAccepted: true, ...(referrerCode ? { referrerCode } : {}) };
   }
   async function createAccount(event: FormEvent) {
     event.preventDefault();

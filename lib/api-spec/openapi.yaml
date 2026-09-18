@@ -1917,7 +1917,7 @@ components:
               amountCents: { type: integer }
               currency: { type: string, enum: [usd] }
               status: { type: string, enum: [pending, paid, failed, expired, refunded, disputed, comped] }
-              source: { type: string, enum: [stripe, gift, comp] }
+              source: { type: string, enum: [stripe, gift, comp, lockbox] }
               stripeRefundId: { type: ["string", "null"] }
               refundRequestId: { type: ["string", "null"], format: uuid }
               refundAttemptStatus: { type: ["string", "null"] }
@@ -2011,21 +2011,23 @@ components:
         refundAttemptStatus: { type: string }
     BillingAttempt:
       type: object
-      required: [id, fromTier, targetTier, amountCents, currency, status, createdAt]
+      required: [id, fromTier, targetTier, amountCents, currency, status, source, createdAt]
       properties:
         id: { type: string, format: uuid }
         fromTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
-        targetTier: { type: string, enum: [safe, vault, deep_vault] }
-        amountCents: { type: integer, minimum: 1 }
+        targetTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        amountCents: { type: integer, minimum: 0 }
         currency: { type: string, enum: [usd] }
-        status: { type: string, enum: [pending, paid, expired, failed, disputed] }
+        status: { type: string, enum: [pending, paid, expired, failed, disputed, refunded, comped] }
+        source: { type: string, enum: [stripe, gift, comp, lockbox] }
         createdAt: { type: string, format: date-time }
     VaultBillingStatus:
       type: object
-      required: [vaultId, currentTier, attempts]
+      required: [vaultId, currentTier, vaultCreatedAt, attempts]
       properties:
         vaultId: { type: string, format: uuid }
         currentTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
+        vaultCreatedAt: { type: string, format: date-time }
         attempts:
           type: array
           items: { $ref: "#/components/schemas/BillingAttempt" }
@@ -2209,9 +2211,10 @@ components:
         scored: { type: integer }
     VaultHealthReport:
       type: object
-      required: [vaultId, planTier, status, predictionCount, guestCount, revealSlots, completedRevealCount, nextRevealDate, referralCount, vaultTypeSlug, coverObjectKey, guestLayout]
+      required: [vaultId, name, planTier, status, predictionCount, guestCount, revealSlots, completedRevealCount, nextRevealDate, referralCount, vaultTypeSlug, coverObjectKey, guestLayout]
       properties:
         vaultId: { type: string, format: uuid }
+        name: { type: string }
         planTier: { type: string, enum: [lockbox, safe, vault, deep_vault] }
         status: { type: string }
         predictionCount: { type: integer }

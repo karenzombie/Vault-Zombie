@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type AdminBillingListRecordsItemSource = typeof AdminBillingListRecordsItemSource[keyof typeof AdminBillingListRecordsItemSource];
+export type BillingAttemptSource = typeof BillingAttemptSource[keyof typeof BillingAttemptSource];
 
 
-export const AdminBillingListRecordsItemSource = {
+export const BillingAttemptSource = {
   stripe: 'stripe',
   gift: 'gift',
   comp: 'comp',

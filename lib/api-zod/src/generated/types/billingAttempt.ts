@@ -7,6 +7,7 @@
  */
 import type { BillingAttemptCurrency } from './billingAttemptCurrency';
 import type { BillingAttemptFromTier } from './billingAttemptFromTier';
+import type { BillingAttemptSource } from './billingAttemptSource';
 import type { BillingAttemptStatus } from './billingAttemptStatus';
 import type { BillingAttemptTargetTier } from './billingAttemptTargetTier';
 
@@ -14,9 +15,10 @@ export interface BillingAttempt {
   id: string;
   fromTier: BillingAttemptFromTier;
   targetTier: BillingAttemptTargetTier;
-  /** @minimum 1 */
+  /** @minimum 0 */
   amountCents: number;
   currency: BillingAttemptCurrency;
   status: BillingAttemptStatus;
+  source: BillingAttemptSource;
   createdAt: Date;
 }

@@ -174,11 +174,18 @@ export async function spendEntitlementForNewVault(input: {
       planTier: billingRecord.targetTier,
       subjectValues: input.subjectValues,
     }, tx);
+    // The vault's entitlement (what it is allowed to seal at) is this billing record's
+    // tier, not createDraftVault's schema default. Set it in the same transaction as the
+    // vault insert and the billing record's appliedAt, so a vault is never left entitled
+    // below what was actually paid or granted for it.
+    const [entitledVault] = await tx.update(vaultsTable).set({
+      entitledPlanTier: billingRecord.targetTier,
+    }).where(eq(vaultsTable.id, vault.id)).returning();
     await tx.update(billingRecordsTable).set({
       vaultId: vault.id,
       appliedAt: new Date(),
     }).where(eq(billingRecordsTable.id, billingRecord.id));
-    return { kind: "ok" as const, vault, guestToken, emailDeliveryId };
+    return { kind: "ok" as const, vault: entitledVault, guestToken, emailDeliveryId };
   });
 }
 

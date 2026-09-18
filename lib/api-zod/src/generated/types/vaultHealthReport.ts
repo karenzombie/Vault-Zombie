@@ -11,6 +11,7 @@ import type { VaultHealthReportPlanTier } from './vaultHealthReportPlanTier';
 
 export interface VaultHealthReport {
   vaultId: string;
+  name: string;
   planTier: VaultHealthReportPlanTier;
   status: string;
   predictionCount: number;

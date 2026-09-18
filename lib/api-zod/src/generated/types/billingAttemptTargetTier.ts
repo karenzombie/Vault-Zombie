@@ -10,6 +10,7 @@ export type BillingAttemptTargetTier = typeof BillingAttemptTargetTier[keyof typ
 
 
 export const BillingAttemptTargetTier = {
+  lockbox: 'lockbox',
   safe: 'safe',
   vault: 'vault',
   deep_vault: 'deep_vault',

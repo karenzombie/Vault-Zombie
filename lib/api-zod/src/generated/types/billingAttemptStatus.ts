@@ -15,4 +15,6 @@ export const BillingAttemptStatus = {
   expired: 'expired',
   failed: 'failed',
   disputed: 'disputed',
+  refunded: 'refunded',
+  comped: 'comped',
 } as const;

@@ -142,7 +142,7 @@ export async function getVaultHealthReport(vaultId: string, operatorId: string) 
   const today = todayInTimeZone(new Date(), vault.timeZone);
   const referralCount = vault.entitledPlanTier === "lockbox" ? null : Number((await db.select({ value: count() }).from(accountsTable).where(eq(accountsTable.referredByVaultId, vaultId)))[0]?.value ?? 0);
   const [vaultType] = await db.select({ slug: vaultTypesTable.slug }).from(vaultTypesTable).where(eq(vaultTypesTable.id, vault.vaultTypeId)).limit(1);
-  return { vaultId, planTier: vault.entitledPlanTier, status, predictionCount: Number(predictions.value),
+  return { vaultId, name: vault.name, planTier: vault.entitledPlanTier, status, predictionCount: Number(predictions.value),
     guestCount: Number(guests.value), revealSlots: slots, completedRevealCount: slots.filter((s) => s.revealDate <= today).length,
     nextRevealDate: slots.find((s) => s.revealDate > today)?.revealDate ?? null, referralCount,
     vaultTypeSlug: vaultType?.slug ?? "", coverObjectKey: vault.coverObjectKey, guestLayout: vault.guestLayout };

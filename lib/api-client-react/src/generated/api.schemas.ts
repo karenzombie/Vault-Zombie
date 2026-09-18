@@ -892,6 +892,7 @@ export const AdminOperatorDetailBillingRecordsItemSource = {
   stripe: 'stripe',
   gift: 'gift',
   comp: 'comp',
+  lockbox: 'lockbox',
 } as const;
 
 export type AdminOperatorDetailBillingRecordsItem = {
@@ -1123,6 +1124,7 @@ export const AdminVaultSupportDetailBillingRecordsItemSource = {
   stripe: 'stripe',
   gift: 'gift',
   comp: 'comp',
+  lockbox: 'lockbox',
 } as const;
 
 export type AdminVaultSupportDetailBillingRecordsItem = {
@@ -1534,6 +1536,7 @@ export const AdminBillingListRecordsItemSource = {
   stripe: 'stripe',
   gift: 'gift',
   comp: 'comp',
+  lockbox: 'lockbox',
 } as const;
 
 export type AdminBillingListRecordsItem = {
@@ -1757,6 +1760,7 @@ export type BillingAttemptTargetTier = typeof BillingAttemptTargetTier[keyof typ
 
 
 export const BillingAttemptTargetTier = {
+  lockbox: 'lockbox',
   safe: 'safe',
   vault: 'vault',
   deep_vault: 'deep_vault',
@@ -1778,16 +1782,29 @@ export const BillingAttemptStatus = {
   expired: 'expired',
   failed: 'failed',
   disputed: 'disputed',
+  refunded: 'refunded',
+  comped: 'comped',
+} as const;
+
+export type BillingAttemptSource = typeof BillingAttemptSource[keyof typeof BillingAttemptSource];
+
+
+export const BillingAttemptSource = {
+  stripe: 'stripe',
+  gift: 'gift',
+  comp: 'comp',
+  lockbox: 'lockbox',
 } as const;
 
 export interface BillingAttempt {
   id: string;
   fromTier: BillingAttemptFromTier;
   targetTier: BillingAttemptTargetTier;
-  /** @minimum 1 */
+  /** @minimum 0 */
   amountCents: number;
   currency: BillingAttemptCurrency;
   status: BillingAttemptStatus;
+  source: BillingAttemptSource;
   createdAt: string;
 }
 
@@ -1804,6 +1821,7 @@ export const VaultBillingStatusCurrentTier = {
 export interface VaultBillingStatus {
   vaultId: string;
   currentTier: VaultBillingStatusCurrentTier;
+  vaultCreatedAt: string;
   attempts: BillingAttempt[];
 }
 
@@ -2110,6 +2128,7 @@ export const VaultHealthReportGuestLayout = {
 
 export interface VaultHealthReport {
   vaultId: string;
+  name: string;
   planTier: VaultHealthReportPlanTier;
   status: string;
   predictionCount: number;

@@ -13,4 +13,5 @@ export const AdminOperatorDetailBillingRecordsItemSource = {
   stripe: 'stripe',
   gift: 'gift',
   comp: 'comp',
+  lockbox: 'lockbox',
 } as const;

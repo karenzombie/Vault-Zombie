@@ -171,6 +171,26 @@ function buildErrorMessage(response: Response, data: unknown): string {
   return prefix;
 }
 
+/**
+ * The server's own error message, without the "HTTP 409 Conflict:" prefix
+ * that ApiError#message carries for logging/debugging. Falls back to
+ * ApiError#message with the prefix stripped for a plain-string response
+ * body, or undefined if the error is not an ApiError or carries no message.
+ */
+export function getApiErrorDetail(err: unknown): string | undefined {
+  if (!(err instanceof ApiError)) return undefined;
+  const data = err.data;
+  if (typeof data === "string") {
+    const text = data.trim();
+    return text ? truncate(text) : undefined;
+  }
+  const title = getStringField(data, "title");
+  const detail = getStringField(data, "detail");
+  const message = getStringField(data, "message") ?? getStringField(data, "error_description") ?? getStringField(data, "error");
+  if (title && detail) return `${title} — ${detail}`;
+  return detail ?? message ?? title;
+}
+
 export class ApiError<T = unknown> extends Error {
   readonly name = "ApiError";
   readonly status: number;

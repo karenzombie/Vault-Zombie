@@ -152,13 +152,19 @@ export function OperatorReveal({ vaultId }: { vaultId: string }) {
   const { data: revealData, isLoading: isRevealLoading, error: revealError } = useListUnlockedRevealWork(vaultId);
   const { data: healthData } = useGetVaultHealthReport(vaultId);
 
+  // 5.5: a draft vault has no live reveal to show; send the host to setup instead.
+  if (healthData && healthData.status === "draft") {
+    return <Redirect to={`/operator/vaults/${vaultId}/setup`} />;
+  }
+
   const hasPaidAccess = !!(healthData && healthData.planTier !== 'lockbox');
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       <SiteHeader />
       <div className="flex justify-center px-3 sm:px-4 pt-4">
-        <div className="w-full max-w-lg flex justify-end">
+        <div className="w-full max-w-lg flex items-center justify-between gap-3">
+          <h1 className="font-display text-4xl text-ink truncate">{healthData?.name}</h1>
           <div className="shrink-0 text-[10px] sm:text-[11px] font-bold tracking-wider sm:tracking-widest text-bronze uppercase bg-bronze-wash px-2 sm:px-3 py-1.5 rounded-full">
             Live Host
           </div>
@@ -189,7 +195,7 @@ export function OperatorReveal({ vaultId }: { vaultId: string }) {
         )}
 
         <Tabs defaultValue="reveal" className="w-full">
-          <TabsList className={`w-full grid mb-8 bg-muted p-1 border border-border/50 ${!hasPaidAccess ? 'grid-cols-3' : 'grid-cols-4'}`}>
+          <TabsList className={`w-full h-auto grid mb-8 bg-muted p-1 border border-border/50 ${!hasPaidAccess ? 'grid-cols-3' : 'grid-cols-4'}`}>
             <TabsTrigger value="reveal" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Live</TabsTrigger>
             {hasPaidAccess && (
               <TabsTrigger value="scoreboard" className="text-sm sm:text-base font-bold py-2.5 data-[state=active]:bg-white data-[state=active]:text-ink">Score</TabsTrigger>

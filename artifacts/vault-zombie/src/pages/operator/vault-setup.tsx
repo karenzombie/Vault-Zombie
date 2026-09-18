@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Redirect, useLocation } from "wouter";
+import { Redirect } from "wouter";
 import {
   DndContext,
   PointerSensor,
@@ -30,6 +30,7 @@ import {
   useSealVaultAction,
   getListVaultPromptsQueryKey,
   getGetVaultSetupDetailQueryKey,
+  getGetSealReadinessQueryKey,
   type VaultPrompt,
   type RevealSlotPreview,
   type SchedulePreviewInputSchedule,
@@ -85,8 +86,21 @@ function formatSlotDate(value: string): string {
   return new Date(`${value}T12:00:00.000Z`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
+/** Addendum 4, 5.1: the event date section's heading and helper line, by vault type slug. */
+const EVENT_DATE_COPY: Record<string, { heading: string; helperLine: string }> = {
+  marriage: { heading: "When's the big day?", helperLine: "Some suggestions: your wedding day or your vow renewal." },
+  couple: { heading: "When did your story start?", helperLine: "Some suggestions: the day you met, your first date, or the day you made it official." },
+  baby: { heading: "When's baby due?", helperLine: "Some suggestions: the due date, or the birthday if baby has already arrived." },
+  "child-growth": { heading: "When does the countdown start?", helperLine: "Some suggestions: a birthday, the first day of school, or any day that marks the start." },
+  college: { heading: "When does college start?", helperLine: "Some suggestions: move-in day, the first day of classes, or graduation day." },
+  job: { heading: "When does the new chapter start?", helperLine: "Some suggestions: the first day at the new job, a promotion, or a graduation." },
+  travel: { heading: "When does the adventure begin?", helperLine: "Some suggestions: departure day, or the day of the big move." },
+  retirement: { heading: "When's the last day at work?", helperLine: "Some suggestions: the retirement date, or the day of the party." },
+  "new-business": { heading: "When's launch day?", helperLine: "Some suggestions: opening day, launch day, or the day the business was founded." },
+  "new-year": { heading: "Which year are we predicting?", helperLine: "Most New Year vaults use January 1 of the year ahead." },
+};
+
 export default function VaultSetupPage({ vaultId }: { vaultId: string }) {
-  const [, setLocation] = useLocation();
   const detail = useGetVaultSetupDetail(vaultId);
 
   if (detail.isLoading) {
@@ -127,12 +141,6 @@ export default function VaultSetupPage({ vaultId }: { vaultId: string }) {
         <ScheduleSection vaultId={vaultId} detail={detail.data} />
         <PromptsSection vaultId={vaultId} subjectValues={detail.data.subjectValues} />
         <SealSection vaultId={vaultId} vaultName={detail.data.name} />
-
-        <div className="flex justify-end mt-10">
-          <Button data-testid="button-setup-done" onClick={() => setLocation(`/operator/vaults/${vaultId}`)}>
-            Continue
-          </Button>
-        </div>
       </div>
     </div>
   );
@@ -202,11 +210,22 @@ function SealSection({ vaultId, vaultName }: { vaultId: string; vaultName: strin
     );
   }
 
+  const sealBlocked = !r || !r.ready;
+
   return (
     <SectionCard title="Seal this vault">
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      {/* 5.3: AlertDialogTrigger's asChild composes its own onClick onto the child
+          regardless of the child's disabled attribute, so a disabled Button here can
+          still open the confirmation dialog. Gate the dialog's own open state on
+          readiness too, so a blocked seal cannot be opened by any path. */}
+      <AlertDialog open={confirmOpen && !sealBlocked} onOpenChange={(next) => setConfirmOpen(next && !sealBlocked)}>
         <AlertDialogTrigger asChild>
-          <Button data-testid="button-seal-vault" disabled={!r || !r.ready}>
+          <Button
+            data-testid="button-seal-vault"
+            disabled={sealBlocked}
+            aria-disabled={sealBlocked}
+            className={sealBlocked ? "opacity-50 pointer-events-none" : undefined}
+          >
             Seal this vault
           </Button>
         </AlertDialogTrigger>
@@ -258,12 +277,13 @@ function SectionCard({ title, helper, children }: { title: string; helper?: stri
   );
 }
 
-function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anchorDate: string | null; planTier: any; revealSchedule: string | null; milestoneDate: string | null; milestoneLabel: string | null; timeZone: string | null; status: string } }) {
+function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anchorDate: string | null; planTier: any; revealSchedule: string | null; milestoneDate: string | null; milestoneLabel: string | null; timeZone: string | null; status: string; vaultTypeSlug: string } }) {
   const queryClient = useQueryClient();
   const update = useUpdateVaultSetup();
   const [anchorDate, setAnchorDate] = useState(detail.anchorDate ?? "");
   const [timeZone, setTimeZone] = useState(detail.timeZone ?? "");
   const seeded = useRef(false);
+  const copy = EVENT_DATE_COPY[detail.vaultTypeSlug];
   // Section 7.6: once sealed, the time zone is immutable, but this section still
   // renders it (as a disabled control) rather than hiding it.
   const isSealed = detail.status !== "draft";
@@ -289,12 +309,20 @@ function EventDateSection({ vaultId, detail }: { vaultId: string; detail: { anch
           timeZone: nextTimeZone || null,
         },
       },
-      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) }) },
+      { onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) });
+        queryClient.invalidateQueries({ queryKey: getGetSealReadinessQueryKey(vaultId) });
+      } },
     );
   }
 
+  const heading = copy?.heading ?? "When's the big day?";
+  const helper = copy
+    ? `${copy.helperLine} Your reveal dates count forward from this day. Leave it blank and they count from the day you seal.`
+    : "Your reveal dates count forward from this day. Leave it blank and they count from the day you seal.";
+
   return (
-    <SectionCard title="When's the big day?" helper="Your reveal dates count forward from this day. Leave it blank and they count from the day you seal.">
+    <SectionCard title={heading} helper={helper}>
       <div className="max-w-xs mb-5">
         <Label htmlFor="event-date">Event date</Label>
         <Input
@@ -362,7 +390,10 @@ function MilestoneSection({ vaultId, detail }: { vaultId: string; detail: { anch
           milestoneLabel: nextLabel || null,
         },
       },
-      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) }) },
+      { onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) });
+        queryClient.invalidateQueries({ queryKey: getGetSealReadinessQueryKey(vaultId) });
+      } },
     );
   }
 
@@ -419,6 +450,7 @@ function CoverSection({ vaultId, detail }: { vaultId: string; detail: { planTier
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) });
+    queryClient.invalidateQueries({ queryKey: getGetSealReadinessQueryKey(vaultId) });
   }
 
   function handleFile(file: File | undefined) {
@@ -506,7 +538,10 @@ function GuestLayoutSection({ vaultId, guestLayout }: { vaultId: string; guestLa
   function choose(next: GuestLayoutInputGuestLayout) {
     update.mutate(
       { vaultId, data: { guestLayout: next } },
-      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) }) },
+      { onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) });
+        queryClient.invalidateQueries({ queryKey: getGetSealReadinessQueryKey(vaultId) });
+      } },
     );
   }
 
@@ -574,7 +609,10 @@ function ScheduleSection({ vaultId, detail }: { vaultId: string; detail: { ancho
           milestoneLabel: detail.milestoneLabel ?? null,
         },
       },
-      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) }) },
+      { onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetVaultSetupDetailQueryKey(vaultId) });
+        queryClient.invalidateQueries({ queryKey: getGetSealReadinessQueryKey(vaultId) });
+      } },
     );
   }
 
@@ -776,6 +814,7 @@ function PromptsSection({ vaultId, subjectValues }: { vaultId: string; subjectVa
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: getListVaultPromptsQueryKey(vaultId) });
+    queryClient.invalidateQueries({ queryKey: getGetSealReadinessQueryKey(vaultId) });
   }
 
   function handleToggle(vaultQuestionId: string, enabled: boolean) {
@@ -868,7 +907,7 @@ function PromptsSection({ vaultId, subjectValues }: { vaultId: string; subjectVa
             <p className="text-xs text-text-2 mt-2">Scoreable prompts have a real answer you'll mark later. Keepsake prompts are just for the memories.</p>
           </div>
           <Button type="button" data-testid="button-save-custom-prompt" onClick={handleAddCustom} disabled={addCustom.isPending || !customText.trim()}>
-            {addCustom.isPending ? "Adding…" : "Add prompt"}
+            {addCustom.isPending ? "Saving…" : "Save"}
           </Button>
         </div>
       )}

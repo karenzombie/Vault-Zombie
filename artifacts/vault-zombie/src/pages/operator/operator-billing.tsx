@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Link } from "wouter";
 import { useGetOperatorVaultBillingStatus, useCreateVaultCheckout, useDeclineOperatorOverage, useGetOperatorOverageStatus, useGetBillingPrices, VaultCheckoutInputTargetTier } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetOperatorVaultBillingStatusQueryKey, getGetOperatorOverageStatusQueryKey } from "@workspace/api-client-react";
 import { getTierLabel } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, CreditCard, Gift, ShieldAlert, ArrowRight } from "lucide-react";
+import { AlertCircle, CreditCard, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function OperatorOverageWarning({ vaultId }: { vaultId: string }) {
@@ -69,14 +68,14 @@ export function OperatorOverageWarning({ vaultId }: { vaultId: string }) {
 }
 
 export function OperatorBillingPanel({ vaultId }: { vaultId: string }) {
-  const { data: billing, isLoading } = useGetOperatorVaultBillingStatus(vaultId);
+  const { data: billing, isLoading, isError } = useGetOperatorVaultBillingStatus(vaultId);
   const { data: billingPrices, isLoading: pricesLoading, isError: pricesError } = useGetBillingPrices();
   const createCheckout = useCreateVaultCheckout();
   const { toast } = useToast();
   const [selectedTier, setSelectedTier] = useState<VaultCheckoutInputTargetTier | null>(null);
 
   if (isLoading) return <div className="animate-pulse p-6 text-center text-text-2">Loading billing status...</div>;
-  if (!billing) return null;
+  if (isError || !billing) return <div className="p-6 text-center text-destructive">Unable to load billing. Please try again.</div>;
 
   const currentTier = billing.currentTier;
   const availableUpgrades = billingPrices?.filter((price) => price.fromTier === currentTier);
@@ -141,40 +140,63 @@ export function OperatorBillingPanel({ vaultId }: { vaultId: string }) {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-5">
-        <div className="flex items-center gap-3 mb-2">
-          <Gift className="w-5 h-5 text-vault-accent" />
-          <h3 className="font-display text-xl text-ink">Have a Gift Code?</h3>
-        </div>
-        <p className="text-text-2 text-sm mb-4">Apply a pre-paid gift card to upgrade this vault instantly.</p>
-        <Link href={`/gifts/redeem?vaultId=${vaultId}`}>
-          <Button variant="outline" className="w-full gap-2">Redeem a Gift <ArrowRight className="w-4 h-4" /></Button>
-        </Link>
-      </div>
-
-      {billing.attempts.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <h4 className="font-bold text-ink mb-4">Billing History</h4>
-          <div className="space-y-3">
-            {billing.attempts.map((att) => (
-              <div key={att.id} className="flex items-center justify-between p-3 border-b border-hairline last:border-0 text-sm">
-                <div>
-                  <div className="font-medium text-ink">Upgrade to {getTierName(att.targetTier)}</div>
-                  <div className="text-xs text-text-2">{new Date(att.createdAt).toLocaleDateString()}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-ink">${(att.amountCents / 100).toFixed(2)}</div>
-                  <div className={`text-xs font-bold uppercase ${att.status === 'paid' ? 'text-ok' : att.status === 'pending' ? 'text-vault-accent' : 'text-text-2'}`}>
-                    {att.status}
+      {(() => {
+        // 4.2: only completed records are shown to the host; pending/expired/failed
+        // records are abandoned or incomplete checkouts, not history.
+        const visibleAttempts = billing.attempts.filter((att) =>
+          att.status === "paid" || att.status === "refunded" || att.status === "disputed" || att.status === "comped");
+        if (visibleAttempts.length === 0) return null;
+        const vaultCreatedAt = new Date(billing.vaultCreatedAt).getTime();
+        return (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <h4 className="font-bold text-ink mb-4">Billing History</h4>
+            <div className="space-y-3">
+              {visibleAttempts.map((att) => {
+                const row = describeBillingRow(att, vaultCreatedAt, getTierName);
+                return (
+                  <div key={att.id} className="flex items-center justify-between p-3 border-b border-hairline last:border-0 text-sm">
+                    <div>
+                      <div className="font-medium text-ink">{row.title}</div>
+                      <div className="text-xs text-text-2">{new Date(att.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-ink">{row.amount}</div>
+                      {row.statusText && (
+                        <div className="text-xs font-bold uppercase text-text-2">{row.statusText}</div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
+}
+
+function describeBillingRow(
+  att: { targetTier: string; amountCents: number; currency: string; status: string; source: string; createdAt: string },
+  vaultCreatedAt: number,
+  getTierName: (t: string) => string,
+): { title: string; amount: string; statusText: string | null } {
+  const formattedAmount = new Intl.NumberFormat("en-US", { style: "currency", currency: att.currency }).format(att.amountCents / 100);
+  if (att.source === "lockbox") {
+    return { title: "Lockbox (Free)", amount: "Free", statusText: null };
+  }
+  if (att.source === "gift") {
+    return { title: `Gift: ${getTierName(att.targetTier)}`, amount: formattedAmount, statusText: "Gift" };
+  }
+  if (att.source === "comp") {
+    return { title: `Complimentary upgrade to ${getTierName(att.targetTier)}`, amount: "$0.00", statusText: "Complimentary" };
+  }
+  // source === "stripe": a purchase made before this vault existed (its billing record
+  // predates the vault) reads as a plan purchase; one made after reads as an upgrade.
+  const purchasedBeforeVault = new Date(att.createdAt).getTime() < vaultCreatedAt;
+  const title = purchasedBeforeVault ? `${getTierName(att.targetTier)} purchase` : `Upgrade to ${getTierName(att.targetTier)}`;
+  const statusText = att.status === "paid" ? "Paid" : att.status === "refunded" ? "Refunded" : att.status === "disputed" ? "Disputed" : null;
+  return { title, amount: formattedAmount, statusText };
 }
 
 function UpgradeCard({ tier, name, amountCents, currency, onSelect, isPending, setSelect }: { tier: VaultCheckoutInputTargetTier, name: string, amountCents: number, currency: string, onSelect: (t: VaultCheckoutInputTargetTier) => void, isPending: boolean, setSelect: (t: VaultCheckoutInputTargetTier) => void }) {

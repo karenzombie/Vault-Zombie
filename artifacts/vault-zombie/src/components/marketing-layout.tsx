@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth, useClerk } from "@clerk/react";
 import { Menu, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,13 @@ import { cn } from "@/lib/utils";
  * share this header and footer. This is distinct from `SiteHeader`, which
  * serves the authenticated app surfaces (operator, reports, admin) and is
  * unmodified by this work.
+ *
+ * Addendum 4, section 7: marketing pages stay viewable when signed in, so the
+ * header and footer must reflect signed-in state (home destination, and the
+ * header's own signed-in links) rather than assuming every visitor is signed
+ * out.
  */
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || "";
 const PAGE_LINKS = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/vault-types", label: "Vault types" },
@@ -27,9 +34,31 @@ const FOOTER_LINKS = [
 ];
 
 function MarketingHeader() {
+  return PUBLISHABLE_KEY ? <AuthAwareMarketingHeader /> : <MarketingHeaderChrome isSignedIn={false} onSignOut={() => {}} />;
+}
+
+function AuthAwareMarketingHeader() {
+  const [, setLocation] = useLocation();
+  const clerk = useClerk();
+  const { isLoaded, isSignedIn } = useAuth();
+
+  async function signOut() {
+    await clerk.signOut();
+    setLocation("/");
+  }
+
+  return <MarketingHeaderChrome isSignedIn={isLoaded && !!isSignedIn} onSignOut={signOut} />;
+}
+
+function MarketingHeaderChrome({ isSignedIn, onSignOut }: { isSignedIn: boolean; onSignOut: () => void | Promise<void> }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  async function signOut() {
+    setMenuOpen(false);
+    await onSignOut();
+  }
 
   // Close on click outside the header (button + panel together).
   useEffect(() => {
@@ -56,7 +85,7 @@ function MarketingHeader() {
   return (
     <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-hairline">
       <div className="mx-auto flex h-24 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
-        <Link href="/" aria-label="Vault Zombie home" className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        <Link href={isSignedIn ? "/operator" : "/"} aria-label="Vault Zombie home" className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-16 w-auto shrink-0" />
           <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-16 w-auto shrink-0" />
         </Link>
@@ -75,12 +104,25 @@ function MarketingHeader() {
             {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
 
-          <Link href="/sign-in" data-testid="link-sign-in" className="text-sm font-bold text-ink hover:text-bronze transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-            Sign in
-          </Link>
-          <Link href="/sign-up" data-testid="link-sign-up" className={cn(buttonVariants({ size: "sm" }))}>
-            Sign up
-          </Link>
+          {isSignedIn ? (
+            <>
+              <Link href="/operator" data-testid="link-my-vaults" className="text-sm font-bold text-ink hover:text-bronze transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                My vaults
+              </Link>
+              <button type="button" data-testid="button-sign-out" onClick={signOut} className="text-sm font-bold text-ink hover:text-bronze transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in" data-testid="link-sign-in" className="text-sm font-bold text-ink hover:text-bronze transition-colors rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                Sign in
+              </Link>
+              <Link href="/sign-up" data-testid="link-sign-up" className={cn(buttonVariants({ size: "sm" }))}>
+                Sign up
+              </Link>
+            </>
+          )}
 
           {menuOpen && (
             <div
@@ -110,10 +152,19 @@ function MarketingHeader() {
 }
 
 function MarketingFooter() {
+  return PUBLISHABLE_KEY ? <AuthAwareMarketingFooter /> : <MarketingFooterChrome home="/" />;
+}
+
+function AuthAwareMarketingFooter() {
+  const { isLoaded, isSignedIn } = useAuth();
+  return <MarketingFooterChrome home={isLoaded && isSignedIn ? "/operator" : "/"} />;
+}
+
+function MarketingFooterChrome({ home }: { home: string }) {
   return (
     <footer className="border-t border-hairline bg-[#F6F4F0] px-6 py-16 text-ink">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-        <Link href="/" aria-label="Vault Zombie home" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        <Link href={home} aria-label="Vault Zombie home" className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="" className="h-12 w-auto shrink-0" />
           <img src={`${import.meta.env.BASE_URL}vaultzombie_text.png`} alt="VaultZombie" className="h-12 w-auto shrink-0" />
         </Link>

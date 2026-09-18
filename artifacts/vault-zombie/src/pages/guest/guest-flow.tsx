@@ -333,8 +333,8 @@ function QuestionInput({ question, value, onChange, subjectValues, revealDate }:
           type="number"
           className="text-[24px] font-display tracking-wide text-center py-6 bg-background shadow-inner" 
           placeholder="0" 
-          value={value.numberValue || ""} 
-          onChange={e => onChange({ numberValue: e.target.value ? Number(e.target.value) : null })} 
+          value={value.numberValue ?? ""} 
+          onChange={e => onChange({ numberValue: e.target.value !== "" ? Number(e.target.value) : null })} 
         />
         {(question.numberMinimum !== undefined || question.numberMaximum !== undefined) && (
           <p className="text-[12.5px] text-gray mt-2.5 text-center font-medium">
@@ -352,6 +352,14 @@ function QuestionInput({ question, value, onChange, subjectValues, revealDate }:
       <div className="flex flex-col gap-2.5">
         {question.options?.map(opt => (
           <label key={opt.id} className={`flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${value.optionId === opt.id ? 'border-pop bg-pop-tint/30 scale-[1.01] shadow-sm' : 'border-hairline bg-white hover:bg-background'}`}>
+            <input
+              type="radio"
+              name={`question-${question.id}`}
+              value={opt.id}
+              checked={value.optionId === opt.id}
+              onChange={() => onChange({ optionId: opt.id })}
+              className="sr-only"
+            />
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${value.optionId === opt.id ? 'border-pop' : 'border-gray'}`}>
               {value.optionId === opt.id && <div className="w-2.5 h-2.5 bg-pop rounded-full" />}
             </div>

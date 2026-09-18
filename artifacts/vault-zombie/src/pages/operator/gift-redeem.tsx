@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import { useAuth } from "@clerk/react";
-import { getGetGiftCardQueryKey, useGetGiftCard, useRedeemGift } from "@workspace/api-client-react";
+import { getGetGiftCardQueryKey, useGetGiftCard, useRedeemGift, getApiErrorDetail } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { SiteHeader } from "@/components/site-header";
 
 // A pending code, entered before the visitor has an account, is kept here so it
 // survives navigation to sign-in/sign-up, email verification, and Google SSO.
@@ -52,10 +53,11 @@ export default function GiftRedeemPage() {
           clearPendingGiftCode();
           setLocation(`/operator/vaults/new?billingRecordId=${encodeURIComponent(res.billingRecordId)}&tier=${res.tier}&banner=gift`);
         },
-        onError: (err: any) => {
+        onError: (err) => {
+          clearPendingGiftCode();
           toast({
             title: "Redemption Failed",
-            description: err?.message || "Invalid, already redeemed, or refunded code.",
+            description: getApiErrorDetail(err) || "Invalid, already redeemed, or refunded code.",
             variant: "destructive",
           });
         },
@@ -72,6 +74,12 @@ export default function GiftRedeemPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoaded, isSignedIn, validatedCode]);
 
+  // 7: a saved code that turns out to be invalid, already redeemed, or refunded
+  // is cleared so the header's "Redeem a gift code" link stops appearing for it.
+  useEffect(() => {
+    if (giftCard.isError) clearPendingGiftCode();
+  }, [giftCard.isError]);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = code.trim().toUpperCase();
@@ -84,13 +92,9 @@ export default function GiftRedeemPage() {
   const showAuthStep = authLoaded && !isSignedIn && pendingCode && giftCard.isSuccess;
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col items-center justify-center p-4">
-      <div className="absolute top-4 left-4">
-        <Link href="/operator">
-          <Button variant="ghost" size="sm">← Back to Host</Button>
-        </Link>
-      </div>
-
+    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
+      <SiteHeader />
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <img src={`${import.meta.env.BASE_URL}vault_zombie_png.png`} alt="Vault Zombie" className="h-16 w-auto mx-auto mb-6" />
@@ -142,6 +146,7 @@ export default function GiftRedeemPage() {
         {authLoaded && isSignedIn && (redeemGift.isPending || pendingCode) && !redeemGift.isError && (
           <p className="text-center text-text-2">Finishing your redemption…</p>
         )}
+      </div>
       </div>
     </div>
   );

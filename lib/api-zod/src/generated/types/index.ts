@@ -97,6 +97,7 @@ export * from './areaReportAreasItem';
 export * from './billingAttempt';
 export * from './billingAttemptCurrency';
 export * from './billingAttemptFromTier';
+export * from './billingAttemptSource';
 export * from './billingAttemptStatus';
 export * from './billingAttemptTargetTier';
 export * from './billingPrice';
