@@ -54,6 +54,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - **Literal means literal.** When a document specifies exact copy or exact values, transcribe them character for character rather than writing your own version of the same idea. Covering similar ground is not the same as building what the document specified. If a sentence cannot be made accurate for a real situation, stop and report it rather than rewriting it.
 - **Verify before reporting done.** Before reporting any work as finished, compare the built output against the document line by line: every subject line, heading, sentence, block, field, and icon. Report anything you could not match rather than substituting your own.
 - **Never mention follow-up task proposals.** Never mention follow-up task proposals, proposeFollowUpTasks, or any preference about them, in any message.
+- **Prove the running server has your change.** Changing a file the API server bundles, meaning anything under `artifacts/api-server/src/` or any `lib/` package it imports, changes nothing until the server is rebuilt and restarted. After such a change, restart the API server workflow so it rebuilds, then confirm the running `artifacts/api-server/dist/index.mjs` actually contains the change, and report both, quoting what you found in the built file. Never report server work as finished, working, or verified from the source alone.
 - **Addendums govern.** Several documents in this project have addendums. An addendum amends its original document and governs wherever the two differ. Whenever you read one of these documents, read its addendums too, and follow the addendum where it covers the same ground. Addendum file names carry version numbers; the highest version of a given addendum is the current one.
 
   The documents and their addendums, as of now:
@@ -65,6 +66,7 @@ _Populate as you build — explicit user instructions worth remembering across s
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-3-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-4-v2.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-5-v1.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-6-v1.md`
 
   - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Build-Stages.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-1.md`
