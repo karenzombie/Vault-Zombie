@@ -1,6 +1,6 @@
 import { clerkClient, getAuth } from "@clerk/express";
 import { accountsTable, db, enqueueEmail, legalConsentsTable, legalSignupIntentsTable, vaultsTable, type Account } from "@workspace/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
 import { currentLegalConfiguration, legalSignupIntentHash, verifyLegalSignupIntent } from "../lib/legal";
 import { sendEmailNow } from "../lib/mail";
@@ -91,8 +91,12 @@ export async function findOrCreateAccount(userId: string): Promise<Account> {
     throw Object.assign(new Error("A valid legal signup intent is required."), { code: "CONSENT_REQUIRED" });
   }
   const created = await db.transaction(async (tx) => {
-    const locked = await tx.execute(sql`SELECT * FROM legal_signup_intents WHERE token_hash = ${legalSignupIntentHash(intentToken)} FOR UPDATE`);
-    const intent = locked.rows[0] as typeof legalSignupIntentsTable.$inferSelect | undefined;
+    const [intent] = await tx
+      .select()
+      .from(legalSignupIntentsTable)
+      .where(eq(legalSignupIntentsTable.tokenHash, legalSignupIntentHash(intentToken)))
+      .limit(1)
+      .for("update");
     if (!intent || intent.consumedAt || intent.expiresAt.getTime() <= Date.now()
       || intent.nonce !== intentPayload.n || intent.termsVersion !== intentPayload.t
       || intent.privacyVersion !== intentPayload.p || intent.acceptedAt.getTime() !== intentPayload.a

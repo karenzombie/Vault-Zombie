@@ -64,6 +64,7 @@ _Populate as you build — explicit user instructions worth remembering across s
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-2-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-3-v1.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-4-v2.md`
+    - `Vault_Zombie_Initial_Build_Files/VaultZombie-Build-Brief-Addendum-5-v1.md`
 
   - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Build-Stages.md`
     - `Vault_Zombie_Initial_Build_Files/VaultZombie-Flow1-Addendum-1.md`
